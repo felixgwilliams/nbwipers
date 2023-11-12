@@ -154,11 +154,32 @@ impl CodeCell {
     pub fn is_clear_exec_count(&self) -> bool {
         self.execution_count.is_none()
     }
+    pub fn is_clear_id(&self) -> bool {
+        self.id.is_none()
+    }
     pub fn clear_outputs(&mut self) {
         self.outputs.clear();
     }
     pub fn clear_counts(&mut self) {
         self.execution_count = None;
+    }
+    pub fn should_clear_output(&self, drop_output: bool) -> bool {
+        // drop_output
+        if drop_output {
+            let keep_output_metadata = self
+                .metadata
+                .as_object()
+                .is_some_and(|x| x.contains_key("keep_output"));
+            let keep_output_tags = self
+                .metadata
+                .as_object()
+                .and_then(|x| x.get("tags"))
+                .and_then(|x| x.as_array())
+                .is_some_and(|x| x.iter().any(|s| s.as_str() == Some("keep_output")));
+            !(keep_output_metadata || keep_output_tags)
+        } else {
+            false
+        }
     }
 }
 
@@ -223,9 +244,9 @@ impl Cell {
 }
 
 fn get_value_child_mut<'a, T: AsRef<str>>(
-    value: &'a mut serde_json::Value,
+    value: &'a mut Value,
     path: &[T],
-) -> Option<&'a mut serde_json::Value> {
+) -> Option<&'a mut Value> {
     let mut cur = value;
     for segment in path {
         cur = cur
@@ -234,6 +255,14 @@ fn get_value_child_mut<'a, T: AsRef<str>>(
     }
     Some(cur)
 }
+pub fn get_value_child<'a, T: AsRef<str>>(value: &'a Value, path: &[T]) -> Option<&'a Value> {
+    let mut cur = value;
+    for segment in path {
+        cur = cur.as_object().and_then(|x| x.get(segment.as_ref()))?;
+    }
+    Some(cur)
+}
+
 pub fn pop_value_child<T: AsRef<str>>(
     value: &mut serde_json::Value,
     path: &[T],
@@ -274,23 +303,18 @@ pub fn read_nb(path: &Path) -> Result<RawNotebook, NBReadError> {
     Ok(out)
 }
 
-// #[derive(Debug, Clone, PartialEq, Eq)]
-// pub struct ExtraKeyStruct {
-//     extra_key: ExtraKey,
-// }
-
-// impl FromStr for ExtraKeyStruct {
-//     type Err = ExtraKeyParseError;
-//     fn from_str(s: &str) -> Result<Self, Self::Err> {
-//         let extra_key = ExtraKey::from_str(s)?;
-//         Ok(ExtraKeyStruct { extra_key })
-//     }
-// }
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ExtraKey {
     CellMeta(StripKey),
     Metadata(StripKey),
+}
+
+impl ExtraKey {
+    pub fn get_parts(&self) -> &Vec<String> {
+        match self {
+            ExtraKey::Metadata(ref c) | ExtraKey::CellMeta(ref c) => &c.parts,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -352,6 +376,18 @@ impl<'de> Deserialize<'de> for ExtraKey {
             )
         })
     }
+}
+
+pub fn partition_extra_keys(extra_keys: &[ExtraKey]) -> (Vec<&ExtraKey>, Vec<&ExtraKey>) {
+    let mut meta_keys = vec![];
+    let mut cell_keys = vec![];
+    for extra_key in extra_keys {
+        match extra_key {
+            ExtraKey::CellMeta(ref _cell_key) => cell_keys.push(extra_key),
+            ExtraKey::Metadata(ref _meta_key) => meta_keys.push(extra_key),
+        };
+    }
+    (cell_keys, meta_keys)
 }
 
 #[cfg(test)]
