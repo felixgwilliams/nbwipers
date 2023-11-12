@@ -1,63 +1,9 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, fs::File, io::BufReader, path::Path, str::FromStr};
 
-use serde::{Deserialize, Serialize};
+use serde::{de, Deserialize, Serialize};
 use serde_json::Value;
 use serde_with::skip_serializing_none;
-
-fn sort_alphabetically<T: Serialize, S: serde::Serializer>(
-    value: &T,
-    serializer: S,
-) -> Result<S::Ok, S::Error> {
-    let value = serde_json::to_value(value).map_err(serde::ser::Error::custom)?;
-    value.serialize(serializer)
-}
-
-/// This is used to serialize any value implementing [`Serialize`] alphabetically.
-///
-/// The reason for this is to maintain consistency in the generated JSON string,
-/// which is useful for diffing. The default serializer keeps the order of the
-/// fields as they are defined in the struct, which will not be consistent when
-/// there are `extra` fields.
-///
-/// # Example
-///
-/// ```
-/// use std::collections::BTreeMap;
-///
-/// use serde::Serialize;
-///
-/// use ruff_notebook::SortAlphabetically;
-///
-/// #[derive(Serialize)]
-/// struct MyStruct {
-///    a: String,
-///    #[serde(flatten)]
-///    extra: BTreeMap<String, String>,
-///    b: String,
-/// }
-///
-/// let my_struct = MyStruct {
-///     a: "a".to_string(),
-///     extra: BTreeMap::from([
-///         ("d".to_string(), "d".to_string()),
-///         ("c".to_string(), "c".to_string()),
-///     ]),
-///     b: "b".to_string(),
-/// };
-///
-/// let serialized = serde_json::to_string_pretty(&SortAlphabetically(&my_struct)).unwrap();
-/// assert_eq!(
-///     serialized,
-/// r#"{
-///   "a": "a",
-///   "b": "b",
-///   "c": "c",
-///   "d": "d"
-/// }"#
-/// );
-/// ```
-#[derive(Serialize)]
-pub struct SortAlphabetically<T: Serialize>(#[serde(serialize_with = "sort_alphabetically")] pub T);
+use thiserror::Error;
 
 /// The root of the JSON of a Jupyter Notebook
 ///
@@ -206,33 +152,182 @@ impl CodeCell {
     }
 }
 
-fn get_value_child_mut<'a>(
+impl Cell {
+    #[allow(dead_code)]
+    pub fn as_codecell(&self) -> Option<&CodeCell> {
+        if let Cell::Code(codecell) = self {
+            Some(codecell)
+        } else {
+            None
+        }
+    }
+    pub fn as_codecell_mut(&mut self) -> Option<&mut CodeCell> {
+        if let Cell::Code(codecell) = self {
+            Some(codecell)
+        } else {
+            None
+        }
+    }
+}
+
+fn get_value_child_mut<'a, T: AsRef<str>>(
     value: &'a mut serde_json::Value,
-    path: &[&str],
+    path: &[T],
 ) -> Option<&'a mut serde_json::Value> {
     let mut cur = value;
-    for segment in path.iter().copied() {
-        cur = cur.as_object_mut().and_then(|x| x.get_mut(segment))?;
+    for segment in path.iter() {
+        cur = cur
+            .as_object_mut()
+            .and_then(|x| x.get_mut(segment.as_ref()))?;
     }
     Some(cur)
 }
-pub fn pop_value_child(value: &mut serde_json::Value, path: &[&str]) -> Option<serde_json::Value> {
+pub fn pop_value_child<T: AsRef<str>>(
+    value: &mut serde_json::Value,
+    path: &[T],
+) -> Option<serde_json::Value> {
     let (child_label, parent_path) = path.split_last()?;
     let parent = get_value_child_mut(value, parent_path)?;
-    parent.as_object_mut().and_then(|m| m.remove(*child_label))
+    parent
+        .as_object_mut()
+        .and_then(|m| m.remove(child_label.as_ref()))
+}
+
+pub fn pop_cell_key(cell: &mut CodeCell, extra_key: &ExtraKey) -> Option<serde_json::Value> {
+    let (cell, ExtraKey::CellMeta(cellmeta_key)) = (cell, extra_key) else {
+        return None;
+    };
+    pop_value_child(&mut cell.metadata, cellmeta_key.parts.as_slice())
+}
+
+#[derive(Error, Debug)]
+pub enum NBReadError {
+    #[error("File IO error")]
+    IO(#[from] std::io::Error),
+    #[error("JSON read error")]
+    Serde(#[from] serde_json::Error),
+}
+
+pub fn read_nb(path: &Path) -> Result<RawNotebook, NBReadError> {
+    let f = File::open(path)?;
+    let rdr = BufReader::new(f);
+
+    let out = serde_json::from_reader(rdr)?;
+    Ok(out)
+}
+
+// #[derive(Debug, Clone, PartialEq, Eq)]
+// pub struct ExtraKeyStruct {
+//     extra_key: ExtraKey,
+// }
+
+// impl FromStr for ExtraKeyStruct {
+//     type Err = ExtraKeyParseError;
+//     fn from_str(s: &str) -> Result<Self, Self::Err> {
+//         let extra_key = ExtraKey::from_str(s)?;
+//         Ok(ExtraKeyStruct { extra_key })
+//     }
+// }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ExtraKey {
+    CellMeta(StripKey),
+    Metadata(StripKey),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StripKey {
+    pub(crate) parts: Vec<String>,
+}
+
+#[derive(Debug, PartialEq, Clone, Copy, Error)]
+pub enum ExtraKeyParseError {
+    #[error("Key must start with `cell.metadata` or `metadata`")]
+    NotCellOrMetadata,
+    #[error("No dot")]
+    NoDot,
+    #[error("Empty")]
+    Empty,
+}
+
+impl StripKey {
+    pub fn try_from_slice(parts: &[&str]) -> Result<Self, ExtraKeyParseError> {
+        if parts.is_empty() {
+            Err(ExtraKeyParseError::Empty)
+        } else {
+            Ok(StripKey {
+                parts: parts.iter().map(|x| String::from(*x)).collect(),
+            })
+        }
+    }
+}
+
+impl FromStr for ExtraKey {
+    type Err = ExtraKeyParseError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts = s.split('.').collect::<Vec<_>>();
+        match parts.split_first() {
+            Some((&"cell", tail)) => match tail.split_first() {
+                Some((&"metadata", tail2)) => {
+                    StripKey::try_from_slice(tail2).map(ExtraKey::CellMeta)
+                }
+                _ => Err(ExtraKeyParseError::NotCellOrMetadata),
+            },
+
+            Some((&"metadata", tail)) => StripKey::try_from_slice(tail).map(ExtraKey::Metadata),
+            Some(_) => Err(ExtraKeyParseError::NotCellOrMetadata),
+            None => Err(ExtraKeyParseError::NoDot),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for ExtraKey {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let str_result = String::deserialize(deserializer)?;
+        Self::from_str(str_result.as_str()).map_err(|_| {
+            de::Error::invalid_value(
+                de::Unexpected::Str(str_result.as_str()),
+                &"dot separated json path to key starting with `cell` or `metadata`",
+            )
+        })
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use serde_json::json;
 
-    use super::pop_value_child;
+    use crate::wipers::pop_cell_key;
+
+    use super::{pop_value_child, Cell, ExtraKey};
+    use std::str::FromStr;
 
     #[test]
     fn test_pop_value_child() {
         let mut x = json!({"hello": {"world": "baby", "banana":"pear"}});
-
         pop_value_child(&mut x, &"hello.world".split('.').collect::<Vec<_>>());
         assert_eq!(x, json!({"hello": {"banana": "pear"}}))
+    }
+    #[test]
+    fn test_pop_key() {
+        let cell_value = json!({
+         "cell_type": "code",
+         "execution_count": null,
+         "metadata": {"banana": "pear"},
+         "outputs": [],
+         "source": [
+          "from ipywidgets import interact"
+         ]
+        });
+
+        let mut cell: Cell = serde_json::from_value(cell_value).unwrap();
+        let extra_key = ExtraKey::from_str("cell.metadata.banana").unwrap();
+        println!("{:?}", cell);
+        println!("{:?}", extra_key);
+        pop_cell_key(cell.as_codecell_mut().unwrap(), &extra_key);
+        println!("{:?}", cell);
     }
 }
