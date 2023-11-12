@@ -30,13 +30,18 @@ fn main() {
     for meta_key in &meta_keys {
         wipers::pop_meta_key(&mut nb, meta_key);
     }
-    // TODO: add logic to check if we need to remove any cells
-    let drop_cells = false;
-    if drop_cells {
+
+    let drop_cells: Vec<_> = nb
+        .cells
+        .iter()
+        .map(|c| c.should_drop(settings.drop_empty_cells, &settings.drop_tagged_cells))
+        .collect();
+    if drop_cells.iter().any(|b| *b) {
         let mut retained_cells = vec![];
-        for cell in nb.cells {
-            //TODO: possibly remove cells
-            retained_cells.push(cell);
+        for (cell, to_drop) in nb.cells.into_iter().zip(drop_cells.iter()) {
+            if !to_drop {
+                retained_cells.push(cell);
+            }
         }
         nb.cells = retained_cells;
     }

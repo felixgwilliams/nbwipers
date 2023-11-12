@@ -1,4 +1,5 @@
 use crate::{settings::Settings, wipers::ExtraKey};
+use rustc_hash::FxHashSet;
 use serde::Deserialize;
 use std::path::{Path, PathBuf};
 
@@ -9,6 +10,7 @@ pub struct Configuration {
     pub drop_output: Option<bool>,
     pub drop_count: Option<bool>,
     pub drop_id: Option<bool>,
+    pub drop_tagged_cells: Option<Vec<String>>,
 }
 
 impl Configuration {
@@ -19,6 +21,10 @@ impl Configuration {
             drop_output: self.drop_output.unwrap_or(true),
             drop_count: self.drop_count.unwrap_or(true),
             drop_id: self.drop_id.unwrap_or(false),
+            drop_tagged_cells: self
+                .drop_tagged_cells
+                .map(FxHashSet::from_iter)
+                .unwrap_or_default(),
         }
     }
 }

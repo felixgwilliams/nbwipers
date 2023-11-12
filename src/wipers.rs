@@ -1,5 +1,6 @@
 use std::{fs::File, io::BufReader, path::Path, str::FromStr};
 
+use rustc_hash::FxHashSet;
 use serde::{de, Deserialize, Serialize};
 use serde_json::Value;
 use serde_with::skip_serializing_none;
@@ -137,6 +138,15 @@ pub enum SourceValue {
     StringArray(Vec<String>),
 }
 
+impl SourceValue {
+    fn is_empty(&self) -> bool {
+        match self {
+            SourceValue::String(ref s) => s.trim().is_empty(),
+            SourceValue::StringArray(ref s_vec) => s_vec.iter().all(|s| s.trim().is_empty()),
+        }
+    }
+}
+
 impl CodeCell {
     pub fn is_clear_outputs(&self) -> bool {
         self.outputs.is_empty()
@@ -166,6 +176,48 @@ impl Cell {
             Some(codecell)
         } else {
             None
+        }
+    }
+
+    pub fn get_source(&self) -> &SourceValue {
+        match self {
+            Cell::Code(ref c) => &c.source,
+            Cell::Markdown(ref c) => &c.source,
+            Cell::Raw(ref c) => &c.source,
+        }
+    }
+
+    pub fn get_metadata(&self) -> &Value {
+        match self {
+            Cell::Code(ref c) => &c.metadata,
+            Cell::Markdown(ref c) => &c.metadata,
+            Cell::Raw(ref c) => &c.metadata,
+        }
+    }
+
+    pub fn should_drop(
+        &self,
+        drop_empty_cells: bool,
+        drop_tagged_cells: &FxHashSet<String>,
+    ) -> bool {
+        if drop_empty_cells && self.get_source().is_empty() {
+            return true;
+        }
+        if drop_tagged_cells.is_empty() {
+            return false;
+        }
+        let tags = self
+            .get_metadata()
+            .as_object()
+            .and_then(|x| x.get("tags"))
+            .and_then(|x| x.as_array());
+
+        if let Some(tags) = tags {
+            tags.iter()
+                .filter_map(|v| v.as_str())
+                .any(|s| drop_tagged_cells.contains(s))
+        } else {
+            false
         }
     }
 }
