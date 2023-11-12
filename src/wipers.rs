@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, fs::File, io::BufReader, path::Path, str::FromStr};
+use std::{fs::File, io::BufReader, path::Path, str::FromStr};
 
 use serde::{de, Deserialize, Serialize};
 use serde_json::Value;
@@ -16,7 +16,7 @@ pub struct RawNotebook {
     /// Array of cells of the current notebook.
     pub cells: Vec<Cell>,
     /// Notebook root-level metadata.
-    pub metadata: RawNotebookMetadata,
+    pub metadata: Value,
     /// Notebook format (major number). Incremented between backwards incompatible changes to the
     /// notebook format.
     pub nbformat: i64,
@@ -85,44 +85,44 @@ pub struct CodeCell {
     pub source: SourceValue,
 }
 
-/// Notebook root-level metadata.
-#[skip_serializing_none]
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub struct RawNotebookMetadata {
-    /// The author(s) of the notebook document
-    pub authors: Option<Value>,
-    /// Kernel information.
-    pub kernelspec: Option<Value>,
-    /// Kernel information.
-    pub language_info: Option<LanguageInfo>,
-    /// Original notebook format (major number) before converting the notebook between versions.
-    /// This should never be written to a file.
-    pub orig_nbformat: Option<i64>,
-    /// The title of the notebook document
-    pub title: Option<String>,
-    /// For additional properties.
-    #[serde(flatten)]
-    pub extra: BTreeMap<String, Value>,
-}
+// /// Notebook root-level metadata.
+// #[skip_serializing_none]
+// #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+// pub struct RawNotebookMetadata {
+//     /// The author(s) of the notebook document
+//     pub authors: Option<Value>,
+//     /// Kernel information.
+//     pub kernelspec: Option<Value>,
+//     /// Kernel information.
+//     pub language_info: Option<LanguageInfo>,
+//     /// Original notebook format (major number) before converting the notebook between versions.
+//     /// This should never be written to a file.
+//     pub orig_nbformat: Option<i64>,
+//     /// The title of the notebook document
+//     pub title: Option<String>,
+//     /// For additional properties.
+//     #[serde(flatten)]
+//     pub extra: BTreeMap<String, Value>,
+// }
 
-/// Kernel information.
-#[skip_serializing_none]
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub struct LanguageInfo {
-    /// The codemirror mode to use for code in this language.
-    pub codemirror_mode: Option<Value>,
-    /// The file extension for files in this language.
-    pub file_extension: Option<String>,
-    /// The mimetype corresponding to files in this language.
-    pub mimetype: Option<String>,
-    /// The programming language which this kernel runs.
-    pub name: String,
-    /// The pygments lexer to use for code in this language.
-    pub pygments_lexer: Option<String>,
-    /// For additional properties.
-    #[serde(flatten)]
-    pub extra: BTreeMap<String, Value>,
-}
+// /// Kernel information.
+// #[skip_serializing_none]
+// #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+// pub struct LanguageInfo {
+//     /// The codemirror mode to use for code in this language.
+//     pub codemirror_mode: Option<Value>,
+//     /// The file extension for files in this language.
+//     pub file_extension: Option<String>,
+//     /// The mimetype corresponding to files in this language.
+//     pub mimetype: Option<String>,
+//     /// The programming language which this kernel runs.
+//     pub name: String,
+//     /// The pygments lexer to use for code in this language.
+//     pub pygments_lexer: Option<String>,
+//     /// For additional properties.
+//     #[serde(flatten)]
+//     pub extra: BTreeMap<String, Value>,
+// }
 
 /// mimetype output (e.g. text/plain), represented as either an array of strings or a
 /// string.
@@ -198,6 +198,12 @@ pub fn pop_cell_key(cell: &mut CodeCell, extra_key: &ExtraKey) -> Option<serde_j
         return None;
     };
     pop_value_child(&mut cell.metadata, cellmeta_key.parts.as_slice())
+}
+pub fn pop_meta_key(nb: &mut RawNotebook, extra_key: &ExtraKey) -> Option<serde_json::Value> {
+    let (nb, ExtraKey::Metadata(meta_key)) = (nb, extra_key) else {
+        return None;
+    };
+    pop_value_child(&mut nb.metadata, meta_key.parts.as_slice())
 }
 
 #[derive(Error, Debug)]

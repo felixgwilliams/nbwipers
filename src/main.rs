@@ -21,7 +21,20 @@ fn main() {
             ExtraKey::Metadata(ref _meta_key) => meta_keys.push(extra_key),
         };
     }
-    // TODO: notebook meta keys
+    for meta_key in meta_keys.iter() {
+        wipers::pop_meta_key(&mut nb, meta_key);
+    }
+    // TODO: add logic to check if we need to remove any cells
+    let drop_cells = false;
+    if drop_cells {
+        let mut retained_cells = vec![];
+        for cell in nb.cells {
+            //TODO: possibly remove cells
+            retained_cells.push(cell);
+        }
+        nb.cells = retained_cells;
+    }
+
     for cell in nb.cells.iter_mut().filter_map(|x| x.as_codecell_mut()) {
         cell.clear_counts();
         cell.clear_outputs();
