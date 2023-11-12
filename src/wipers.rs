@@ -175,7 +175,7 @@ fn get_value_child_mut<'a, T: AsRef<str>>(
     path: &[T],
 ) -> Option<&'a mut serde_json::Value> {
     let mut cur = value;
-    for segment in path.iter() {
+    for segment in path {
         cur = cur
             .as_object_mut()
             .and_then(|x| x.get_mut(segment.as_ref()))?;
@@ -315,7 +315,7 @@ mod tests {
     fn test_pop_value_child() {
         let mut x = json!({"hello": {"world": "baby", "banana":"pear"}});
         pop_value_child(&mut x, &"hello.world".split('.').collect::<Vec<_>>());
-        assert_eq!(x, json!({"hello": {"banana": "pear"}}))
+        assert_eq!(x, json!({"hello": {"banana": "pear"}}));
     }
     #[test]
     fn test_pop_key() {
@@ -331,9 +331,9 @@ mod tests {
 
         let mut cell: Cell = serde_json::from_value(cell_value).unwrap();
         let extra_key = ExtraKey::from_str("cell.metadata.banana").unwrap();
-        println!("{:?}", cell);
-        println!("{:?}", extra_key);
+        println!("{cell:?}");
+        println!("{extra_key:?}");
         pop_cell_key(cell.as_codecell_mut().unwrap(), &extra_key);
-        println!("{:?}", cell);
+        println!("{cell:?}");
     }
 }

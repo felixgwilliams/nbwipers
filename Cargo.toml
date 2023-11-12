@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.4.8", features = ["derive"] }
+path-absolutize = { version = "3.1.1", features = ["once_cell_cache"] }
 serde = { version = "1.0.192", features = ["derive"] }
 serde_json = "1.0.108"
 serde_with = "3.4.0"
