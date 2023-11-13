@@ -317,6 +317,15 @@ impl ExtraKey {
     }
 }
 
+impl ToString for ExtraKey {
+    fn to_string(&self) -> String {
+        match self {
+            Self::CellMeta(cellmeta) => format!("cell.metadata.{}", cellmeta.parts.join(".")),
+            Self::Metadata(meta) => format!("metadata.{}", meta.parts.join(".")),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StripKey {
     pub(crate) parts: Vec<String>,

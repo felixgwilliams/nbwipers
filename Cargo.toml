@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.4.8", features = ["derive"] }
+ignore = "0.4.20"
 path-absolutize = { version = "3.1.1", features = ["once_cell_cache"] }
 rustc-hash = "1.1.0"
 serde = { version = "1.0.192", features = ["derive"] }

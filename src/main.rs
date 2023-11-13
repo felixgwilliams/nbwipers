@@ -12,66 +12,84 @@ mod config;
 mod settings;
 mod wipers;
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
 pub enum CheckResult {
-    StripMeta,
-    DropCells,
-    ClearOutput,
-    ClearCount,
-    ClearId,
-    CellStripMeta,
+    StripMeta {
+        extra_key: String,
+    },
+    DropCells {
+        cell_number: usize,
+    },
+    ClearOutput {
+        cell_number: usize,
+    },
+    ClearCount {
+        cell_number: usize,
+    },
+    ClearId {
+        cell_number: usize,
+    },
+    CellStripMeta {
+        cell_number: usize,
+        extra_key: String,
+    },
 }
 
 fn check(nb: &RawNotebook, settings: &Settings) -> Vec<CheckResult> {
     let (cell_keys, meta_keys) = partition_extra_keys(settings.extra_keys.as_slice());
     let mut out = vec![];
-    let strip_meta = meta_keys
+
+    meta_keys
         .iter()
-        .any(|k| wipers::get_value_child(&nb.metadata, k.get_parts()).is_some());
-    if strip_meta {
-        out.push(CheckResult::StripMeta);
-    }
-    let drop_cells = nb
-        .cells
+        .filter(|k| wipers::get_value_child(&nb.metadata, k.get_parts()).is_some())
+        .for_each(|extra_key| {
+            out.push(CheckResult::StripMeta {
+                extra_key: extra_key.to_string(),
+            });
+        });
+
+    nb.cells
         .iter()
-        .any(|c| c.should_drop(settings.drop_empty_cells, &settings.drop_tagged_cells));
-    if drop_cells {
-        out.push(CheckResult::DropCells);
-    }
-    let clear_output = nb
-        .cells
-        .iter()
-        .filter_map(|c| c.as_codecell())
-        .any(|c| c.is_clear_outputs() || !c.should_clear_output(settings.drop_output));
-    if clear_output {
-        out.push(CheckResult::ClearOutput);
-    }
-    let clear_count = settings.drop_count
-        && nb
-            .cells
+        .enumerate()
+        .filter(|(_i, c)| c.should_drop(settings.drop_empty_cells, &settings.drop_tagged_cells))
+        .for_each(|(cell_number, _c)| out.push(CheckResult::DropCells { cell_number }));
+
+    if settings.drop_output {
+        nb.cells
             .iter()
-            .filter_map(|c| c.as_codecell())
-            .any(|c| !c.is_clear_exec_count());
-    if clear_count {
-        out.push(CheckResult::ClearCount);
+            .enumerate()
+            .filter_map(|(i, c)| c.as_codecell().map(|c| (i, c)))
+            .filter(|(_i, c)| !c.is_clear_outputs() || c.should_clear_output(settings.drop_output))
+            .for_each(|(cell_number, _)| out.push(CheckResult::ClearOutput { cell_number }));
     }
-    let clear_id = settings.drop_id
-        && nb
-            .cells
+    if settings.drop_count {
+        nb.cells
             .iter()
-            .filter_map(|c| c.as_codecell())
-            .any(|c| !c.is_clear_id());
-    if clear_id {
-        out.push(CheckResult::ClearId);
+            .enumerate()
+            .filter_map(|(i, c)| c.as_codecell().map(|c| (i, c)))
+            .filter(|(_i, c)| !c.is_clear_exec_count())
+            .for_each(|(cell_number, _)| out.push(CheckResult::ClearCount { cell_number }));
     }
-    let strip_cell_meta = nb.cells.iter().any(|c| {
+    if settings.drop_id {
+        nb.cells
+            .iter()
+            .enumerate()
+            .filter_map(|(i, c)| c.as_codecell().map(|c| (i, c)))
+            .filter(|(_i, c)| !c.is_clear_id())
+            .for_each(|(cell_number, _)| out.push(CheckResult::ClearId { cell_number }));
+    }
+    for (cell_number, cell) in nb.cells.iter().enumerate() {
         cell_keys
             .iter()
-            .any(|k| wipers::get_value_child(c.get_metadata(), k.get_parts()).is_some())
-    });
-    if strip_cell_meta {
-        out.push(CheckResult::CellStripMeta);
+            .filter(|k| wipers::get_value_child(cell.get_metadata(), k.get_parts()).is_some())
+            .for_each(|k| {
+                out.push(CheckResult::CellStripMeta {
+                    cell_number,
+                    extra_key: k.to_string(),
+                });
+            });
     }
+
     out
 }
 
@@ -86,6 +104,7 @@ fn main() {
     let settings = Settings::construct(args.config.as_deref(), &overrides);
     let check_results = check(&nb, &settings);
     println!("{check_results:?}");
+    println!("{}", serde_json::to_string_pretty(&check_results).unwrap());
 
     let (cell_keys, meta_keys) = partition_extra_keys(settings.extra_keys.as_slice());
 
