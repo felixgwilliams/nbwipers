@@ -8,7 +8,7 @@ use crate::{config::Configuration, wipers::ExtraKey};
 #[derive(Parser, Debug, Clone)]
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
-    pub notebook: PathBuf,
+    pub files: Vec<PathBuf>,
 
     #[arg(long, short)]
     pub config: Option<PathBuf>,
@@ -54,7 +54,7 @@ pub struct ConfigOverrides {
 }
 
 pub struct Args {
-    pub notebook: PathBuf,
+    pub files: Vec<PathBuf>,
     pub config: Option<PathBuf>,
 }
 
@@ -71,7 +71,7 @@ impl Cli {
     pub fn partition(self) -> (Args, ConfigOverrides) {
         (
             Args {
-                notebook: self.notebook,
+                files: self.files,
                 config: self.config,
             },
             ConfigOverrides {

@@ -1,11 +1,17 @@
 #![warn(clippy::all, clippy::pedantic)]
 
-use clap::Parser;
-use serde::Serialize;
-use wipers::RawNotebook;
+use std::ffi::OsStr;
+use std::path::{Path, PathBuf};
 
 use crate::settings::Settings;
 use crate::wipers::partition_extra_keys;
+use clap::Parser;
+use ignore::WalkBuilder;
+use itertools::Itertools;
+use path_absolutize::Absolutize;
+use rayon::prelude::*;
+use serde::Serialize;
+use wipers::RawNotebook;
 
 mod cli;
 mod config;
@@ -92,20 +98,56 @@ fn check(nb: &RawNotebook, settings: &Settings) -> Vec<CheckResult> {
 
     out
 }
+/// Convert any path to an absolute path (based on the current working
+/// directory).
+pub fn normalize_path<P: AsRef<Path>>(path: P) -> PathBuf {
+    let path = path.as_ref();
+    if let Ok(path) = path.absolutize() {
+        return path.to_path_buf();
+    }
+    path.to_path_buf()
+}
+fn find_notebooks(paths: &[PathBuf]) -> Option<Vec<PathBuf>> {
+    let paths: Vec<PathBuf> = paths.iter().map(normalize_path).unique().collect();
+    let (first_path, rest_paths) = paths.split_first()?;
 
-fn main() {
-    let cli = cli::Cli::parse();
-    let (args, overrides) = cli.partition();
+    let mut builder = WalkBuilder::new(first_path);
+    for path in rest_paths {
+        builder.add(path);
+    }
+    builder.standard_filters(true);
+    builder.hidden(false);
 
-    let Ok(mut nb) = wipers::read_nb(&args.notebook) else {
-        return;
-    };
+    let walker = builder.build_parallel();
+    let files: std::sync::Mutex<Vec<PathBuf>> = std::sync::Mutex::new(vec![]);
+    walker.run(|| {
+        Box::new(|path| {
+            if let Ok(entry) = path {
+                let resolved = if entry.file_type().map_or(true, |ft| ft.is_dir()) {
+                    None
+                } else if entry.depth() == 0 {
+                    Some(entry.into_path())
+                } else {
+                    let cur_path = entry.into_path();
+                    if cur_path.extension() == Some(OsStr::new("ipynb")) {
+                        Some(cur_path)
+                    } else {
+                        None
+                    }
+                };
+                if let Some(resolved) = resolved {
+                    files.lock().unwrap().push(resolved);
+                }
+            }
 
-    let settings = Settings::construct(args.config.as_deref(), &overrides);
-    let check_results = check(&nb, &settings);
-    println!("{check_results:?}");
-    println!("{}", serde_json::to_string_pretty(&check_results).unwrap());
+            ignore::WalkState::Continue
+        })
+    });
 
+    Some(files.into_inner().unwrap())
+}
+
+fn strip(mut nb: RawNotebook, settings: &Settings) -> RawNotebook {
     let (cell_keys, meta_keys) = partition_extra_keys(settings.extra_keys.as_slice());
 
     for meta_key in meta_keys {
@@ -140,5 +182,25 @@ fn main() {
             wipers::pop_cell_key(cell, cell_key);
         }
     }
-    // println!("{}", serde_json::to_string_pretty(&nb).unwrap());
+    nb
+}
+
+fn main() {
+    let cli = cli::Cli::parse();
+    let (args, overrides) = cli.partition();
+    let nbs = find_notebooks(&args.files);
+
+    let settings = Settings::construct(args.config.as_deref(), &overrides);
+    nbs.unwrap_or_default().par_iter().for_each(|nb_path| {
+        println!("{nb_path:?}");
+        let Ok(nb) = wipers::read_nb(nb_path) else {
+            return;
+        };
+        let check_results = check(&nb, &settings);
+        println!("{check_results:?}");
+        // println!("{}", serde_json::to_string(&check_results).unwrap());
+        let nb = strip(nb, &settings);
+
+        println!("{}", serde_json::to_string_pretty(&nb).unwrap());
+    });
 }
