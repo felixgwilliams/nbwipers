@@ -403,7 +403,7 @@ pub fn partition_extra_keys(extra_keys: &[ExtraKey]) -> (Vec<&ExtraKey>, Vec<&Ex
 mod tests {
     use serde_json::json;
 
-    use crate::wipers::pop_cell_key;
+    use crate::types::pop_cell_key;
 
     use super::{pop_value_child, Cell, ExtraKey};
     use std::str::FromStr;
@@ -433,4 +433,27 @@ mod tests {
         pop_cell_key(cell.as_codecell_mut().unwrap(), &extra_key);
         println!("{cell:?}");
     }
+}
+
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+pub enum CheckResult {
+    StripMeta {
+        extra_key: String,
+    },
+    DropCells {
+        cell_number: usize,
+    },
+    ClearOutput {
+        cell_number: usize,
+    },
+    ClearCount {
+        cell_number: usize,
+    },
+    ClearId {
+        cell_number: usize,
+    },
+    CellStripMeta {
+        cell_number: usize,
+        extra_key: String,
+    },
 }

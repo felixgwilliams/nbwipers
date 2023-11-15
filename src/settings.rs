@@ -1,6 +1,6 @@
 use crate::cli::ConfigOverrides;
 use crate::config::resolve;
-use crate::wipers::ExtraKey;
+use crate::types::ExtraKey;
 use rustc_hash::FxHashSet;
 use std::path::Path;
 

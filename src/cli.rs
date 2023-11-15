@@ -1,13 +1,18 @@
 use std::path::PathBuf;
 
-use clap::{command, Parser};
+use clap::{command, Parser, Subcommand};
 
-use crate::{config::Configuration, wipers::ExtraKey};
+use crate::{config::Configuration, types::ExtraKey};
 
-#[allow(clippy::struct_excessive_bools)]
 #[derive(Parser, Debug, Clone)]
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
+    #[command(subcommand)]
+    pub command: Commands,
+}
+#[allow(clippy::struct_excessive_bools)]
+#[derive(Parser, Debug, Clone)]
+pub struct CommonArgs {
     pub files: Vec<PathBuf>,
 
     #[arg(long, short)]
@@ -44,6 +49,23 @@ pub struct Cli {
     pub drop_tagged_cells: Option<Vec<String>>,
 }
 
+#[derive(Subcommand, Debug, Clone)]
+pub enum Commands {
+    Check(CheckCommand),
+    Clean(CleanCommand),
+}
+
+#[derive(Clone, Debug, Parser)]
+pub struct CheckCommand {
+    #[clap(flatten)]
+    pub common: CommonArgs,
+}
+#[derive(Clone, Debug, Parser)]
+pub struct CleanCommand {
+    #[clap(flatten)]
+    pub common: CommonArgs,
+}
+
 pub struct ConfigOverrides {
     pub extra_keys: Option<Vec<ExtraKey>>,
     pub drop_empty_cells: Option<bool>,
@@ -67,7 +89,7 @@ fn resolve_bool_arg(yes: bool, no: bool) -> Option<bool> {
     }
 }
 
-impl Cli {
+impl CommonArgs {
     pub fn partition(self) -> (Args, ConfigOverrides) {
         (
             Args {
