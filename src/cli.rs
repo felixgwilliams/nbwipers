@@ -13,8 +13,6 @@ pub struct Cli {
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Parser, Debug, Clone)]
 pub struct CommonArgs {
-    pub files: Vec<PathBuf>,
-
     #[arg(long, short)]
     pub config: Option<PathBuf>,
 
@@ -51,17 +49,29 @@ pub struct CommonArgs {
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum Commands {
+    CheckAll(CheckAllCommand),
     Check(CheckCommand),
     Clean(CleanCommand),
 }
 
 #[derive(Clone, Debug, Parser)]
 pub struct CheckCommand {
+    pub file: PathBuf,
+
+    #[clap(flatten)]
+    pub common: CommonArgs,
+}
+#[derive(Clone, Debug, Parser)]
+pub struct CheckAllCommand {
+    pub files: Vec<PathBuf>,
+
     #[clap(flatten)]
     pub common: CommonArgs,
 }
 #[derive(Clone, Debug, Parser)]
 pub struct CleanCommand {
+    pub files: Vec<PathBuf>,
+
     #[clap(flatten)]
     pub common: CommonArgs,
 }
@@ -76,7 +86,6 @@ pub struct ConfigOverrides {
 }
 
 pub struct Args {
-    pub files: Vec<PathBuf>,
     pub config: Option<PathBuf>,
 }
 
@@ -93,7 +102,6 @@ impl CommonArgs {
     pub fn partition(self) -> (Args, ConfigOverrides) {
         (
             Args {
-                files: self.files,
                 config: self.config,
             },
             ConfigOverrides {

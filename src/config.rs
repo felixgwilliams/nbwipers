@@ -2,6 +2,7 @@ use crate::{settings::Settings, types::ExtraKey};
 use rustc_hash::FxHashSet;
 use serde::Deserialize;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 #[derive(Debug, Clone, Default, Deserialize, PartialEq, Eq)]
 pub struct Configuration {
@@ -13,10 +14,30 @@ pub struct Configuration {
     pub drop_tagged_cells: Option<Vec<String>>,
 }
 
+const EXTRA_KEYS: &[&str] = &[
+    "metadata.signature",
+    "metadata.widgets",
+    "cell.metadata.collapsed",
+    "cell.metadata.ExecuteTime",
+    "cell.metadata.execution",
+    "cell.metadata.heading_collapsed",
+    "cell.metadata.hidden",
+    "cell.metadata.scrolled",
+];
+
+fn default_extra_keys() -> Vec<ExtraKey> {
+    EXTRA_KEYS
+        .iter()
+        .filter_map(|s| ExtraKey::from_str(s).ok())
+        .collect()
+}
+
 impl Configuration {
     pub fn into_settings(self) -> Settings {
+        let mut extra_keys = default_extra_keys();
+        extra_keys.extend(self.extra_keys.unwrap_or_default());
         Settings {
-            extra_keys: self.extra_keys.unwrap_or_default(),
+            extra_keys,
             drop_empty_cells: self.drop_empty_cells.unwrap_or(false),
             drop_output: self.drop_output.unwrap_or(true),
             drop_count: self.drop_count.unwrap_or(true),

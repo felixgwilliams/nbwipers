@@ -27,7 +27,7 @@ pub fn check_nb(nb: &RawNotebook, settings: &Settings) -> Vec<CheckResult> {
             .iter()
             .enumerate()
             .filter_map(|(i, c)| c.as_codecell().map(|c| (i, c)))
-            .filter(|(_i, c)| !c.is_clear_outputs() || c.should_clear_output(settings.drop_output))
+            .filter(|(_i, c)| !c.is_clear_outputs() && c.should_clear_output(settings.drop_output))
             .for_each(|(cell_number, _)| out.push(CheckResult::ClearOutput { cell_number }));
     }
     if settings.drop_count {
