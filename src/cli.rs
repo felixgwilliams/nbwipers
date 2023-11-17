@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use clap::{command, Parser, Subcommand};
+use clap::{command, Parser, Subcommand, ValueEnum};
 
 use crate::{config::Configuration, types::ExtraKey};
 
@@ -49,6 +49,7 @@ pub struct CommonArgs {
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum Commands {
+    Install(InstallCommand),
     CheckAll(CheckAllCommand),
     Check(CheckCommand),
     Clean(CleanCommand),
@@ -74,6 +75,17 @@ pub struct CleanCommand {
 
     #[clap(flatten)]
     pub common: CommonArgs,
+}
+#[derive(Clone, Debug, Parser)]
+pub struct InstallCommand {
+    pub config_type: GitConfigType,
+}
+
+#[derive(Clone, Debug, ValueEnum, Copy)]
+pub enum GitConfigType {
+    System,
+    Global,
+    Local,
 }
 
 pub struct ConfigOverrides {
