@@ -42,8 +42,11 @@ fn check_all(files: &[PathBuf], cli: CommonArgs) -> Result<(), Error> {
         })
         .collect();
     let check_results_dict = BTreeMap::from_iter(check_results_iter);
-
-    println!("{check_results_dict:?}");
+    for (path, res) in check_results_dict {
+        for item in res {
+            println!("{}:{}", path.display(), item);
+        }
+    }
 
     Ok(())
 }

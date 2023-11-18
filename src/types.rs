@@ -469,6 +469,35 @@ impl From<NBReadError> for CheckResult {
     }
 }
 
+impl Display for CheckResult {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CheckResult::IOError(e) => write!(f, "IO Error: {e}"),
+            CheckResult::InvalidNotebook(e) => write!(f, "Invalid notebook: {e}"),
+            CheckResult::DropCells { cell_number } => {
+                write!(f, "cell: {cell_number}: Found cell to be dropped")
+            }
+            CheckResult::StripMeta { extra_key } => {
+                write!(f, "Found notebook metadata: {extra_key}")
+            }
+
+            CheckResult::CellStripMeta {
+                cell_number,
+                extra_key,
+            } => write!(f, "cell {cell_number}: Found cell metadata {extra_key}"),
+            CheckResult::ClearCount { cell_number } => {
+                write!(f, "cell {cell_number}: Found cell with execution count")
+            }
+            CheckResult::ClearId { cell_number } => {
+                write!(f, "cell {cell_number}: Found cell with Id")
+            }
+            CheckResult::ClearOutput { cell_number } => {
+                write!(f, "cell {cell_number}: Found cell with output")
+            }
+        }
+    }
+}
+
 #[derive(Debug, Error)]
 pub enum StripError {
     #[error("File read Error")]

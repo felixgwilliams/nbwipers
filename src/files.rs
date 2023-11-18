@@ -56,6 +56,10 @@ pub fn find_notebooks(paths: &[PathBuf]) -> Result<Vec<PathBuf>, Error> {
             ignore::WalkState::Continue
         })
     });
-
-    Ok(files.into_inner()?)
+    let out = files.into_inner()?;
+    if out.is_empty() {
+        Err(anyhow!("Could not find any notebooks in path(s)"))
+    } else {
+        Ok(out)
+    }
 }
