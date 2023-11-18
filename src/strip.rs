@@ -1,6 +1,17 @@
+use std::{
+    fs,
+    io::{BufWriter, Write},
+    path::Path,
+};
+
+use serde::Serialize;
+
 use crate::{
     settings::Settings,
-    types::{partition_extra_keys, pop_cell_key, pop_meta_key, pop_value_child, RawNotebook},
+    types::{
+        partition_extra_keys, pop_cell_key, pop_meta_key, pop_value_child, read_nb, NBWriteError,
+        RawNotebook, StripError, StripSuccess,
+    },
 };
 pub fn strip_nb(mut nb: RawNotebook, settings: &Settings) -> (RawNotebook, bool) {
     let (cell_keys, meta_keys) = partition_extra_keys(settings.extra_keys.as_slice());
@@ -43,4 +54,42 @@ pub fn strip_nb(mut nb: RawNotebook, settings: &Settings) -> (RawNotebook, bool)
         }
     }
     (nb, stripped)
+}
+pub fn strip_single(
+    nb_path: &Path,
+    textconv: bool,
+    settings: &Settings,
+) -> Result<StripSuccess, StripError> {
+    let nb = read_nb(nb_path)?;
+
+    let (strip_nb, stripped) = strip_nb(nb, settings);
+    match (textconv, stripped) {
+        (true, _) => {
+            let stdout = std::io::stdout();
+            match write_nb(stdout, &strip_nb) {
+                Ok(()) => Ok(StripSuccess::from_stripped(stripped)),
+                Err(e) => Err(e.into()),
+            }
+        }
+        (false, false) => Ok(StripSuccess::NoChange),
+        (false, true) => {
+            let f = fs::File::create(nb_path).map_err(NBWriteError::from)?;
+            let writer = BufWriter::new(f);
+            match write_nb(writer, &strip_nb) {
+                Ok(()) => Ok(StripSuccess::Stripped),
+                Err(e) => Err(e.into()),
+            }
+        }
+    }
+}
+fn write_nb<W, T>(mut writer: W, value: &T) -> Result<(), NBWriteError>
+where
+    W: Write,
+    T: ?Sized + Serialize,
+{
+    let formatter = serde_json::ser::PrettyFormatter::with_indent(b" ");
+    let mut ser = serde_json::Serializer::with_formatter(&mut writer, formatter);
+    value.serialize(&mut ser)?;
+    writeln!(writer)?;
+    Ok(())
 }

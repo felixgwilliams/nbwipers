@@ -4,19 +4,17 @@
 
 use std::{
     collections::BTreeMap,
-    fs,
-    io::BufWriter,
-    io::Write,
     path::{Path, PathBuf},
 };
 
-use crate::{settings::Settings, strip::strip_nb};
+use crate::settings::Settings;
 use anyhow::Error;
 use clap::Parser;
 use cli::{CheckAllCommand, CleanAllCommand, CleanCommand, Commands, CommonArgs, InstallCommand};
 use files::find_notebooks;
 use rayon::prelude::*;
-use serde::Serialize;
+use strip::strip_single;
+use types::StripResult;
 
 mod check;
 mod cli;
@@ -35,13 +33,12 @@ fn check_all(files: &[PathBuf], cli: CommonArgs) -> Result<(), Error> {
     // let check_results = BTreeMap::
     let check_results_iter: Vec<_> = nbs
         .par_iter()
-        .filter_map(|nb_path| {
+        .map(|nb_path| {
             // println!("{nb_path:?}");
-            let Ok(nb) = types::read_nb(nb_path) else {
-                return None;
-            };
-            let check_results = check::check_nb(&nb, &settings);
-            Some((nb_path.as_path(), check_results))
+            match types::read_nb(nb_path) {
+                Ok(nb) => (nb_path.as_path(), check::check_nb(&nb, &settings)),
+                Err(e) => (nb_path.as_path(), vec![e.into()]),
+            }
         })
         .collect();
     let check_results_dict = BTreeMap::from_iter(check_results_iter);
@@ -51,38 +48,19 @@ fn check_all(files: &[PathBuf], cli: CommonArgs) -> Result<(), Error> {
     Ok(())
 }
 
-fn strip_all(files: &[PathBuf], textconv: bool, cli: CommonArgs) -> Result<(), Error> {
+fn strip_all(files: &[PathBuf], cli: CommonArgs) -> Result<(), Error> {
     let (args, overrides) = cli.partition();
     let nbs = find_notebooks(files)?;
 
     let settings = Settings::construct(args.config.as_deref(), &overrides);
-    nbs.par_iter()
-        .map(|nb_path| {
-            println!("{nb_path:?}");
-            let nb = types::read_nb(nb_path)?;
+    let strip_results: Vec<StripResult> = nbs
+        .par_iter()
+        .map(|nb_path| strip_single(nb_path, false, &settings).into())
+        .collect();
 
-            let (strip_nb, stripped) = strip::strip_nb(nb, &settings);
-            if textconv {
-                let stdout = std::io::stdout();
-                write_nb(stdout, &strip_nb)?;
-            } else if stripped {
-                let writer = BufWriter::new(fs::File::create(nb_path)?);
-                write_nb(writer, &strip_nb)?;
-            }
-            Ok(())
-        })
-        .collect()
-}
-
-fn write_nb<W, T>(mut writer: W, value: &T) -> anyhow::Result<()>
-where
-    W: Write,
-    T: ?Sized + Serialize,
-{
-    let formatter = serde_json::ser::PrettyFormatter::with_indent(b" ");
-    let mut ser = serde_json::Serializer::with_formatter(&mut writer, formatter);
-    value.serialize(&mut ser)?;
-    writeln!(writer)?;
+    for (nb_path, res) in nbs.iter().zip(strip_results) {
+        println!("{}: {}", nb_path.display(), res);
+    }
     Ok(())
 }
 
@@ -90,16 +68,7 @@ fn strip(file: &Path, textconv: bool, cli: CommonArgs) -> Result<(), Error> {
     let (args, overrides) = cli.partition();
 
     let settings = Settings::construct(args.config.as_deref(), &overrides);
-    let nb = types::read_nb(file)?;
-    let (strip_nb, stripped) = strip_nb(nb, &settings);
-
-    if textconv {
-        let stdout = std::io::stdout();
-        write_nb(stdout, &strip_nb)?;
-    } else if stripped {
-        let writer = BufWriter::new(fs::File::create(file)?);
-        write_nb(writer, &strip_nb)?;
-    }
+    strip_single(file, textconv, &settings)?;
 
     Ok(())
 }
@@ -118,11 +87,7 @@ fn main() -> Result<(), Error> {
             textconv,
             common,
         }) => strip(file, textconv, common),
-        Commands::CleanAll(CleanAllCommand {
-            ref files,
-            textconv,
-            common,
-        }) => strip_all(files, textconv, common),
+        Commands::CleanAll(CleanAllCommand { ref files, common }) => strip_all(files, common),
         Commands::Check(CheckAllCommand { ref files, common }) => check_all(files, common),
         Commands::Install(ref cmd) => install(cmd),
     }

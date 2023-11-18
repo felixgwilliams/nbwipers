@@ -83,9 +83,6 @@ pub struct CleanCommand {
 pub struct CleanAllCommand {
     pub files: Vec<PathBuf>,
 
-    #[arg(long, short)]
-    pub textconv: bool,
-
     #[clap(flatten)]
     pub common: CommonArgs,
 }

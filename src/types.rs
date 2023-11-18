@@ -1,4 +1,4 @@
-use std::{fs::File, io::BufReader, path::Path, str::FromStr};
+use std::{fmt::Display, fs::File, io::BufReader, path::Path, str::FromStr};
 
 use rustc_hash::FxHashSet;
 use serde::{de, Deserialize, Serialize};
@@ -438,6 +438,8 @@ mod tests {
 
 #[derive(Clone, Debug, Serialize, PartialEq, Eq)]
 pub enum CheckResult {
+    IOError(String),
+    InvalidNotebook(String),
     StripMeta {
         extra_key: String,
     },
@@ -457,4 +459,88 @@ pub enum CheckResult {
         cell_number: usize,
         extra_key: String,
     },
+}
+impl From<NBReadError> for CheckResult {
+    fn from(value: NBReadError) -> Self {
+        match value {
+            NBReadError::IO(e) => Self::IOError(e.to_string()),
+            NBReadError::Serde(e) => Self::InvalidNotebook(e.to_string()),
+        }
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum StripError {
+    #[error("File read Error")]
+    ReadError(#[from] NBReadError),
+    #[error("File write Error")]
+    WriteError(#[from] NBWriteError),
+}
+
+#[derive(Debug, Error)]
+pub enum NBWriteError {
+    #[error("File IO error")]
+    IO(#[from] std::io::Error),
+    #[error("JSON read error")]
+    Serde(#[from] serde_json::Error),
+}
+
+impl StripSuccess {
+    pub fn from_stripped(stripped: bool) -> Self {
+        if stripped {
+            Self::Stripped
+        } else {
+            Self::NoChange
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+pub enum StripSuccess {
+    NoChange,
+    Stripped,
+}
+
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+pub enum StripResult {
+    NoChange,
+    Stripped,
+    ReadError(String),
+    WriteError(String),
+}
+
+impl From<StripSuccess> for StripResult {
+    fn from(value: StripSuccess) -> Self {
+        match value {
+            StripSuccess::NoChange => Self::NoChange,
+            StripSuccess::Stripped => Self::Stripped,
+        }
+    }
+}
+impl From<StripError> for StripResult {
+    fn from(value: StripError) -> Self {
+        match value {
+            StripError::ReadError(e) => Self::ReadError(e.to_string()),
+            StripError::WriteError(e) => Self::WriteError(e.to_string()),
+        }
+    }
+}
+impl From<Result<StripSuccess, StripError>> for StripResult {
+    fn from(value: Result<StripSuccess, StripError>) -> Self {
+        match value {
+            Ok(v) => v.into(),
+            Err(v) => v.into(),
+        }
+    }
+}
+
+impl Display for StripResult {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NoChange => write!(f, "No Change"),
+            Self::Stripped => write!(f, "Stripped"),
+            Self::ReadError(e) => write!(f, "Read error: {e}"),
+            Self::WriteError(e) => write!(f, "Write error: {e}"),
+        }
+    }
 }
