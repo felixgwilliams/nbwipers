@@ -8,7 +8,7 @@ use std::{
 };
 
 use crate::settings::Settings;
-use anyhow::Error;
+use anyhow::{anyhow, Error};
 use clap::Parser;
 use cli::{CheckAllCommand, CleanAllCommand, CleanCommand, Commands, CommonArgs, InstallCommand};
 use colored::Colorize;
@@ -42,15 +42,20 @@ fn check_all(files: &[PathBuf], cli: CommonArgs) -> Result<(), Error> {
             }
         })
         .collect();
+
     let check_results_dict = BTreeMap::from_iter(check_results_iter);
-    for (path, res) in check_results_dict {
+    for (path, res) in &check_results_dict {
         let rel_path = relativize_path(path).bold();
         for item in res {
             println!("{rel_path}:{item}");
         }
     }
-
-    Ok(())
+    if check_results_dict.is_empty() {
+        Ok(())
+    } else {
+        let n_checks = check_results_dict.values().flatten().count();
+        Err(anyhow!("Found {n_checks} items to strip"))
+    }
 }
 
 fn strip_all(files: &[PathBuf], cli: CommonArgs) -> Result<(), Error> {
