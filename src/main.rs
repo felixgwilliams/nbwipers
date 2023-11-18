@@ -73,14 +73,16 @@ fn strip_all(files: &[PathBuf], textconv: bool, cli: CommonArgs) -> Result<(), E
         .collect()
 }
 
-fn write_nb<W, T>(writer: W, value: &T) -> serde_json::Result<()>
+fn write_nb<W, T>(mut writer: W, value: &T) -> anyhow::Result<()>
 where
     W: Write,
     T: ?Sized + Serialize,
 {
     let formatter = serde_json::ser::PrettyFormatter::with_indent(b" ");
-    let mut ser = serde_json::Serializer::with_formatter(writer, formatter);
-    value.serialize(&mut ser)
+    let mut ser = serde_json::Serializer::with_formatter(&mut writer, formatter);
+    value.serialize(&mut ser)?;
+    writeln!(writer)?;
+    Ok(())
 }
 
 fn strip(file: &Path, textconv: bool, cli: CommonArgs) -> Result<(), Error> {
