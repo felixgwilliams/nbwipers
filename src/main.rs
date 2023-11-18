@@ -5,6 +5,7 @@ use std::{
     collections::BTreeMap,
     fs,
     io::BufWriter,
+    io::Write,
     path::{Path, PathBuf},
 };
 
@@ -14,6 +15,7 @@ use clap::Parser;
 use cli::{CheckAllCommand, CleanAllCommand, CleanCommand, Commands, CommonArgs, InstallCommand};
 use files::find_notebooks;
 use rayon::prelude::*;
+use serde::Serialize;
 
 mod check;
 mod cli;
@@ -60,14 +62,25 @@ fn strip_all(files: &[PathBuf], textconv: bool, cli: CommonArgs) -> Result<(), E
 
             let (strip_nb, stripped) = strip::strip_nb(nb, &settings);
             if textconv {
-                println!("{}", serde_json::to_string_pretty(&strip_nb)?);
+                let stdout = std::io::stdout();
+                write_nb(stdout, &strip_nb)?;
             } else if stripped {
                 let writer = BufWriter::new(fs::File::create(nb_path)?);
-                serde_json::to_writer_pretty(writer, &strip_nb)?;
+                write_nb(writer, &strip_nb)?;
             }
             Ok(())
         })
         .collect()
+}
+
+fn write_nb<W, T>(writer: W, value: &T) -> serde_json::Result<()>
+where
+    W: Write,
+    T: ?Sized + Serialize,
+{
+    let formatter = serde_json::ser::PrettyFormatter::with_indent(b" ");
+    let mut ser = serde_json::Serializer::with_formatter(writer, formatter);
+    value.serialize(&mut ser)
 }
 
 fn strip(file: &Path, textconv: bool, cli: CommonArgs) -> Result<(), Error> {
@@ -76,11 +89,13 @@ fn strip(file: &Path, textconv: bool, cli: CommonArgs) -> Result<(), Error> {
     let settings = Settings::construct(args.config.as_deref(), &overrides);
     let nb = types::read_nb(file)?;
     let (strip_nb, stripped) = strip_nb(nb, &settings);
+
     if textconv {
-        println!("{}", serde_json::to_string_pretty(&strip_nb)?);
+        let stdout = std::io::stdout();
+        write_nb(stdout, &strip_nb)?;
     } else if stripped {
         let writer = BufWriter::new(fs::File::create(file)?);
-        serde_json::to_writer_pretty(writer, &strip_nb)?;
+        write_nb(writer, &strip_nb)?;
     }
 
     Ok(())
