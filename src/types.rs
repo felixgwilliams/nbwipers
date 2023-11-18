@@ -399,6 +399,7 @@ pub fn partition_extra_keys(extra_keys: &[ExtraKey]) -> (Vec<&ExtraKey>, Vec<&Ex
     (cell_keys, meta_keys)
 }
 
+#[allow(clippy::unwrap_used)]
 #[cfg(test)]
 mod tests {
     use serde_json::json;

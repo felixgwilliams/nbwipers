@@ -1,4 +1,4 @@
-use anyhow::Error;
+use anyhow::{anyhow, Error};
 
 use std::{fs, io::BufWriter, path::Path, path::PathBuf};
 
@@ -12,15 +12,21 @@ use itertools::Itertools;
 use crate::cli::GitConfigType;
 
 pub fn install_config(config_type: GitConfigType) -> Result<(), Error> {
-    let cur_exe = std::env::current_exe().unwrap();
-    let cur_dir = std::env::current_dir().unwrap();
-    let cur_exe_str = cur_exe.to_str().unwrap().replace('\\', "/");
+    let cur_exe = std::env::current_exe()?;
+    let cur_dir = std::env::current_dir()?;
+    let cur_exe_str = cur_exe
+        .to_str()
+        .ok_or_else(|| (anyhow!("Executable path cannot be converted to unicode")))?
+        .replace('\\', "/");
+
     let source = match config_type {
         GitConfigType::Global => Source::User,
         GitConfigType::System => Source::System,
         GitConfigType::Local => Source::Local,
     };
 
+    // fails for sources without storage location. We don't use those ones.
+    #[allow(clippy::unwrap_used)]
     let file_path: PathBuf = match config_type {
         GitConfigType::Global | GitConfigType::System => source
             .storage_location(&mut gix_path::env::var)
@@ -35,29 +41,37 @@ pub fn install_config(config_type: GitConfigType) -> Result<(), Error> {
             dotgit.join(source.storage_location(&mut gix_path::env::var).unwrap())
         }
     };
-    let mut file = gix_config::File::from_path_no_includes(file_path.clone(), source).unwrap();
+    let mut file = gix_config::File::from_path_no_includes(file_path.clone(), source)?;
 
+    // fails for invalid section names. This one is ok
+    #[allow(clippy::unwrap_used)]
     let mut wipers_section = file
         .section_mut_or_create_new("filter", Some("wipers".into()))
         .unwrap();
-
+    // fails for invalid section names. This one is ok
+    #[allow(clippy::unwrap_used)]
     wipers_section.set(
         Key::try_from("clean").unwrap(),
         BStr::new(format!("\"{}\" clean", cur_exe_str.as_str()).as_str()),
     );
+    #[allow(clippy::unwrap_used)]
     wipers_section.set(Key::try_from("smudge").unwrap(), BStr::new("cat"));
 
+    // fails for invalid section names. This one is ok
+    #[allow(clippy::unwrap_used)]
     let mut diff_section = file
         .section_mut_or_create_new("diff", Some("wipers".into()))
         .unwrap();
 
+    // fails for invalid section names. This one is ok
+    #[allow(clippy::unwrap_used)]
     diff_section.set(
         Key::try_from("textconv").unwrap(),
         BStr::new(format!("\"{}\" clean -t", cur_exe_str.as_str()).as_str()),
     );
     println!("Writing to {}", file_path.display());
-    let mut stdout = BufWriter::new(fs::File::create(file_path)?);
-    file.write_to(&mut stdout).unwrap();
+    let mut writer = BufWriter::new(fs::File::create(file_path)?);
+    file.write_to(&mut writer)?;
 
     Ok(())
 }
@@ -69,7 +83,7 @@ fn resolve_attribute_file(
     if let Some(path) = attribute_file {
         Ok(path.to_owned())
     } else {
-        let cur_dir = std::env::current_dir().unwrap();
+        let cur_dir = std::env::current_dir()?;
 
         let source = match config_type {
             GitConfigType::Global => gix_attributes::Source::Git,
@@ -78,6 +92,7 @@ fn resolve_attribute_file(
         };
 
         let file_path: PathBuf = match config_type {
+            #[allow(clippy::unwrap_used)]
             GitConfigType::Global | GitConfigType::System => source
                 .storage_location(&mut gix_path::env::var)
                 .as_deref()
@@ -88,6 +103,7 @@ fn resolve_attribute_file(
                     .0
                     .into_repository_and_work_tree_directories()
                     .0;
+                #[allow(clippy::unwrap_used)]
                 dotgit.join(source.storage_location(&mut gix_path::env::var).unwrap())
             }
         };
@@ -108,7 +124,7 @@ pub fn install_attributes(
         "*.ipynb diff=wipers",
     ];
     // let to_add_str = to_add_lines.join("\n").as_bytes();
-
+    #[allow(clippy::unwrap_used)]
     let to_add_values = to_add_lines
         .iter()
         .map(|x| gix_attributes::parse(x.as_bytes()).next().unwrap().unwrap())
@@ -133,8 +149,7 @@ pub fn install_attributes(
         let mut writer = fs::OpenOptions::new()
             .create(true)
             .append(true)
-            .open(&file_path)
-            .unwrap();
+            .open(&file_path)?;
         let extra = if extra_newline { "" } else { "\n" };
         writeln!(writer, "{}{}", extra, to_add.values().join("\n"))?;
     }

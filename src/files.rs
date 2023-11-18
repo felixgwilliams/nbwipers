@@ -16,6 +16,7 @@ fn normalize_path<P: AsRef<Path>>(path: P) -> PathBuf {
     }
     path.to_path_buf()
 }
+
 pub fn find_notebooks(paths: &[PathBuf]) -> Result<Vec<PathBuf>, Error> {
     let paths: Vec<PathBuf> = paths.iter().map(normalize_path).unique().collect();
     let (first_path, rest_paths) = paths
@@ -47,6 +48,7 @@ pub fn find_notebooks(paths: &[PathBuf]) -> Result<Vec<PathBuf>, Error> {
                     }
                 };
                 if let Some(resolved) = resolved {
+                    #[allow(clippy::unwrap_used)]
                     files.lock().unwrap().push(resolved);
                 }
             }

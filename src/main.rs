@@ -1,5 +1,6 @@
 #![warn(clippy::all, clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]
+#![warn(clippy::unwrap_used)]
 
 use std::{
     collections::BTreeMap,
