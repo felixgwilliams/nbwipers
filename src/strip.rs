@@ -37,12 +37,12 @@ pub fn strip_nb(mut nb: RawNotebook, settings: &Settings) -> (RawNotebook, bool)
     }
 
     for cell in nb.cells.iter_mut().filter_map(|x| x.as_codecell_mut()) {
-        if cell.should_clear_output(settings.drop_output) {
+        if cell.should_clear_output(settings.drop_output) && !cell.is_clear_outputs() {
             stripped = true;
 
             cell.clear_outputs();
         }
-        if settings.drop_count {
+        if settings.drop_count && !cell.is_clear_exec_count() {
             stripped = true;
 
             cell.clear_counts();

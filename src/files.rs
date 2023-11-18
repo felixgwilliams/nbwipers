@@ -16,6 +16,19 @@ fn normalize_path<P: AsRef<Path>>(path: P) -> PathBuf {
     }
     path.to_path_buf()
 }
+pub fn relativize_path<P: AsRef<Path>>(path: P) -> String {
+    let path = path.as_ref();
+
+    #[cfg(target_arch = "wasm32")]
+    let cwd = Path::new(".");
+    #[cfg(not(target_arch = "wasm32"))]
+    let cwd = path_absolutize::path_dedot::CWD.as_path();
+
+    if let Ok(path) = path.strip_prefix(cwd) {
+        return format!("{}", path.display());
+    }
+    format!("{}", path.display())
+}
 
 pub fn find_notebooks(paths: &[PathBuf]) -> Result<Vec<PathBuf>, Error> {
     let paths: Vec<PathBuf> = paths.iter().map(normalize_path).unique().collect();

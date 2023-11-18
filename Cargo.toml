@@ -9,6 +9,7 @@ edition = "2021"
 anyhow = "1.0.75"
 bstr = "1.8.0"
 clap = { version = "4.4.8", features = ["derive"] }
+colored = "2.0.4"
 gix-attributes = "0.20.0"
 gix-config = { version = "0.31.0" }
 gix-discover = "0.26.0"

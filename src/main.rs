@@ -11,7 +11,8 @@ use crate::settings::Settings;
 use anyhow::Error;
 use clap::Parser;
 use cli::{CheckAllCommand, CleanAllCommand, CleanCommand, Commands, CommonArgs, InstallCommand};
-use files::find_notebooks;
+use colored::Colorize;
+use files::{find_notebooks, relativize_path};
 use rayon::prelude::*;
 use strip::strip_single;
 use types::StripResult;
@@ -43,8 +44,9 @@ fn check_all(files: &[PathBuf], cli: CommonArgs) -> Result<(), Error> {
         .collect();
     let check_results_dict = BTreeMap::from_iter(check_results_iter);
     for (path, res) in check_results_dict {
+        let rel_path = relativize_path(path).bold();
         for item in res {
-            println!("{}:{}", path.display(), item);
+            println!("{rel_path}:{item}");
         }
     }
 
@@ -62,7 +64,9 @@ fn strip_all(files: &[PathBuf], cli: CommonArgs) -> Result<(), Error> {
         .collect();
 
     for (nb_path, res) in nbs.iter().zip(strip_results) {
-        println!("{}: {}", nb_path.display(), res);
+        let rel_path = relativize_path(nb_path).bold();
+
+        println!("{rel_path}: {res}");
     }
     Ok(())
 }
