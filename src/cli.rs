@@ -50,8 +50,8 @@ pub struct CommonArgs {
 #[derive(Subcommand, Debug, Clone)]
 pub enum Commands {
     Install(InstallCommand),
-    CheckAll(CheckAllCommand),
-    Check(CheckCommand),
+    CleanAll(CleanAllCommand),
+    Check(CheckAllCommand),
     Clean(CleanCommand),
 }
 
@@ -71,7 +71,20 @@ pub struct CheckAllCommand {
 }
 #[derive(Clone, Debug, Parser)]
 pub struct CleanCommand {
+    pub file: PathBuf,
+
+    #[arg(long, short)]
+    pub textconv: bool,
+
+    #[clap(flatten)]
+    pub common: CommonArgs,
+}
+#[derive(Clone, Debug, Parser)]
+pub struct CleanAllCommand {
     pub files: Vec<PathBuf>,
+
+    #[arg(long, short)]
+    pub textconv: bool,
 
     #[clap(flatten)]
     pub common: CommonArgs,
@@ -79,6 +92,7 @@ pub struct CleanCommand {
 #[derive(Clone, Debug, Parser)]
 pub struct InstallCommand {
     pub config_type: GitConfigType,
+    pub attribute_file: Option<PathBuf>,
 }
 
 #[derive(Clone, Debug, ValueEnum, Copy)]
