@@ -130,3 +130,53 @@ fn test_keep_metadata_keys() {
         ],
     );
 }
+#[ignore]
+#[test]
+fn test_metadata_period() {
+    test_expected(
+        "tests/e2e_notebooks/test_metadata_period.ipynb",
+        "tests/e2e_notebooks/test_metadata_period.ipynb.expected",
+        &["--extra-keys", "cell.metadata.application/vnd.databricks.v1+cell,metadata.application/vnd.databricks.v1+notebook"],
+    );
+}
+#[test]
+fn test_strip_init_cells() {
+    test_expected(
+        "tests/e2e_notebooks/test_strip_init_cells.ipynb",
+        "tests/e2e_notebooks/test_strip_init_cells.ipynb.expected",
+        &["--strip-init-cells"],
+    );
+}
+#[test]
+fn test_nbformat45() {
+    test_expected(
+        "tests/e2e_notebooks/test_nbformat45.ipynb",
+        "tests/e2e_notebooks/test_nbformat45.ipynb.expected",
+        &["--keep-id"],
+    );
+}
+#[ignore]
+#[test]
+fn test_nbformat45_expected_sequential_id() {
+    test_expected(
+        "tests/e2e_notebooks/test_nbformat45.ipynb",
+        "tests/e2e_notebooks/test_nbformat45.ipynb.expected_sequential_id",
+        &[],
+    );
+}
+#[test]
+fn test_unicode() {
+    test_expected(
+        "tests/e2e_notebooks/test_unicode.ipynb",
+        "tests/e2e_notebooks/test_unicode.ipynb.expected",
+        &[],
+    );
+}
+#[test]
+fn test_widgets() {
+    test_expected(
+        "tests/e2e_notebooks/test_widgets.ipynb",
+        "tests/e2e_notebooks/test_widgets.ipynb.expected",
+        &[],
+    );
+}

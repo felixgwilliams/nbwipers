@@ -43,11 +43,11 @@ pub struct CommonArgs {
     #[arg(long, conflicts_with = "drop_id")]
     pub keep_id: bool,
 
-    #[arg(long, conflicts_with = "keep_init_cell")]
-    pub strip_init_cell: bool,
+    #[arg(long, conflicts_with = "keep_init_cells")]
+    pub strip_init_cells: bool,
 
-    #[arg(long, conflicts_with = "strip_init_cell")]
-    pub keep_init_cell: bool,
+    #[arg(long, conflicts_with = "strip_init_cells")]
+    pub keep_init_cells: bool,
 
     #[arg(long, value_delimiter = ',')]
     pub drop_tagged_cells: Option<Vec<String>>,
@@ -141,7 +141,7 @@ impl CommonArgs {
                 drop_count: resolve_bool_arg(self.drop_count, self.keep_count),
                 drop_id: resolve_bool_arg(self.drop_id, self.keep_id),
                 drop_tagged_cells: self.drop_tagged_cells,
-                strip_init_cell: resolve_bool_arg(self.strip_init_cell, self.keep_init_cell),
+                strip_init_cell: resolve_bool_arg(self.strip_init_cells, self.keep_init_cells),
             },
         )
     }
