@@ -1,5 +1,7 @@
 use std::{
     ffi::OsStr,
+    fs::File,
+    io::BufReader,
     path::{Path, PathBuf},
 };
 
@@ -7,6 +9,9 @@ use anyhow::{anyhow, Error};
 use ignore::WalkBuilder;
 use itertools::Itertools;
 use path_absolutize::Absolutize;
+use thiserror::Error;
+
+use crate::schema::RawNotebook;
 
 // normalize_path and relative_path are from Ruff, used under the MIT license
 
@@ -73,4 +78,27 @@ pub fn find_notebooks(paths: &[PathBuf]) -> Result<Vec<PathBuf>, Error> {
     } else {
         Ok(out)
     }
+}
+
+pub fn read_nb(path: &Path) -> Result<RawNotebook, NBReadError> {
+    let f = File::open(path)?;
+    let rdr = BufReader::new(f);
+
+    let out = serde_json::from_reader(rdr)?;
+    Ok(out)
+}
+
+#[derive(Error, Debug)]
+pub enum NBReadError {
+    #[error("File IO error")]
+    IO(#[from] std::io::Error),
+    #[error("JSON read error")]
+    Serde(#[from] serde_json::Error),
+}
+#[derive(Debug, Error)]
+pub enum NBWriteError {
+    #[error("File IO error")]
+    IO(#[from] std::io::Error),
+    #[error("JSON read error")]
+    Serde(#[from] serde_json::Error),
 }

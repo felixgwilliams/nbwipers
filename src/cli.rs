@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use clap::{command, Parser, Subcommand, ValueEnum};
 
-use crate::{config::Configuration, types::ExtraKey};
+use crate::{config::Configuration, extra_keys::ExtraKey};
 
 #[derive(Parser, Debug, Clone)]
 #[command(author, version, about, long_about = None)]

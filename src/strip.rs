@@ -1,18 +1,19 @@
 use std::{
+    fmt::Display,
     fs,
     io::{BufWriter, Write},
     path::Path,
 };
 
 use serde::Serialize;
+use thiserror::Error;
 
 use crate::{
+    extra_keys::partition_extra_keys,
+    files::{read_nb, NBReadError, NBWriteError},
     schema::RawNotebook,
     settings::Settings,
-    types::{
-        get_value_child, partition_extra_keys, pop_cell_key, pop_meta_key, pop_value_child,
-        read_nb, NBWriteError, StripError, StripSuccess,
-    },
+    utils::{get_value_child, pop_cell_key, pop_meta_key, pop_value_child},
 };
 use serde_json::Value;
 
@@ -102,4 +103,71 @@ where
     value.serialize(&mut ser)?;
     writeln!(writer)?;
     Ok(())
+}
+
+#[derive(Debug, Error)]
+pub enum StripError {
+    #[error("File read Error")]
+    ReadError(#[from] NBReadError),
+    #[error("File write Error")]
+    WriteError(#[from] NBWriteError),
+}
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+pub enum StripSuccess {
+    NoChange,
+    Stripped,
+}
+
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+pub enum StripResult {
+    NoChange,
+    Stripped,
+    ReadError(String),
+    WriteError(String),
+}
+
+impl From<StripSuccess> for StripResult {
+    fn from(value: StripSuccess) -> Self {
+        match value {
+            StripSuccess::NoChange => Self::NoChange,
+            StripSuccess::Stripped => Self::Stripped,
+        }
+    }
+}
+impl From<StripError> for StripResult {
+    fn from(value: StripError) -> Self {
+        match value {
+            StripError::ReadError(e) => Self::ReadError(e.to_string()),
+            StripError::WriteError(e) => Self::WriteError(e.to_string()),
+        }
+    }
+}
+impl From<Result<StripSuccess, StripError>> for StripResult {
+    fn from(value: Result<StripSuccess, StripError>) -> Self {
+        match value {
+            Ok(v) => v.into(),
+            Err(v) => v.into(),
+        }
+    }
+}
+
+impl Display for StripResult {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NoChange => write!(f, "No Change"),
+            Self::Stripped => write!(f, "Stripped"),
+            Self::ReadError(e) => write!(f, "Read error: {e}"),
+            Self::WriteError(e) => write!(f, "Write error: {e}"),
+        }
+    }
+}
+
+impl StripSuccess {
+    pub fn from_stripped(stripped: bool) -> Self {
+        if stripped {
+            Self::Stripped
+        } else {
+            Self::NoChange
+        }
+    }
 }

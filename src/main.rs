@@ -12,20 +12,21 @@ use anyhow::{anyhow, Error};
 use clap::Parser;
 use cli::{CheckAllCommand, CleanAllCommand, CleanCommand, Commands, CommonArgs, InstallCommand};
 use colored::Colorize;
-use files::{find_notebooks, relativize_path};
+use files::{find_notebooks, read_nb, relativize_path};
 use rayon::prelude::*;
-use strip::strip_single;
-use types::StripResult;
+use strip::{strip_single, StripResult};
 
+mod cell_impl;
 mod check;
 mod cli;
 mod config;
+mod extra_keys;
 mod files;
 mod install;
 mod schema;
 mod settings;
 mod strip;
-mod types;
+mod utils;
 
 fn check_all(files: &[PathBuf], cli: CommonArgs) -> Result<(), Error> {
     let (args, overrides) = cli.partition();
@@ -37,7 +38,7 @@ fn check_all(files: &[PathBuf], cli: CommonArgs) -> Result<(), Error> {
         .par_iter()
         .map(|nb_path| {
             // println!("{nb_path:?}");
-            match types::read_nb(nb_path) {
+            match read_nb(nb_path) {
                 Ok(nb) => (nb_path.as_path(), check::check_nb(&nb, &settings)),
                 Err(e) => (nb_path.as_path(), vec![e.into()]),
             }

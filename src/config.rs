@@ -1,4 +1,4 @@
-use crate::{settings::Settings, types::ExtraKey};
+use crate::{extra_keys::ExtraKey, settings::Settings};
 use rustc_hash::FxHashSet;
 use serde::Deserialize;
 use std::path::{Path, PathBuf};
