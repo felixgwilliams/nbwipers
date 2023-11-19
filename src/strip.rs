@@ -7,10 +7,11 @@ use std::{
 use serde::Serialize;
 
 use crate::{
+    schema::RawNotebook,
     settings::Settings,
     types::{
         get_value_child, partition_extra_keys, pop_cell_key, pop_meta_key, pop_value_child,
-        read_nb, NBWriteError, RawNotebook, StripError, StripSuccess,
+        read_nb, NBWriteError, StripError, StripSuccess,
     },
 };
 use serde_json::Value;

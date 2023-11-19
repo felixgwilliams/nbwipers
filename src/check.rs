@@ -1,6 +1,7 @@
 use crate::{
+    schema::RawNotebook,
     settings::Settings,
-    types::{get_value_child, partition_extra_keys, CheckResult, RawNotebook},
+    types::{get_value_child, partition_extra_keys, CheckResult},
 };
 use serde_json::Value;
 

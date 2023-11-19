@@ -24,7 +24,7 @@ end of terms and conditions
 
 Third party notices:
 
-src/files.rs contains portions derived from Ruff, used under the following license
+src/files.rs and src/schema.rs contain portions derived from Ruff, used under the following license
 
     Copyright (c) 2022 Charles Marsh
 

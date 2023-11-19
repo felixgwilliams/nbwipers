@@ -22,6 +22,7 @@ mod cli;
 mod config;
 mod files;
 mod install;
+mod schema;
 mod settings;
 mod strip;
 mod types;
