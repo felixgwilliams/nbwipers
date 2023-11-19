@@ -45,22 +45,22 @@ pub fn install_config(config_type: GitConfigType) -> Result<(), Error> {
 
     // fails for invalid section names. This one is ok
     #[allow(clippy::unwrap_used)]
-    let mut wipers_section = file
-        .section_mut_or_create_new("filter", Some("wipers".into()))
+    let mut nbwipers_section = file
+        .section_mut_or_create_new("filter", Some("nbwipers".into()))
         .unwrap();
     // fails for invalid section names. This one is ok
     #[allow(clippy::unwrap_used)]
-    wipers_section.set(
+    nbwipers_section.set(
         Key::try_from("clean").unwrap(),
         BStr::new(format!("\"{}\" clean", cur_exe_str.as_str()).as_str()),
     );
     #[allow(clippy::unwrap_used)]
-    wipers_section.set(Key::try_from("smudge").unwrap(), BStr::new("cat"));
+    nbwipers_section.set(Key::try_from("smudge").unwrap(), BStr::new("cat"));
 
     // fails for invalid section names. This one is ok
     #[allow(clippy::unwrap_used)]
     let mut diff_section = file
-        .section_mut_or_create_new("diff", Some("wipers".into()))
+        .section_mut_or_create_new("diff", Some("nbwipers".into()))
         .unwrap();
 
     // fails for invalid section names. This one is ok
@@ -119,9 +119,9 @@ pub fn install_attributes(
     let attribute_bytes = fs::read(&file_path)?;
 
     let to_add_lines = &[
-        "*.ipynb filter=wipers",
-        "*.zpln filter=wipers",
-        "*.ipynb diff=wipers",
+        "*.ipynb filter=nbwipers",
+        "*.zpln filter=nbwipers",
+        "*.ipynb diff=nbwipers",
     ];
     // let to_add_str = to_add_lines.join("\n").as_bytes();
     #[allow(clippy::unwrap_used)]

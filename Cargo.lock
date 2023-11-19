@@ -833,6 +833,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "nbwipers"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bstr",
+ "clap",
+ "colored",
+ "gix-attributes",
+ "gix-config",
+ "gix-discover",
+ "gix-path",
+ "ignore",
+ "itertools",
+ "path-absolutize",
+ "rayon",
+ "rustc-hash",
+ "serde",
+ "serde_json",
+ "serde_with",
+ "thiserror",
+ "toml",
+]
+
+[[package]]
 name = "num-traits"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1441,28 +1465,4 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "829846f3e3db426d4cee4510841b71a8e58aa2a76b1132579487ae430ccd9c7b"
 dependencies = [
  "memchr",
-]
-
-[[package]]
-name = "wipers"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bstr",
- "clap",
- "colored",
- "gix-attributes",
- "gix-config",
- "gix-discover",
- "gix-path",
- "ignore",
- "itertools",
- "path-absolutize",
- "rayon",
- "rustc-hash",
- "serde",
- "serde_json",
- "serde_with",
- "thiserror",
- "toml",
 ]

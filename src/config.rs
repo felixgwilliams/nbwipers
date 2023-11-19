@@ -57,7 +57,7 @@ struct Pyproject {
 }
 #[derive(Debug, PartialEq, Eq, Deserialize)]
 struct Tools {
-    wipers: Option<Configuration>,
+    nbwipers: Option<Configuration>,
 }
 
 pub fn find_pyproject() -> Option<PathBuf> {
@@ -76,7 +76,7 @@ pub fn read_pyproject(path: &Path) -> Option<Configuration> {
     let contents = std::fs::read_to_string(path).ok()?;
     let pyproject: Pyproject = toml::from_str(&contents).ok()?;
 
-    pyproject.tools.and_then(|tools| tools.wipers)
+    pyproject.tools.and_then(|tools| tools.nbwipers)
 }
 
 pub fn resolve(config_file: Option<&Path>) -> Configuration {

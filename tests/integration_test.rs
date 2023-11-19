@@ -4,7 +4,7 @@ use bstr::ByteSlice;
 
 #[test]
 fn test_invalid_format() {
-    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_wipers"));
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
 
     let output = Command::new(cur_exe)
         .args(["check", "tests/test_nbformat2.ipynb"])
@@ -14,7 +14,7 @@ fn test_invalid_format() {
 }
 
 fn test_expected(path: &str, expected: &str, extra_args: &[&str]) {
-    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_wipers"));
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
     let output = Command::new(cur_exe)
         .args(["clean", "-t", path])
         .args(extra_args)
