@@ -43,6 +43,12 @@ pub struct CommonArgs {
     #[arg(long, conflicts_with = "drop_id")]
     pub keep_id: bool,
 
+    #[arg(long, conflicts_with = "keep_init_cell")]
+    pub strip_init_cell: bool,
+
+    #[arg(long, conflicts_with = "strip_init_cell")]
+    pub keep_init_cell: bool,
+
     #[arg(long, value_delimiter = ',')]
     pub drop_tagged_cells: Option<Vec<String>>,
 }
@@ -105,6 +111,7 @@ pub struct ConfigOverrides {
     pub drop_output: Option<bool>,
     pub drop_count: Option<bool>,
     pub drop_id: Option<bool>,
+    pub strip_init_cell: Option<bool>,
     pub drop_tagged_cells: Option<Vec<String>>,
 }
 
@@ -134,6 +141,7 @@ impl CommonArgs {
                 drop_count: resolve_bool_arg(self.drop_count, self.keep_count),
                 drop_id: resolve_bool_arg(self.drop_id, self.keep_id),
                 drop_tagged_cells: self.drop_tagged_cells,
+                strip_init_cell: resolve_bool_arg(self.strip_init_cell, self.keep_init_cell),
             },
         )
     }
@@ -158,6 +166,9 @@ impl ConfigOverrides {
         }
         if let Some(drop_tagged_cells) = &self.drop_tagged_cells {
             config.drop_tagged_cells = Some(drop_tagged_cells.clone());
+        }
+        if let Some(strip_init_cell) = &self.strip_init_cell {
+            config.strip_init_cell = Some(*strip_init_cell);
         }
         config
     }

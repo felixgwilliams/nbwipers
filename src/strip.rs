@@ -9,12 +9,19 @@ use serde::Serialize;
 use crate::{
     settings::Settings,
     types::{
-        partition_extra_keys, pop_cell_key, pop_meta_key, pop_value_child, read_nb, NBWriteError,
-        RawNotebook, StripError, StripSuccess,
+        get_value_child, partition_extra_keys, pop_cell_key, pop_meta_key, pop_value_child,
+        read_nb, NBWriteError, RawNotebook, StripError, StripSuccess,
     },
 };
+use serde_json::Value;
+
 pub fn strip_nb(mut nb: RawNotebook, settings: &Settings) -> (RawNotebook, bool) {
     let (cell_keys, meta_keys) = partition_extra_keys(settings.extra_keys.as_slice());
+    let nb_keep_output = get_value_child(&nb.metadata, &["keep_output"])
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let drop_output = settings.drop_output && !nb_keep_output;
+
     let mut stripped = false;
     for meta_key in meta_keys {
         stripped |= pop_meta_key(&mut nb, meta_key).is_some();
@@ -37,7 +44,9 @@ pub fn strip_nb(mut nb: RawNotebook, settings: &Settings) -> (RawNotebook, bool)
     }
 
     for cell in nb.cells.iter_mut().filter_map(|x| x.as_codecell_mut()) {
-        if cell.should_clear_output(settings.drop_output) && !cell.is_clear_outputs() {
+        if cell.should_clear_output(drop_output, settings.strip_init_cell)
+            && !cell.is_clear_outputs()
+        {
             stripped = true;
 
             cell.clear_outputs();

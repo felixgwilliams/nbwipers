@@ -13,6 +13,7 @@ pub struct Settings {
     pub drop_output: bool,
     pub drop_count: bool,
     pub drop_id: bool,
+    pub strip_init_cell: bool,
 }
 
 impl Settings {

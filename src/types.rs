@@ -152,7 +152,15 @@ impl CodeCell {
         self.outputs.is_empty()
     }
     pub fn is_clear_exec_count(&self) -> bool {
-        self.execution_count.is_none()
+        let clear_exec_count = self.execution_count.is_none();
+
+        let output_exec_counts = self
+            .outputs
+            .iter()
+            .filter_map(|v| v.as_object())
+            .filter_map(|x| x.get("execution_count"))
+            .any(|v| v.as_number().is_some());
+        clear_exec_count && !output_exec_counts
     }
     pub fn is_clear_id(&self) -> bool {
         self.id.is_none()
@@ -162,14 +170,24 @@ impl CodeCell {
     }
     pub fn clear_counts(&mut self) {
         self.execution_count = None;
+        self.outputs
+            .iter_mut()
+            .filter_map(|v| v.as_object_mut())
+            .for_each(|x| {
+                x.insert("execution_count".into(), Value::Null);
+            });
     }
-    pub fn should_clear_output(&self, drop_output: bool) -> bool {
+    pub fn should_clear_output(&self, drop_output: bool, strip_init_cell: bool) -> bool {
         // drop_output
+        let Some(cell_metadata) = self.metadata.as_object() else {
+            return drop_output;
+        };
+        if let Some(init_cell) = cell_metadata.get("init_cell") {
+            return !init_cell.as_bool().unwrap_or(false) || strip_init_cell;
+        };
+
         if drop_output {
-            let keep_output_metadata = self
-                .metadata
-                .as_object()
-                .is_some_and(|x| x.contains_key("keep_output"));
+            let keep_output_metadata = cell_metadata.contains_key("keep_output");
             let keep_output_tags = self
                 .metadata
                 .as_object()

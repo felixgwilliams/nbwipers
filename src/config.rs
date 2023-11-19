@@ -12,6 +12,7 @@ pub struct Configuration {
     pub drop_count: Option<bool>,
     pub drop_id: Option<bool>,
     pub drop_tagged_cells: Option<Vec<String>>,
+    pub strip_init_cell: Option<bool>,
 }
 
 const EXTRA_KEYS: &[&str] = &[
@@ -46,6 +47,7 @@ impl Configuration {
                 .drop_tagged_cells
                 .map(FxHashSet::from_iter)
                 .unwrap_or_default(),
+            strip_init_cell: self.strip_init_cell.unwrap_or(false),
         }
     }
 }
