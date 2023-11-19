@@ -7,8 +7,9 @@ use anyhow::{anyhow, Error};
 use ignore::WalkBuilder;
 use itertools::Itertools;
 use path_absolutize::Absolutize;
-/// Convert any path to an absolute path (based on the current working
-/// directory).
+
+// normalize_path and relative_path are from Ruff, used under the MIT license
+
 fn normalize_path<P: AsRef<Path>>(path: P) -> PathBuf {
     let path = path.as_ref();
     if let Ok(path) = path.absolutize() {
@@ -19,9 +20,6 @@ fn normalize_path<P: AsRef<Path>>(path: P) -> PathBuf {
 pub fn relativize_path<P: AsRef<Path>>(path: P) -> String {
     let path = path.as_ref();
 
-    #[cfg(target_arch = "wasm32")]
-    let cwd = Path::new(".");
-    #[cfg(not(target_arch = "wasm32"))]
     let cwd = path_absolutize::path_dedot::CWD.as_path();
 
     if let Ok(path) = path.strip_prefix(cwd) {
