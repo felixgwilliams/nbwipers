@@ -130,7 +130,7 @@ fn test_keep_metadata_keys() {
         ],
     );
 }
-#[ignore]
+// #[ignore]
 #[test]
 fn test_metadata_period() {
     test_expected(

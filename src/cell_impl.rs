@@ -98,6 +98,13 @@ impl Cell {
             Cell::Raw(ref c) => &c.metadata,
         }
     }
+    pub fn get_metadata_mut(&mut self) -> &mut Value {
+        match self {
+            Cell::Code(ref mut c) => &mut c.metadata,
+            Cell::Markdown(ref mut c) => &mut c.metadata,
+            Cell::Raw(ref mut c) => &mut c.metadata,
+        }
+    }
 
     pub fn should_drop(
         &self,

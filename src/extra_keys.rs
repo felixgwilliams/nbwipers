@@ -134,7 +134,7 @@ mod tests {
         let extra_key = ExtraKey::from_str("cell.metadata.banana").unwrap();
         println!("{cell:?}");
         println!("{extra_key:?}");
-        pop_cell_key(cell.as_codecell_mut().unwrap(), &extra_key);
+        pop_cell_key(&mut cell, &extra_key);
         println!("{cell:?}");
     }
 }

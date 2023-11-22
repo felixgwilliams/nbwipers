@@ -45,21 +45,23 @@ pub fn strip_nb(mut nb: RawNotebook, settings: &Settings) -> (RawNotebook, bool)
         nb.cells = retained_cells;
     }
 
-    for cell in nb.cells.iter_mut().filter_map(|x| x.as_codecell_mut()) {
-        if cell.should_clear_output(drop_output, settings.strip_init_cell)
-            && !cell.is_clear_outputs()
-        {
-            stripped = true;
+    for cell in &mut nb.cells {
+        if let Some(codecell) = cell.as_codecell_mut() {
+            if codecell.should_clear_output(drop_output, settings.strip_init_cell)
+                && !codecell.is_clear_outputs()
+            {
+                stripped = true;
 
-            cell.clear_outputs();
+                codecell.clear_outputs();
+            }
+            if settings.drop_count && !codecell.is_clear_exec_count() {
+                stripped = true;
+
+                codecell.clear_counts();
+            }
         }
-        if settings.drop_count && !cell.is_clear_exec_count() {
-            stripped = true;
 
-            cell.clear_counts();
-        }
-
-        pop_value_child(&mut cell.metadata, &["collapsed"]);
+        stripped |= pop_value_child(cell.get_metadata_mut(), &["collapsed"]).is_some();
         for cell_key in &cell_keys {
             stripped |= pop_cell_key(cell, cell_key).is_some();
         }
