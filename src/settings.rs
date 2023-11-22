@@ -7,7 +7,7 @@ use std::path::Path;
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone)]
 pub struct Settings {
-    pub extra_keys: Vec<ExtraKey>,
+    pub extra_keys: FxHashSet<ExtraKey>,
     pub drop_tagged_cells: FxHashSet<String>,
     pub drop_empty_cells: bool,
     pub drop_output: bool,

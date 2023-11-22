@@ -118,19 +118,17 @@ fn test_metadata_notebook() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_keep_metadata_keys() {
     test_expected(
         "tests/e2e_notebooks/test_keep_metadata_keys.ipynb",
         "tests/e2e_notebooks/test_keep_metadata_keys.ipynb.expected",
         &[
-            "--keep-metadata-keys",
+            "--keep-keys",
             "cell.metadata.scrolled,cell.metadata.collapsed,metadata.a",
         ],
     );
 }
-// #[ignore]
 #[test]
 fn test_metadata_period() {
     test_expected(

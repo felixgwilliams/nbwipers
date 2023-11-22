@@ -70,7 +70,7 @@ impl Display for CheckResult {
 }
 
 pub fn check_nb(nb: &RawNotebook, settings: &Settings) -> Vec<CheckResult> {
-    let (cell_keys, meta_keys) = partition_extra_keys(settings.extra_keys.as_slice());
+    let (cell_keys, meta_keys) = partition_extra_keys(&settings.extra_keys);
     let mut out = vec![];
     let nb_keep_output = get_value_child(&nb.metadata, &["keep_output"])
         .and_then(Value::as_bool)

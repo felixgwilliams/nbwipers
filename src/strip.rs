@@ -13,12 +13,12 @@ use crate::{
     files::{read_nb, NBReadError, NBWriteError},
     schema::RawNotebook,
     settings::Settings,
-    utils::{get_value_child, pop_cell_key, pop_meta_key, pop_value_child},
+    utils::{get_value_child, pop_cell_key, pop_meta_key},
 };
 use serde_json::Value;
 
 pub fn strip_nb(mut nb: RawNotebook, settings: &Settings) -> (RawNotebook, bool) {
-    let (cell_keys, meta_keys) = partition_extra_keys(settings.extra_keys.as_slice());
+    let (cell_keys, meta_keys) = partition_extra_keys(&settings.extra_keys);
     let nb_keep_output = get_value_child(&nb.metadata, &["keep_output"])
         .and_then(Value::as_bool)
         .unwrap_or(false);
@@ -61,7 +61,6 @@ pub fn strip_nb(mut nb: RawNotebook, settings: &Settings) -> (RawNotebook, bool)
             }
         }
 
-        stripped |= pop_value_child(cell.get_metadata_mut(), &["collapsed"]).is_some();
         for cell_key in &cell_keys {
             stripped |= pop_cell_key(cell, cell_key).is_some();
         }

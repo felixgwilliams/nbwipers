@@ -3,7 +3,7 @@ use std::str::FromStr;
 use serde::{de, Deserialize};
 use thiserror::Error;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ExtraKey {
     CellMeta(StripKey),
     Metadata(StripKey),
@@ -26,7 +26,7 @@ impl ToString for ExtraKey {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct StripKey {
     pub(crate) parts: Vec<String>,
 }
@@ -87,7 +87,9 @@ impl<'de> Deserialize<'de> for ExtraKey {
     }
 }
 
-pub fn partition_extra_keys(extra_keys: &[ExtraKey]) -> (Vec<&ExtraKey>, Vec<&ExtraKey>) {
+pub fn partition_extra_keys<'a, I: IntoIterator<Item = &'a ExtraKey>>(
+    extra_keys: I,
+) -> (Vec<&'a ExtraKey>, Vec<&'a ExtraKey>) {
     let mut meta_keys = vec![];
     let mut cell_keys = vec![];
     for extra_key in extra_keys {

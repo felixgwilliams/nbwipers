@@ -13,6 +13,7 @@ pub struct Configuration {
     pub drop_id: Option<bool>,
     pub drop_tagged_cells: Option<Vec<String>>,
     pub strip_init_cell: Option<bool>,
+    pub keep_keys: Option<Vec<ExtraKey>>,
 }
 
 const EXTRA_KEYS: &[&str] = &[
@@ -26,7 +27,7 @@ const EXTRA_KEYS: &[&str] = &[
     "cell.metadata.scrolled",
 ];
 
-fn default_extra_keys() -> Vec<ExtraKey> {
+fn default_extra_keys() -> FxHashSet<ExtraKey> {
     EXTRA_KEYS
         .iter()
         .filter_map(|s| ExtraKey::from_str(s).ok())
@@ -37,6 +38,9 @@ impl Configuration {
     pub fn into_settings(self) -> Settings {
         let mut extra_keys = default_extra_keys();
         extra_keys.extend(self.extra_keys.unwrap_or_default());
+        for key in &self.keep_keys.unwrap_or_default() {
+            extra_keys.remove(key);
+        }
         Settings {
             extra_keys,
             drop_empty_cells: self.drop_empty_cells.unwrap_or(false),

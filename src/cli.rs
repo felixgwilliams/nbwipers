@@ -51,6 +51,9 @@ pub struct CommonArgs {
 
     #[arg(long, value_delimiter = ',')]
     pub drop_tagged_cells: Option<Vec<String>>,
+
+    #[arg(long, value_delimiter = ',')]
+    pub keep_keys: Option<Vec<ExtraKey>>,
 }
 
 #[derive(Subcommand, Debug, Clone)]
@@ -113,6 +116,7 @@ pub struct ConfigOverrides {
     pub drop_id: Option<bool>,
     pub strip_init_cell: Option<bool>,
     pub drop_tagged_cells: Option<Vec<String>>,
+    pub keep_keys: Option<Vec<ExtraKey>>,
 }
 
 pub struct Args {
@@ -142,6 +146,7 @@ impl CommonArgs {
                 drop_id: resolve_bool_arg(self.drop_id, self.keep_id),
                 drop_tagged_cells: self.drop_tagged_cells,
                 strip_init_cell: resolve_bool_arg(self.strip_init_cells, self.keep_init_cells),
+                keep_keys: self.keep_keys,
             },
         )
     }
@@ -169,6 +174,9 @@ impl ConfigOverrides {
         }
         if let Some(strip_init_cell) = &self.strip_init_cell {
             config.strip_init_cell = Some(*strip_init_cell);
+        }
+        if let Some(keep_keys) = &self.keep_keys {
+            config.keep_keys = Some(keep_keys.clone());
         }
         config
     }
