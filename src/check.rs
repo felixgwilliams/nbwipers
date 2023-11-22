@@ -115,8 +115,7 @@ pub fn check_nb(nb: &RawNotebook, settings: &Settings) -> Vec<CheckResult> {
         nb.cells
             .iter()
             .enumerate()
-            .filter_map(|(i, c)| c.as_codecell().map(|c| (i, c)))
-            .filter(|(_i, c)| !c.is_clear_id())
+            .filter(|(i, c)| !c.is_clear_id(*i))
             .for_each(|(cell_number, _)| out.push(CheckResult::ClearId { cell_number }));
     }
     for (cell_number, cell) in nb.cells.iter().enumerate() {

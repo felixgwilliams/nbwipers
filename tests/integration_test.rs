@@ -153,13 +153,12 @@ fn test_nbformat45() {
         &["--keep-id"],
     );
 }
-#[ignore]
 #[test]
 fn test_nbformat45_expected_sequential_id() {
     test_expected(
         "tests/e2e_notebooks/test_nbformat45.ipynb",
         "tests/e2e_notebooks/test_nbformat45.ipynb.expected_sequential_id",
-        &[],
+        &["--drop-id"],
     );
 }
 #[test]

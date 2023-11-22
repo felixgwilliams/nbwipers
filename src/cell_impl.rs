@@ -27,9 +27,7 @@ impl CodeCell {
             .any(|v| v.as_number().is_some());
         clear_exec_count && !output_exec_counts
     }
-    pub fn is_clear_id(&self) -> bool {
-        self.id.is_none()
-    }
+
     pub fn clear_outputs(&mut self) {
         self.outputs.clear();
     }
@@ -67,7 +65,6 @@ impl CodeCell {
 }
 
 impl Cell {
-    #[allow(dead_code)]
     pub fn as_codecell(&self) -> Option<&CodeCell> {
         if let Cell::Code(codecell) = self {
             Some(codecell)
@@ -81,6 +78,10 @@ impl Cell {
         } else {
             None
         }
+    }
+    pub fn is_clear_id(&self, cell_number: usize) -> bool {
+        let id = self.get_id();
+        id.is_none() || id.as_ref().is_some_and(|id| id == &cell_number.to_string())
     }
 
     pub fn get_source(&self) -> &SourceValue {
@@ -104,6 +105,26 @@ impl Cell {
             Cell::Markdown(ref mut c) => &mut c.metadata,
             Cell::Raw(ref mut c) => &mut c.metadata,
         }
+    }
+    pub fn get_id(&self) -> &Option<String> {
+        match self {
+            Cell::Code(ref c) => &c.id,
+            Cell::Markdown(ref c) => &c.id,
+            Cell::Raw(ref c) => &c.id,
+        }
+    }
+    pub fn set_id(&mut self, new_id: Option<String>) -> Option<String> {
+        let prev_id = match self {
+            Cell::Code(c) => c.id.clone(),
+            Cell::Markdown(c) => c.id.clone(),
+            Cell::Raw(c) => c.id.clone(),
+        };
+        match self {
+            Cell::Code(ref mut c) => c.id = new_id,
+            Cell::Markdown(ref mut c) => c.id = new_id,
+            Cell::Raw(ref mut c) => c.id = new_id,
+        };
+        prev_id
     }
 
     pub fn should_drop(

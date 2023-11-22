@@ -45,7 +45,7 @@ pub fn strip_nb(mut nb: RawNotebook, settings: &Settings) -> (RawNotebook, bool)
         nb.cells = retained_cells;
     }
 
-    for cell in &mut nb.cells {
+    for (i, cell) in nb.cells.iter_mut().enumerate() {
         if let Some(codecell) = cell.as_codecell_mut() {
             if codecell.should_clear_output(drop_output, settings.strip_init_cell)
                 && !codecell.is_clear_outputs()
@@ -60,7 +60,10 @@ pub fn strip_nb(mut nb: RawNotebook, settings: &Settings) -> (RawNotebook, bool)
                 codecell.clear_counts();
             }
         }
-
+        if settings.drop_id && !cell.is_clear_id(i) {
+            stripped = true;
+            cell.set_id(Some(format!("{i}")));
+        }
         for cell_key in &cell_keys {
             stripped |= pop_cell_key(cell, cell_key).is_some();
         }
