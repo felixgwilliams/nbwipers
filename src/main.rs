@@ -32,7 +32,7 @@ fn check_all(files: &[PathBuf], cli: CommonArgs) -> Result<(), Error> {
     let (args, overrides) = cli.partition();
     let nbs = find_notebooks(files)?;
 
-    let settings = Settings::construct(args.config.as_deref(), &overrides);
+    let settings = Settings::construct(args.config.as_deref(), &overrides)?;
     // let check_results = BTreeMap::
     let check_results_iter: Vec<_> = nbs
         .par_iter()
@@ -64,7 +64,7 @@ fn strip_all(files: &[PathBuf], cli: CommonArgs) -> Result<(), Error> {
     let (args, overrides) = cli.partition();
     let nbs = find_notebooks(files)?;
 
-    let settings = Settings::construct(args.config.as_deref(), &overrides);
+    let settings = Settings::construct(args.config.as_deref(), &overrides)?;
     let strip_results: Vec<StripResult> = nbs
         .par_iter()
         .map(|nb_path| strip_single(nb_path, false, &settings).into())
@@ -81,7 +81,7 @@ fn strip_all(files: &[PathBuf], cli: CommonArgs) -> Result<(), Error> {
 fn strip(file: &Path, textconv: bool, cli: CommonArgs) -> Result<(), Error> {
     let (args, overrides) = cli.partition();
 
-    let settings = Settings::construct(args.config.as_deref(), &overrides);
+    let settings = Settings::construct(args.config.as_deref(), &overrides)?;
     strip_single(file, textconv, &settings)?;
 
     Ok(())

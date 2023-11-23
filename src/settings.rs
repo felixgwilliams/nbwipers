@@ -1,5 +1,5 @@
 use crate::cli::ConfigOverrides;
-use crate::config::resolve;
+use crate::config::{resolve, PyprojectError};
 use crate::extra_keys::ExtraKey;
 use rustc_hash::FxHashSet;
 use std::path::Path;
@@ -17,10 +17,13 @@ pub struct Settings {
 }
 
 impl Settings {
-    pub fn construct(config_file: Option<&Path>, overrides: &ConfigOverrides) -> Self {
-        let mut config = resolve(config_file);
+    pub fn construct(
+        config_file: Option<&Path>,
+        overrides: &ConfigOverrides,
+    ) -> Result<Self, PyprojectError> {
+        let mut config = resolve(config_file)?;
         config = overrides.override_config(config);
 
-        config.into_settings()
+        Ok(config.into_settings())
     }
 }

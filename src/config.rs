@@ -1,8 +1,10 @@
 use crate::{extra_keys::ExtraKey, settings::Settings};
 use rustc_hash::FxHashSet;
 use serde::Deserialize;
+use std::io;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use thiserror::Error;
 
 #[derive(Debug, Clone, Default, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
@@ -77,14 +79,33 @@ pub fn find_pyproject() -> Option<PathBuf> {
     None
 }
 
-pub fn read_pyproject(path: &Path) -> Option<Configuration> {
-    let contents = std::fs::read_to_string(path).ok()?;
-    let pyproject: Pyproject = toml::from_str(&contents).ok()?;
+#[derive(Debug, Error)]
 
-    pyproject.tool.and_then(|tools| tools.nbwipers)
+pub enum PyprojectError {
+    #[error("IO Error")]
+    IOError(#[from] io::Error),
+    #[error("Parse Error")]
+    ParseError(#[from] toml::de::Error),
 }
 
-pub fn resolve(config_file: Option<&Path>) -> Configuration {
-    let to_read = config_file.map_or_else(find_pyproject, |x| Some(x.to_owned()));
-    to_read.and_then(|p| read_pyproject(&p)).unwrap_or_default()
+pub fn read_pyproject(path: &Path) -> Result<Option<Configuration>, PyprojectError> {
+    let contents = std::fs::read_to_string(path)?;
+    let pyproject: Pyproject = toml::from_str(&contents)?;
+    let config = pyproject.tool.and_then(|tools| tools.nbwipers);
+    Ok(config)
+}
+
+pub fn resolve(config_file: Option<&Path>) -> Result<Configuration, PyprojectError> {
+    // config_file.unwrap().is_file()
+    if let Some(config_file) = config_file {
+        let config = read_pyproject(config_file)?;
+        Ok(config.unwrap_or_default())
+    } else if let Some(pyproject_file) = find_pyproject() {
+        let config = read_pyproject(&pyproject_file)?;
+        Ok(config.unwrap_or_default())
+    } else {
+        Ok(Configuration::default())
+    }
+    // let to_read = config_file.map_or_else(find_pyproject, |x| Some(x.to_owned()));
+    // to_read.and_then(|p| read_pyproject(&p)).unwrap_or_default()
 }
