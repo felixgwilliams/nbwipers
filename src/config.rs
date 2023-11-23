@@ -31,9 +31,10 @@ const EXTRA_KEYS: &[&str] = &[
 ];
 
 fn default_extra_keys() -> FxHashSet<ExtraKey> {
+    #[allow(clippy::unwrap_used)]
     EXTRA_KEYS
         .iter()
-        .filter_map(|s| ExtraKey::from_str(s).ok())
+        .map(|s| ExtraKey::from_str(s).unwrap())
         .collect()
 }
 
