@@ -24,3 +24,7 @@ serde_json = { version = "1.0.108", features = ["preserve_order"] }
 serde_with = "3.4.0"
 thiserror = "1.0.50"
 toml = "0.8.8"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
