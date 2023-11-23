@@ -1,0 +1,2 @@
+[tool.nbwipers]
+drop-tagged-cells = ["test"]

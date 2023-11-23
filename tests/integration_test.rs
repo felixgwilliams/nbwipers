@@ -41,6 +41,11 @@ fn test_drop_empty_cells() {
         "tests/e2e_notebooks/test_drop_empty_cells.ipynb.expected",
         &["--drop-empty-cells"],
     );
+    test_expected(
+        "tests/e2e_notebooks/test_drop_empty_cells.ipynb",
+        "tests/e2e_notebooks/test_drop_empty_cells.ipynb.expected",
+        &["-c", "tests/e2e_notebooks/test_drop_empty_cells.toml"],
+    );
 }
 
 #[test]
@@ -59,6 +64,11 @@ fn test_drop_tagged_cells() {
         "tests/e2e_notebooks/test_drop_tagged_cells.ipynb.expected",
         &["--drop-tagged-cells=test"],
     );
+    test_expected(
+        "tests/e2e_notebooks/test_drop_tagged_cells.ipynb",
+        "tests/e2e_notebooks/test_drop_tagged_cells.ipynb.expected",
+        &["-c", "tests/e2e_notebooks/test_drop_tagged_cells.toml"],
+    );
 }
 #[test]
 fn test_execution_timing() {
@@ -66,6 +76,11 @@ fn test_execution_timing() {
         "tests/e2e_notebooks/test_execution_timing.ipynb",
         "tests/e2e_notebooks/test_execution_timing.ipynb.expected",
         &["--drop-tagged-cells=test"],
+    );
+    test_expected(
+        "tests/e2e_notebooks/test_execution_timing.ipynb",
+        "tests/e2e_notebooks/test_execution_timing.ipynb.expected",
+        &["-c", "tests/e2e_notebooks/test_drop_tagged_cells.toml"],
     );
 }
 #[test]
@@ -83,6 +98,11 @@ fn test_metadata_extra_keys() {
         "tests/e2e_notebooks/test_metadata_extra_keys.ipynb.expected",
         &["--extra-keys", "metadata.kernelspec,metadata.language_info"],
     );
+    test_expected(
+        "tests/e2e_notebooks/test_metadata.ipynb",
+        "tests/e2e_notebooks/test_metadata_extra_keys.ipynb.expected",
+        &["-c", "tests/e2e_notebooks/test_metadata_extra_keys.toml"],
+    );
 }
 
 #[test]
@@ -92,6 +112,11 @@ fn test_metadata_keep_count() {
         "tests/e2e_notebooks/test_metadata_keep_count.ipynb.expected",
         &["--keep-count"],
     );
+    test_expected(
+        "tests/e2e_notebooks/test_metadata.ipynb",
+        "tests/e2e_notebooks/test_metadata_keep_count.ipynb.expected",
+        &["-c", "tests/e2e_notebooks/test_metadata_keep_count.toml"],
+    );
 }
 #[test]
 fn test_metadata_keep_output() {
@@ -100,6 +125,11 @@ fn test_metadata_keep_output() {
         "tests/e2e_notebooks/test_metadata_keep_output.ipynb.expected",
         &["--keep-output"],
     );
+    test_expected(
+        "tests/e2e_notebooks/test_metadata.ipynb",
+        "tests/e2e_notebooks/test_metadata_keep_output.ipynb.expected",
+        &["-c", "tests/e2e_notebooks/test_metadata_keep_output.toml"],
+    );
 }
 #[test]
 fn test_metadata_keep_output_keep_count() {
@@ -107,6 +137,14 @@ fn test_metadata_keep_output_keep_count() {
         "tests/e2e_notebooks/test_metadata.ipynb",
         "tests/e2e_notebooks/test_metadata_keep_output_keep_count.ipynb.expected",
         &["--keep-output", "--keep-count"],
+    );
+    test_expected(
+        "tests/e2e_notebooks/test_metadata.ipynb",
+        "tests/e2e_notebooks/test_metadata_keep_output_keep_count.ipynb.expected",
+        &[
+            "-c",
+            "tests/e2e_notebooks/test_metadata_keep_output_keep_count.toml",
+        ],
     );
 }
 #[test]
@@ -128,6 +166,11 @@ fn test_keep_metadata_keys() {
             "cell.metadata.scrolled,cell.metadata.collapsed,metadata.a",
         ],
     );
+    test_expected(
+        "tests/e2e_notebooks/test_keep_metadata_keys.ipynb",
+        "tests/e2e_notebooks/test_keep_metadata_keys.ipynb.expected",
+        &["-c", "tests/e2e_notebooks/test_keep_metadata_keys.toml"],
+    );
 }
 #[test]
 fn test_metadata_period() {
@@ -136,13 +179,23 @@ fn test_metadata_period() {
         "tests/e2e_notebooks/test_metadata_period.ipynb.expected",
         &["--extra-keys", "cell.metadata.application/vnd.databricks.v1+cell,metadata.application/vnd.databricks.v1+notebook"],
     );
+    test_expected(
+        "tests/e2e_notebooks/test_metadata_period.ipynb",
+        "tests/e2e_notebooks/test_metadata_period.ipynb.expected",
+        &["-c", "tests/e2e_notebooks/test_metadata_period.toml"],
+    );
 }
 #[test]
 fn test_strip_init_cells() {
     test_expected(
         "tests/e2e_notebooks/test_strip_init_cells.ipynb",
         "tests/e2e_notebooks/test_strip_init_cells.ipynb.expected",
-        &["--strip-init-cells"],
+        &["--strip-init-cell"],
+    );
+    test_expected(
+        "tests/e2e_notebooks/test_strip_init_cells.ipynb",
+        "tests/e2e_notebooks/test_strip_init_cells.ipynb.expected",
+        &["-c", "tests/e2e_notebooks/test_strip_init_cells.toml"],
     );
 }
 #[test]
@@ -152,6 +205,11 @@ fn test_nbformat45() {
         "tests/e2e_notebooks/test_nbformat45.ipynb.expected",
         &["--keep-id"],
     );
+    test_expected(
+        "tests/e2e_notebooks/test_nbformat45.ipynb",
+        "tests/e2e_notebooks/test_nbformat45.ipynb.expected",
+        &["-c", "tests/e2e_notebooks/test_nbformat45.toml"],
+    );
 }
 #[test]
 fn test_nbformat45_expected_sequential_id() {
@@ -159,6 +217,11 @@ fn test_nbformat45_expected_sequential_id() {
         "tests/e2e_notebooks/test_nbformat45.ipynb",
         "tests/e2e_notebooks/test_nbformat45.ipynb.expected_sequential_id",
         &["--drop-id"],
+    );
+    test_expected(
+        "tests/e2e_notebooks/test_nbformat45.ipynb",
+        "tests/e2e_notebooks/test_nbformat45.ipynb.expected_sequential_id",
+        &["-c", "tests/e2e_notebooks/test_nbformat45_sequential.toml"],
     );
 }
 #[test]

@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 #[derive(Debug, Clone, Default, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
 pub struct Configuration {
     pub extra_keys: Option<Vec<ExtraKey>>,
     pub drop_empty_cells: Option<bool>,
@@ -57,7 +58,7 @@ impl Configuration {
 }
 #[derive(Debug, Default, Deserialize, PartialEq, Eq)]
 struct Pyproject {
-    tools: Option<Tools>,
+    tool: Option<Tools>,
 }
 #[derive(Debug, PartialEq, Eq, Deserialize)]
 struct Tools {
@@ -80,7 +81,7 @@ pub fn read_pyproject(path: &Path) -> Option<Configuration> {
     let contents = std::fs::read_to_string(path).ok()?;
     let pyproject: Pyproject = toml::from_str(&contents).ok()?;
 
-    pyproject.tools.and_then(|tools| tools.nbwipers)
+    pyproject.tool.and_then(|tools| tools.nbwipers)
 }
 
 pub fn resolve(config_file: Option<&Path>) -> Configuration {

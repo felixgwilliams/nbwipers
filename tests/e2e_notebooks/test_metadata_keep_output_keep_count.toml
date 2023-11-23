@@ -1,0 +1,3 @@
+[tool.nbwipers]
+drop-output = false
+drop-count = false

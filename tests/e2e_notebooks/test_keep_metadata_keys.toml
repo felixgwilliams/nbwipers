@@ -1,0 +1,2 @@
+[tool.nbwipers]
+keep-keys = ["cell.metadata.scrolled", "cell.metadata.collapsed", "metadata.a"]
