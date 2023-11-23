@@ -46,7 +46,7 @@ src/files.rs and src/schema.rs contain portions derived from Ruff, used under th
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
 
-Test notebooks are taken from nbstiripout, under the following license
+Test notebooks and the overall API are taken from nbstiripout, under the following license
 
     Copyright (c) 2015 Min RK, Florian Rathgeber, Michael McNeil Forbes
     2019 Casper da Costa-Luis
