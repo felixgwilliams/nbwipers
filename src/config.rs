@@ -82,9 +82,9 @@ pub fn find_pyproject() -> Option<PathBuf> {
 #[derive(Debug, Error)]
 
 pub enum PyprojectError {
-    #[error("IO Error")]
+    #[error("Pyproject IO Error")]
     IOError(#[from] io::Error),
-    #[error("Parse Error")]
+    #[error("Pyproject Parse Error")]
     ParseError(#[from] toml::de::Error),
 }
 

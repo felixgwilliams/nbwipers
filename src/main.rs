@@ -60,14 +60,14 @@ fn check_all(files: &[PathBuf], cli: CommonArgs) -> Result<(), Error> {
     }
 }
 
-fn strip_all(files: &[PathBuf], cli: CommonArgs) -> Result<(), Error> {
+fn strip_all(files: &[PathBuf], dry_run: bool, cli: CommonArgs) -> Result<(), Error> {
     let (args, overrides) = cli.partition();
     let nbs = find_notebooks(files)?;
 
     let settings = Settings::construct(args.config.as_deref(), &overrides)?;
     let strip_results: Vec<StripResult> = nbs
         .par_iter()
-        .map(|nb_path| strip_single(nb_path, false, &settings).into())
+        .map(|nb_path| strip_single(nb_path, dry_run, &settings).into())
         .collect();
 
     for (nb_path, res) in nbs.iter().zip(strip_results) {
@@ -101,7 +101,11 @@ fn main() -> Result<(), Error> {
             textconv,
             common,
         }) => strip(file, textconv, common),
-        Commands::CleanAll(CleanAllCommand { ref files, common }) => strip_all(files, common),
+        Commands::CleanAll(CleanAllCommand {
+            ref files,
+            dry_run,
+            common,
+        }) => strip_all(files, dry_run, common),
         Commands::Check(CheckAllCommand { ref files, common }) => check_all(files, common),
         Commands::Install(ref cmd) => install(cmd),
     }

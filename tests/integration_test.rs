@@ -13,6 +13,19 @@ fn test_invalid_format() {
     assert!(&output.stdout.contains_str(b"Invalid notebook:"))
 }
 
+#[test]
+fn test_file_not_found() {
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+
+    let output = Command::new(cur_exe)
+        .args(["check", "tests/test_nbformat2.ipynb"])
+        .args(["-c", "bananas.toml"])
+        .output()
+        .expect("command failed");
+    assert!(!output.status.success());
+    assert!(&output.stderr.contains_str(b"Pyproject IO Error"))
+}
+
 fn test_expected(path: &str, expected: &str, extra_args: &[&str]) {
     let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
     let output = Command::new(cur_exe)
