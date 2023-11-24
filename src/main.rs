@@ -1,6 +1,12 @@
 #![warn(clippy::all, clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]
 #![warn(clippy::unwrap_used)]
+#![warn(missing_docs)]
+
+/*! nbwipers is a command line tool to wipe clean Jupyter Notebooks
+ *
+ *
+ */
 
 use std::{
     collections::BTreeMap,
