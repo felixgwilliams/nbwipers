@@ -16,7 +16,7 @@ use std::{
 use crate::settings::Settings;
 use anyhow::{anyhow, Error};
 use clap::Parser;
-use cli::{CheckAllCommand, CleanAllCommand, CleanCommand, Commands, CommonArgs, InstallCommand};
+use cli::{CheckCommand, CleanAllCommand, CleanCommand, Commands, CommonArgs, InstallCommand};
 use colored::Colorize;
 use files::{find_notebooks, read_nb, relativize_path};
 use rayon::prelude::*;
@@ -66,9 +66,17 @@ fn check_all(files: &[PathBuf], cli: CommonArgs) -> Result<(), Error> {
     }
 }
 
-fn strip_all(files: &[PathBuf], dry_run: bool, cli: CommonArgs) -> Result<(), Error> {
+fn strip_all(files: &[PathBuf], dry_run: bool, yes: bool, cli: CommonArgs) -> Result<(), Error> {
     let (args, overrides) = cli.partition();
     let nbs = find_notebooks(files)?;
+    if !yes {
+        let ans = inquire::Confirm::new("Continue?")
+            .with_default(false)
+            .prompt()?;
+        if !ans {
+            return Ok(());
+        }
+    }
 
     let settings = Settings::construct(args.config.as_deref(), &overrides)?;
     let strip_results: Vec<StripResult> = nbs
@@ -101,7 +109,6 @@ fn install(cmd: &InstallCommand) -> Result<(), Error> {
 fn main() -> Result<(), Error> {
     let cli = cli::Cli::parse();
     match cli.command {
-        // Commands::Check(CheckCommand { ref file, common }) => check(file, common),
         Commands::Clean(CleanCommand {
             ref file,
             textconv,
@@ -110,9 +117,10 @@ fn main() -> Result<(), Error> {
         Commands::CleanAll(CleanAllCommand {
             ref files,
             dry_run,
+            yes,
             common,
-        }) => strip_all(files, dry_run, common),
-        Commands::Check(CheckAllCommand { ref files, common }) => check_all(files, common),
+        }) => strip_all(files, dry_run, yes, common),
+        Commands::Check(CheckCommand { ref files, common }) => check_all(files, common),
         Commands::Install(ref cmd) => install(cmd),
     }
 }

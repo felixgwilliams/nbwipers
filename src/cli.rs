@@ -58,21 +58,19 @@ pub struct CommonArgs {
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum Commands {
+    /// Register nbwipers as a git filter for `ipynb` files
     Install(InstallCommand),
+    /// clean all notebooks in a given path
     CleanAll(CleanAllCommand),
-    Check(CheckAllCommand),
+    /// check notebooks in a given path for elements that would be removed by `clean`
+    Check(CheckCommand),
+    /// clean a single notebook
     Clean(CleanCommand),
 }
 
 #[derive(Clone, Debug, Parser)]
 pub struct CheckCommand {
-    pub file: PathBuf,
-
-    #[clap(flatten)]
-    pub common: CommonArgs,
-}
-#[derive(Clone, Debug, Parser)]
-pub struct CheckAllCommand {
+    /// paths containing ipynb files to check
     pub files: Vec<PathBuf>,
 
     #[clap(flatten)]
@@ -80,8 +78,10 @@ pub struct CheckAllCommand {
 }
 #[derive(Clone, Debug, Parser)]
 pub struct CleanCommand {
+    /// path to ipynb file to clean
     pub file: PathBuf,
 
+    /// write cleaned file to stdout instead of to the file
     #[arg(long, short)]
     pub textconv: bool,
 
@@ -90,24 +90,35 @@ pub struct CleanCommand {
 }
 #[derive(Clone, Debug, Parser)]
 pub struct CleanAllCommand {
+    /// paths containing ipynb files to clean
     pub files: Vec<PathBuf>,
 
+    /// set to true to avoid writing to files
     #[arg(long, short)]
     pub dry_run: bool,
+
+    /// skip confirmation and assume yes
+    #[arg(long, short)]
+    pub yes: bool,
 
     #[clap(flatten)]
     pub common: CommonArgs,
 }
 #[derive(Clone, Debug, Parser)]
 pub struct InstallCommand {
+    /// Git config type that determines which file to modify
     pub config_type: GitConfigType,
+    /// optional attribute file. If not specified, will write to .git/info/attributes
     pub attribute_file: Option<PathBuf>,
 }
 
 #[derive(Clone, Debug, ValueEnum, Copy)]
 pub enum GitConfigType {
+    /// System-wide git config
     System,
+    /// User level git config, typically corresponding to ~/.gitconfig
     Global,
+    /// Repository level git config, corresponding to .git/config
     Local,
 }
 
