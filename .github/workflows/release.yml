@@ -211,3 +211,11 @@ jobs:
         with:
           command: upload
           args: --non-interactive --skip-existing *
+  release_crate:
+    name: Release crates
+    runs-on: ubuntu-latest
+    needs: [release_github]
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
