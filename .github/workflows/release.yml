@@ -36,9 +36,13 @@ jobs:
           manylinux: auto
       - name: Build archives
         run: |
-          ARCHIVE_FILE=nbwipers-${{ matrix.target }}.tar.gz
-          tar czvf $ARCHIVE_FILE -C target/${{ matrix.target }}/release nbwipers
-          shasum -a 256 $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
+          for dir in target/${{ matrix.target }}*/
+          do
+            TARGET_TRIPLE=$(basename $dir)
+            ARCHIVE_FILE=nbwipers-${TARGET_TRIPLE}.tar.gz
+            tar czvf $ARCHIVE_FILE -C ${dir}/release nbwipers
+            shasum -a 256 $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
+          done
       - name: Upload wheels
         uses: actions/upload-artifact@v3
         with:
@@ -65,10 +69,15 @@ jobs:
           args: --release --out dist
           sccache: 'true'
       - name: Build archives
+        shell: bash
         run: |
-          ARCHIVE_FILE=nbwipers-${{ matrix.target }}.zip
-          7z a $ARCHIVE_FILE ./target/${{ matrix.target }}/release/nbwipers.exe
-          sha256sum $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
+          for dir in target/${{ matrix.target }}*/
+          do
+            TARGET_TRIPLE=$(basename $dir)
+            ARCHIVE_FILE=nbwipers-${TARGET_TRIPLE}.zip
+            7z a $ARCHIVE_FILE ${dir}/release/nbwipers.exe
+            sha256sum $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
+          done
       - name: Upload wheels
         uses: actions/upload-artifact@v3
         with:
@@ -97,9 +106,13 @@ jobs:
           sccache: 'true'
       - name: Build archives
         run: |
-          ARCHIVE_FILE=nbwipers-${{ matrix.target }}.tar.gz
-          tar czvf $ARCHIVE_FILE -C target/${{ matrix.target }}/release nbwipers
-          shasum -a 256 $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
+          for dir in target/${{ matrix.target }}*/
+          do
+            TARGET_TRIPLE=$(basename $dir)
+            ARCHIVE_FILE=nbwipers-${TARGET_TRIPLE}.tar.gz
+            tar czvf $ARCHIVE_FILE -C ${dir}/release nbwipers
+            shasum -a 256 $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
+          done
       - name: Upload wheels
         uses: actions/upload-artifact@v3
         with:
