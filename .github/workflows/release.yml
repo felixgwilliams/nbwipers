@@ -34,12 +34,23 @@ jobs:
           args: --release --out dist
           sccache: 'true'
           manylinux: auto
+      - name: Build archives
+        run: |
+          ARCHIVE_FILE=nbwipers-${{ matrix.target }}.tar.gz
+          tar czvf $ARCHIVE_FILE -C target/${{ matrix.target }}/release nbwipers
+          shasum -a 256 $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
       - name: Upload wheels
         uses: actions/upload-artifact@v3
         with:
           name: wheels
           path: dist
-
+      - name: "Upload binary"
+        uses: actions/upload-artifact@v3
+        with:
+          name: binaries
+          path: |
+            *.tar.gz
+            *.sha256
   windows:
     runs-on: windows-latest
     strategy:
@@ -53,11 +64,23 @@ jobs:
           target: ${{ matrix.target }}
           args: --release --out dist
           sccache: 'true'
+      - name: Build archives
+        run: |
+          ARCHIVE_FILE=nbwipers-${{ matrix.target }}.zip
+          7z a $ARCHIVE_FILE ./target/${{ matrix.target }}/release/nbwipers.exe
+          sha256sum $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
       - name: Upload wheels
         uses: actions/upload-artifact@v3
         with:
           name: wheels
           path: dist
+      - name: "Upload binary"
+        uses: actions/upload-artifact@v3
+        with:
+          name: binaries
+          path: |
+            *.zip
+            *.sha256
 
   macos:
     runs-on: macos-latest
@@ -72,11 +95,24 @@ jobs:
           target: ${{ matrix.target }}
           args: --release --out dist
           sccache: 'true'
+      - name: Build archives
+        run: |
+          ARCHIVE_FILE=nbwipers-${{ matrix.target }}.tar.gz
+          tar czvf $ARCHIVE_FILE -C target/${{ matrix.target }}/release nbwipers
+          shasum -a 256 $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
       - name: Upload wheels
         uses: actions/upload-artifact@v3
         with:
           name: wheels
           path: dist
+      - name: "Upload binary"
+        uses: actions/upload-artifact@v3
+        with:
+          name: binaries
+          path: |
+            *.tar.gz
+            *.sha256
+
 
   sdist:
     runs-on: ubuntu-latest
