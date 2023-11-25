@@ -79,7 +79,7 @@ pub enum Commands {
 
 #[derive(Clone, Debug, Parser)]
 pub struct CheckCommand {
-    /// paths containing ipynb files to check
+    /// paths containing ipynb files to check. Use `-` to read from stdin
     pub files: Vec<PathBuf>,
 
     #[clap(flatten)]
@@ -87,7 +87,7 @@ pub struct CheckCommand {
 }
 #[derive(Clone, Debug, Parser)]
 pub struct CleanCommand {
-    /// path to ipynb file to clean
+    /// path to ipynb file to clean. Use `-` to read from stdin and write to stdout
     pub file: PathBuf,
 
     /// write cleaned file to stdout instead of to the file
@@ -99,7 +99,7 @@ pub struct CleanCommand {
 }
 #[derive(Clone, Debug, Parser)]
 pub struct CleanAllCommand {
-    /// paths containing ipynb files to clean
+    /// paths containing ipynb files to clean. Stdin is not supported.
     pub files: Vec<PathBuf>,
 
     /// set to true to avoid writing to files
