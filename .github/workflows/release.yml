@@ -124,7 +124,7 @@ jobs:
           name: wheels
           path: wheels
       - run: |
-          gh release create {{ inputs.tag }} --generate-notes wheels/*
+          gh release create {{ inputs.tag }} --generate-notes -d wheels/*
 
   release_pypi:
     name: Release PyPI
