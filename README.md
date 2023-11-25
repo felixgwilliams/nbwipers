@@ -22,11 +22,12 @@ A working copy of a Jupyter notebook contains
 3. Execution counts
 4. Metadata, such as whether cells are collapsed, scrollable etc.
 
-Of these categories of data, only the first &mdash; code written by the author &mdash; should definitely be tracked by version control.
-The other categories of data are subject to change without explicit intention from the author, and are generally noisy from a version control perspective.
+Of these categories of data, only the first &mdash; code written by the author &mdash; should definitely be tracked by version control, since it is the product of the author's intension and hard work.
+The other categories of data are subject to change outside of the explicit intensions of the author, and are generally noisy from a version control perspective.
 
 Moreover, including notebook outputs in version control
 
+- makes diffs harder to interpret, as they will contain lots of unintended changes
 - increases the risk of a tricky merge conflict if different users run the same cell and get a slightly different result
 - increases the amount of data committed, which can degrade repository performance
 - risks leaking sensitive data
