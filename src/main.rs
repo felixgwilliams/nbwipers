@@ -114,6 +114,12 @@ fn install(cmd: &InstallCommand) -> Result<(), Error> {
 
 fn main() -> Result<(), Error> {
     let cli = cli::Cli::parse();
+
+    #[cfg(feature = "markdown-help")]
+    if cli.markdown_help {
+        clap_markdown::print_help_markdown::<cli::Cli>();
+        return Ok(());
+    }
     match cli.command {
         Commands::Clean(CleanCommand {
             ref file,

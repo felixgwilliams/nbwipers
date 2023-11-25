@@ -7,6 +7,8 @@ use crate::{config::Configuration, extra_keys::ExtraKey};
 #[derive(Parser, Debug, Clone)]
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
+    #[arg(long, hide = true)]
+    pub markdown_help: bool,
     #[command(subcommand)]
     pub command: Commands,
 }

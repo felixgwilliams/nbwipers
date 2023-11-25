@@ -13,6 +13,22 @@ nbwipers has a few subcommands that provide functionality related to cleaning Ju
 - `clean-all` clean all notebooks in a given path. This one should be used carefully!
 - `install` register nbwipers as a git filter for `ipynb` files. Equivalent to `nbstripout --install`
 
+The full options can be found in [`CommandLineHelp.md`](CommandLineHelp.md).
+
+### Examples
+
+To set up nbwipers as a git filter in your repository, use
+
+```shell
+nbwipers install local
+```
+
+To check the notebooks in your folder
+
+```shell
+nbwipers check .
+```
+
 ## Motivation
 
 A working copy of a Jupyter notebook contains
@@ -33,9 +49,6 @@ Moreover, including notebook outputs in version control
 - risks leaking sensitive data
 
 By using nbwipers or nbstripout as a git filter, the problematic parts of the notebook are removed from the version of the file that git sees, while leaving your working copy intact.
-
-In comparison, [Jupytext](https://github.com/mwouts/jupytext) tackles the problems by removing notebooks from version control completely.
-nbwipers, like nbstripout, simply removes the problematic parts from notebooks before git can see them.
 
 ## Acknowledgements
 
