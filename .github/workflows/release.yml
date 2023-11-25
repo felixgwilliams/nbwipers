@@ -163,8 +163,12 @@ jobs:
         with:
           name: wheels
           path: wheels
+      - uses: actions/download-artifact@v3
+        with:
+          name: binaries
+          path: binaries
       - run: |
-          gh release create ${{ inputs.tag }} --generate-notes -d wheels/*
+          gh release create ${{ inputs.tag }} --generate-notes -d wheels/* binaries/*
 
   release_pypi:
     name: Release PyPI
