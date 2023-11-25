@@ -39,7 +39,7 @@ jobs:
           for dir in target/*/
           do
             TARGET_TRIPLE=$(basename $dir)
-            if [ "$TARGET_TRIPLE" == 'release']; then
+            if [ "$TARGET_TRIPLE" == 'release' ]; then
               continue
             fi
             ARCHIVE_FILE=nbwipers-${TARGET_TRIPLE}.tar.gz
@@ -78,7 +78,7 @@ jobs:
           for dir in target/*/
           do
             TARGET_TRIPLE=$(basename $dir)
-            if [ "$TARGET_TRIPLE" == 'release']; then
+            if [ "$TARGET_TRIPLE" == 'release' ]; then
               continue
             fi
             ARCHIVE_FILE=nbwipers-${TARGET_TRIPLE}.zip
@@ -117,7 +117,7 @@ jobs:
           for dir in target/*/
           do
             TARGET_TRIPLE=$(basename $dir)
-            if [ "$TARGET_TRIPLE" == 'release']; then
+            if [ "$TARGET_TRIPLE" == 'release' ]; then
               continue
             fi
             ARCHIVE_FILE=nbwipers-${TARGET_TRIPLE}.tar.gz
