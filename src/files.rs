@@ -1,7 +1,7 @@
 use std::{
     ffi::OsStr,
     fs::File,
-    io::BufReader,
+    io::{stdin, BufReader},
     path::{Path, PathBuf},
 };
 
@@ -33,7 +33,15 @@ pub fn relativize_path<P: AsRef<Path>>(path: P) -> String {
     format!("{}", path.display())
 }
 
-pub fn find_notebooks(paths: &[PathBuf]) -> Result<Vec<PathBuf>, Error> {
+pub enum FoundNotebooks {
+    Stdin,
+    Files(Vec<PathBuf>),
+}
+
+pub fn find_notebooks(paths: &[PathBuf]) -> Result<FoundNotebooks, Error> {
+    if paths == [Path::new("-")] {
+        return Ok(FoundNotebooks::Stdin);
+    }
     let paths: Vec<PathBuf> = paths.iter().map(normalize_path).unique().collect();
     let (first_path, rest_paths) = paths
         .split_first()
@@ -76,7 +84,7 @@ pub fn find_notebooks(paths: &[PathBuf]) -> Result<Vec<PathBuf>, Error> {
     if out.is_empty() {
         Err(anyhow!("Could not find any notebooks in path(s)"))
     } else {
-        Ok(out)
+        Ok(FoundNotebooks::Files(out))
     }
 }
 
@@ -101,4 +109,10 @@ pub enum NBWriteError {
     IO(#[from] std::io::Error),
     #[error("JSON read error")]
     Serde(#[from] serde_json::Error),
+}
+
+pub fn read_nb_stdin() -> Result<RawNotebook, NBReadError> {
+    let handle = stdin().lock();
+    let out = serde_json::from_reader(handle)?;
+    Ok(out)
 }

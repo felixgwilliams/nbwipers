@@ -10,7 +10,7 @@ use thiserror::Error;
 
 use crate::{
     extra_keys::partition_extra_keys,
-    files::{read_nb, NBReadError, NBWriteError},
+    files::{read_nb, read_nb_stdin, NBReadError, NBWriteError},
     schema::RawNotebook,
     settings::Settings,
     utils::{get_value_child, pop_cell_key, pop_meta_key},
@@ -75,10 +75,13 @@ pub fn strip_single(
     textconv: bool,
     settings: &Settings,
 ) -> Result<StripSuccess, StripError> {
-    let nb = read_nb(nb_path)?;
+    let (nb, to_stdout) = match nb_path.to_str() {
+        Some("-") => (read_nb_stdin()?, true),
+        _ => (read_nb(nb_path)?, textconv),
+    };
 
     let (strip_nb, stripped) = strip_nb(nb, settings);
-    match (textconv, stripped) {
+    match (to_stdout, stripped) {
         (true, _) => {
             let stdout = std::io::stdout();
             match write_nb(stdout, &strip_nb) {

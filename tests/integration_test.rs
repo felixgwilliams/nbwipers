@@ -1,4 +1,9 @@
-use std::{fs, path::PathBuf, process::Command};
+use std::{
+    fs,
+    io::Write,
+    path::PathBuf,
+    process::{Command, Stdio},
+};
 
 use bstr::ByteSlice;
 
@@ -28,7 +33,7 @@ fn test_file_not_found() {
 
 fn test_expected(path: &str, expected: &str, extra_args: &[&str]) {
     let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
-    let output = Command::new(cur_exe)
+    let output = Command::new(&cur_exe)
         .args(["clean", "-t", path])
         .args(extra_args)
         .output()
@@ -36,6 +41,27 @@ fn test_expected(path: &str, expected: &str, extra_args: &[&str]) {
 
     let expected_content = fs::read_to_string(expected).expect("could not read expected");
     assert_eq!(output.stdout.to_str().unwrap(), expected_content);
+
+    let mut check_output_cmd = Command::new(&cur_exe)
+        .args(["check", "-"])
+        .args(extra_args)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("command failed");
+    {
+        let mut check_in = check_output_cmd.stdin.take().expect("Failed to open stdin");
+        // write!(check_in, "{expected_content}").expect("Failed to write to stdin");
+        check_in
+            .write_all(expected_content.as_bytes())
+            .expect("Failed to write to stdin");
+    }
+    let check_output = check_output_cmd.wait_with_output().expect("Command failed");
+
+    println!("{}", check_output.stdout.to_str().unwrap());
+
+    assert!(check_output.status.success())
 }
 
 #[test]
