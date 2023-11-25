@@ -1,0 +1,21 @@
+name: Testing
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+    contents: read
+
+jobs:
+  test-rust:
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: "-Dwarnings"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Clippy
+        run: cargo clippy --all-targets --all-features
+      - name: Run Tests
+        run: cargo test --verbose

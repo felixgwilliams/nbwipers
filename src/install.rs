@@ -41,7 +41,11 @@ pub fn install_config(config_type: GitConfigType) -> Result<(), Error> {
             dotgit.join(source.storage_location(&mut gix_path::env::var).unwrap())
         }
     };
-    let mut file = gix_config::File::from_path_no_includes(file_path.clone(), source)?;
+    let mut file = if file_path.is_file() {
+        gix_config::File::from_path_no_includes(file_path.clone(), source)?
+    } else {
+        gix_config::File::new(gix_config::file::Metadata::from(source))
+    };
 
     // fails for invalid section names. This one is ok
     #[allow(clippy::unwrap_used)]
@@ -52,7 +56,7 @@ pub fn install_config(config_type: GitConfigType) -> Result<(), Error> {
     #[allow(clippy::unwrap_used)]
     nbwipers_section.set(
         Key::try_from("clean").unwrap(),
-        BStr::new(format!("\"{}\" clean", cur_exe_str.as_str()).as_str()),
+        BStr::new(format!("\"{}\" clean -", cur_exe_str.as_str()).as_str()),
     );
     #[allow(clippy::unwrap_used)]
     nbwipers_section.set(Key::try_from("smudge").unwrap(), BStr::new("cat"));
@@ -116,42 +120,52 @@ pub fn install_attributes(
     attribute_file: Option<&Path>,
 ) -> Result<(), Error> {
     let file_path = resolve_attribute_file(config_type, attribute_file)?;
-    let attribute_bytes = fs::read(&file_path)?;
-
     let to_add_lines = &[
         "*.ipynb filter=nbwipers",
         "*.zpln filter=nbwipers",
         "*.ipynb diff=nbwipers",
     ];
-    // let to_add_str = to_add_lines.join("\n").as_bytes();
-    #[allow(clippy::unwrap_used)]
-    let to_add_values = to_add_lines
-        .iter()
-        .map(|x| gix_attributes::parse(x.as_bytes()).next().unwrap().unwrap())
-        .flat_map(|(kind, rhs, _)| {
-            rhs.filter_map(Result::ok)
-                .map(move |a| (kind.clone(), a.to_owned()))
-        });
+    if file_path.is_file() {
+        let attribute_bytes = fs::read(&file_path)?;
 
-    let mut to_add: BTreeMap<_, _> = to_add_values.zip(to_add_lines).collect();
-    let extra_newline = attribute_bytes.last() == Some(&b'\n');
+        // let to_add_str = to_add_lines.join("\n").as_bytes();
+        #[allow(clippy::unwrap_used)]
+        let to_add_values = to_add_lines
+            .iter()
+            .map(|x| gix_attributes::parse(x.as_bytes()).next().unwrap().unwrap())
+            .flat_map(|(kind, rhs, _)| {
+                rhs.filter_map(Result::ok)
+                    .map(move |a| (kind.clone(), a.to_owned()))
+            });
 
-    let mut lines = gix_attributes::parse(&attribute_bytes);
+        let mut to_add: BTreeMap<_, _> = to_add_values.zip(to_add_lines).collect();
+        let extra_newline = attribute_bytes.last() == Some(&b'\n');
 
-    for (kind, x, _) in lines.by_ref().filter_map(Result::ok) {
-        //
-        for ass in x.filter_map(Result::ok) {
-            to_add.remove(&(kind.clone(), ass.to_owned()));
+        let mut lines = gix_attributes::parse(&attribute_bytes);
+
+        for (kind, x, _) in lines.by_ref().filter_map(Result::ok) {
+            //
+            for ass in x.filter_map(Result::ok) {
+                to_add.remove(&(kind.clone(), ass.to_owned()));
+            }
         }
-    }
-    println!("{to_add:?}");
-    if !to_add.is_empty() {
-        let mut writer = fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(&file_path)?;
-        let extra = if extra_newline { "" } else { "\n" };
-        writeln!(writer, "{}{}", extra, to_add.values().join("\n"))?;
+        if !to_add.is_empty() {
+            println!("Writing to {}", file_path.display());
+
+            let mut writer = fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(&file_path)?;
+            let extra = if extra_newline { "" } else { "\n" };
+            writeln!(writer, "{}{}", extra, to_add.values().join("\n"))?;
+        }
+    } else {
+        println!("Writing to {}", file_path.display());
+        let mut writer = fs::File::create(file_path)?;
+
+        for line in to_add_lines {
+            writeln!(writer, "{line}")?;
+        }
     }
 
     Ok(())
