@@ -56,7 +56,7 @@ pub fn install_config(config_type: GitConfigType) -> Result<(), Error> {
     #[allow(clippy::unwrap_used)]
     nbwipers_section.set(
         Key::try_from("clean").unwrap(),
-        BStr::new(format!("\"{}\" clean", cur_exe_str.as_str()).as_str()),
+        BStr::new(format!("\"{}\" clean -", cur_exe_str.as_str()).as_str()),
     );
     #[allow(clippy::unwrap_used)]
     nbwipers_section.set(Key::try_from("smudge").unwrap(), BStr::new("cat"));
@@ -150,6 +150,8 @@ pub fn install_attributes(
             }
         }
         if !to_add.is_empty() {
+            println!("Writing to {}", file_path.display());
+
             let mut writer = fs::OpenOptions::new()
                 .create(true)
                 .append(true)
@@ -158,7 +160,9 @@ pub fn install_attributes(
             writeln!(writer, "{}{}", extra, to_add.values().join("\n"))?;
         }
     } else {
+        println!("Writing to {}", file_path.display());
         let mut writer = fs::File::create(file_path)?;
+
         for line in to_add_lines {
             writeln!(writer, "{line}")?;
         }
