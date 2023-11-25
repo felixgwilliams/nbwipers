@@ -13,45 +13,54 @@ pub struct Cli {
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Parser, Debug, Clone)]
 pub struct CommonArgs {
+    /// path to pyproject.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders.
     #[arg(long, short)]
     pub config: Option<PathBuf>,
 
+    /// extra keys to remove in the notebook or cell metadata, separated by commas. Must start with `metadata` or `cell.metadata`
     #[arg(long, value_delimiter = ',')]
     pub extra_keys: Option<Vec<ExtraKey>>,
 
-    #[arg(long, conflicts_with = "keep_empty_cells")]
+    /// drop empty cells. Disable with `--keep-empty-cells`
+    #[arg(long, overrides_with("keep_empty_cells"))]
     pub drop_empty_cells: bool,
 
-    #[arg(long, conflicts_with = "drop_empty_cells")]
+    #[arg(long, overrides_with("drop_empty_cells"), hide = true)]
     pub keep_empty_cells: bool,
 
-    #[arg(long, conflicts_with = "keep_output")]
+    #[arg(long, overrides_with("keep_output"), hide = true)]
     pub drop_output: bool,
 
-    #[arg(long, conflicts_with = "drop_output")]
+    /// keep cell output. Disable with `--drop-output`
+    #[arg(long, overrides_with("drop_output"))]
     pub keep_output: bool,
 
-    #[arg(long, conflicts_with = "keep_count")]
+    #[arg(long, overrides_with("keep_count"), hide = true)]
     pub drop_count: bool,
 
-    #[arg(long, conflicts_with = "drop_count")]
+    /// keep cell exeution count. Disable with `--drop count`
+    #[arg(long, overrides_with("drop_count"))]
     pub keep_count: bool,
 
-    #[arg(long, conflicts_with = "keep_id")]
+    /// replace cell ids with sequential ids. Disable with `--keep-id`
+    #[arg(long, overrides_with("keep_id"))]
     pub drop_id: bool,
 
-    #[arg(long, conflicts_with = "drop_id")]
+    #[arg(long, overrides_with("drop_id"), hide = true)]
     pub keep_id: bool,
 
-    #[arg(long, conflicts_with = "keep_init_cells")]
+    /// Strip init cell. Disable with `--keep-init-cell`
+    #[arg(long, overrides_with("keep_init_cell"))]
     pub strip_init_cell: bool,
 
-    #[arg(long, conflicts_with = "strip_init_cell")]
-    pub keep_init_cells: bool,
+    #[arg(long, overrides_with("strip_init_cell"), hide = true)]
+    pub keep_init_cell: bool,
 
+    /// comma-separated list of tags that will cause the cell to be dropped
     #[arg(long, value_delimiter = ',')]
     pub drop_tagged_cells: Option<Vec<String>>,
 
+    /// List of metadata keys that should be kept, regardless of if they appear in
     #[arg(long, value_delimiter = ',')]
     pub keep_keys: Option<Vec<ExtraKey>>,
 }
@@ -107,8 +116,10 @@ pub struct CleanAllCommand {
 #[derive(Clone, Debug, Parser)]
 pub struct InstallCommand {
     /// Git config type that determines which file to modify
+    #[clap(value_enum)]
     pub config_type: GitConfigType,
     /// optional attribute file. If not specified, will write to .git/info/attributes
+    #[arg(long, short)]
     pub attribute_file: Option<PathBuf>,
 }
 
@@ -159,7 +170,7 @@ impl CommonArgs {
                 drop_count: resolve_bool_arg(self.drop_count, self.keep_count),
                 drop_id: resolve_bool_arg(self.drop_id, self.keep_id),
                 drop_tagged_cells: self.drop_tagged_cells,
-                strip_init_cell: resolve_bool_arg(self.strip_init_cell, self.keep_init_cells),
+                strip_init_cell: resolve_bool_arg(self.strip_init_cell, self.keep_init_cell),
                 keep_keys: self.keep_keys,
             },
         )
