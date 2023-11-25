@@ -105,9 +105,11 @@ jobs:
           subcommand: package.version --pretty
       - name: check matches
         run: |
-          if [ ${{ steps.cargo-get.outputs.metadata }} != ${{ inputs.tag }}]; then
+          if [ "${{ steps.cargo-get.outputs.metadata }}" != "${{ inputs.tag }}" ]; then
             echo "package version ${{ steps.cargo-get.outputs.metadata }} does not match tag ${{ inputs.tag }}" >&2
             exit 1;
+          else
+            echo "Releasing ${{ inputs.tag }}"
           fi
 
   release_github:
@@ -117,6 +119,8 @@ jobs:
     permissions:
       contents: write
     environment: release
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v3
