@@ -9,6 +9,7 @@ This document contains the help content for the `nbwipers` command-line program.
 * [`nbwipers clean-all`↴](#nbwipers-clean-all)
 * [`nbwipers check`↴](#nbwipers-check)
 * [`nbwipers clean`↴](#nbwipers-clean)
+* [`nbwipers uninstall`↴](#nbwipers-uninstall)
 
 ## `nbwipers`
 
@@ -22,6 +23,7 @@ Wipe clean your Jupyter Notebooks!
 * `clean-all` — clean all notebooks in a given path
 * `check` — check notebooks in a given path for elements that would be removed by `clean`
 * `clean` — clean a single notebook
+* `uninstall` — uninstall nbwipers as a git filter
 
 ###### **Options:**
 
@@ -72,10 +74,10 @@ clean all notebooks in a given path
 * `--extra-keys <EXTRA_KEYS>` — extra keys to remove in the notebook or cell metadata, separated by commas. Must start with `metadata` or `cell.metadata`
 * `--drop-empty-cells` — drop empty cells. Disable with `--keep-empty-cells`
 * `--keep-empty-cells`
-* `--drop-output`
 * `--keep-output` — keep cell output. Disable with `--drop-output`
-* `--drop-count`
+* `--drop-output`
 * `--keep-count` — keep cell exeution count. Disable with `--drop count`
+* `--drop-count`
 * `--drop-id` — replace cell ids with sequential ids. Disable with `--keep-id`
 * `--keep-id`
 * `--strip-init-cell` — Strip init cell. Disable with `--keep-init-cell`
@@ -101,10 +103,10 @@ check notebooks in a given path for elements that would be removed by `clean`
 * `--extra-keys <EXTRA_KEYS>` — extra keys to remove in the notebook or cell metadata, separated by commas. Must start with `metadata` or `cell.metadata`
 * `--drop-empty-cells` — drop empty cells. Disable with `--keep-empty-cells`
 * `--keep-empty-cells`
-* `--drop-output`
 * `--keep-output` — keep cell output. Disable with `--drop-output`
-* `--drop-count`
+* `--drop-output`
 * `--keep-count` — keep cell exeution count. Disable with `--drop count`
+* `--drop-count`
 * `--drop-id` — replace cell ids with sequential ids. Disable with `--keep-id`
 * `--keep-id`
 * `--strip-init-cell` — Strip init cell. Disable with `--keep-init-cell`
@@ -131,16 +133,41 @@ clean a single notebook
 * `--extra-keys <EXTRA_KEYS>` — extra keys to remove in the notebook or cell metadata, separated by commas. Must start with `metadata` or `cell.metadata`
 * `--drop-empty-cells` — drop empty cells. Disable with `--keep-empty-cells`
 * `--keep-empty-cells`
-* `--drop-output`
 * `--keep-output` — keep cell output. Disable with `--drop-output`
-* `--drop-count`
+* `--drop-output`
 * `--keep-count` — keep cell exeution count. Disable with `--drop count`
+* `--drop-count`
 * `--drop-id` — replace cell ids with sequential ids. Disable with `--keep-id`
 * `--keep-id`
 * `--strip-init-cell` — Strip init cell. Disable with `--keep-init-cell`
 * `--keep-init-cell`
 * `--drop-tagged-cells <DROP_TAGGED_CELLS>` — comma-separated list of tags that will cause the cell to be dropped
 * `--keep-keys <KEEP_KEYS>` — List of metadata keys that should be kept, regardless of if they appear in
+
+
+
+## `nbwipers uninstall`
+
+uninstall nbwipers as a git filter
+
+**Usage:** `nbwipers uninstall [OPTIONS] <CONFIG_TYPE>`
+
+###### **Arguments:**
+
+* `<CONFIG_TYPE>` — Git config type that determines which file to modify
+
+  Possible values:
+  - `system`:
+    System-wide git config
+  - `global`:
+    User level git config, typically corresponding to ~/.gitconfig
+  - `local`:
+    Repository level git config, corresponding to .git/config
+
+
+###### **Options:**
+
+* `-a`, `--attribute-file <ATTRIBUTE_FILE>` — optional attribute file. If not specified, will write to .git/info/attributes
 
 
 

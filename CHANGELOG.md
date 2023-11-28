@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
 
-- /
+- Add uninstall command to reverse install command
 
 ## [0.1.1] - 2023-11-25
 

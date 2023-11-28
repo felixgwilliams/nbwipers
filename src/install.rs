@@ -1,6 +1,13 @@
-use anyhow::{anyhow, Error};
+use anyhow::{anyhow, bail, Error};
+use gix_attributes::{parse::Kind, AssignmentRef, StateRef};
 
-use std::{fs, io::BufWriter, path::Path, path::PathBuf};
+use std::{
+    fmt::Write as _,
+    fs,
+    io::{BufRead, BufReader, BufWriter},
+    path::Path,
+    path::PathBuf,
+};
 
 use bstr::BStr;
 use gix_config::parse::section::Key;
@@ -115,22 +122,19 @@ fn resolve_attribute_file(
     }
 }
 
+const ATTRIBUTE_LINES: &[&str; 2] = &["*.ipynb filter=nbwipers", "*.ipynb diff=nbwipers"];
+
 pub fn install_attributes(
     config_type: GitConfigType,
     attribute_file: Option<&Path>,
 ) -> Result<(), Error> {
     let file_path = resolve_attribute_file(config_type, attribute_file)?;
-    let to_add_lines = &[
-        "*.ipynb filter=nbwipers",
-        "*.zpln filter=nbwipers",
-        "*.ipynb diff=nbwipers",
-    ];
     if file_path.is_file() {
         let attribute_bytes = fs::read(&file_path)?;
 
         // let to_add_str = to_add_lines.join("\n").as_bytes();
         #[allow(clippy::unwrap_used)]
-        let to_add_values = to_add_lines
+        let to_add_values = ATTRIBUTE_LINES
             .iter()
             .map(|x| gix_attributes::parse(x.as_bytes()).next().unwrap().unwrap())
             .flat_map(|(kind, rhs, _)| {
@@ -138,12 +142,14 @@ pub fn install_attributes(
                     .map(move |a| (kind.clone(), a.to_owned()))
             });
 
-        let mut to_add: BTreeMap<_, _> = to_add_values.zip(to_add_lines).collect();
-        let extra_newline = attribute_bytes.last() == Some(&b'\n');
+        let mut to_add: BTreeMap<_, _> = to_add_values.zip(ATTRIBUTE_LINES).collect();
+        let extra = match attribute_bytes.last() {
+            None | Some(&b'\n') => "",
+            _ => "\n",
+        };
+        let lines = gix_attributes::parse(&attribute_bytes);
 
-        let mut lines = gix_attributes::parse(&attribute_bytes);
-
-        for (kind, x, _) in lines.by_ref().filter_map(Result::ok) {
+        for (kind, x, _) in lines.filter_map(Result::ok) {
             //
             for ass in x.filter_map(Result::ok) {
                 to_add.remove(&(kind.clone(), ass.to_owned()));
@@ -156,14 +162,14 @@ pub fn install_attributes(
                 .create(true)
                 .append(true)
                 .open(&file_path)?;
-            let extra = if extra_newline { "" } else { "\n" };
+
             writeln!(writer, "{}{}", extra, to_add.values().join("\n"))?;
         }
     } else {
         println!("Writing to {}", file_path.display());
         let mut writer = fs::File::create(file_path)?;
 
-        for line in to_add_lines {
+        for line in ATTRIBUTE_LINES {
             writeln!(writer, "{line}")?;
         }
     }
@@ -171,5 +177,111 @@ pub fn install_attributes(
     Ok(())
 }
 
+pub fn uninstall_attributes(
+    config_type: GitConfigType,
+    attribute_file: Option<&Path>,
+) -> Result<(), Error> {
+    let file_path = resolve_attribute_file(config_type, attribute_file)?;
+    if file_path.is_file() {
+        let f = BufReader::new(fs::File::open(&file_path)?);
+        let mut out = String::new();
+        let mut to_write = false;
+        for line in f.lines() {
+            let mut line = line?;
+            // let (kind, x, _) = gix_attributes::parse(line.as_bytes()).next().unwrap()?;
+            let (kind, x, _) = match gix_attributes::parse(line.as_bytes()).next() {
+                None => bail!("No pattern found in line"),
+                Some(Ok(res)) => res,
+                Some(res) => res?,
+            };
+            if let Kind::Pattern(patt) = kind {
+                if patt.to_string() == "*.ipynb" {
+                    let to_delete = x
+                        .into_iter()
+                        .map(|x| {
+                            let x = x?;
+                            if let StateRef::Value(s) = x.state {
+                                Ok((x, s.as_bstr() == "nbwipers"))
+                            } else {
+                                Ok((x, false))
+                            }
+                        })
+                        .collect::<Result<Vec<(AssignmentRef, bool)>, gix_attributes::name::Error>>(
+                        )?;
+                    if to_delete.iter().any(|(_, y)| *y) {
+                        to_write = true;
+                        let assignments = to_delete
+                            .iter()
+                            .filter(|(_x, y)| !y)
+                            .map(|(x, _y)| x.to_string())
+                            .join(" ");
+                        if assignments.is_empty() {
+                            line = String::new();
+                        } else {
+                            line = format!("{patt} {assignments}");
+                        }
+                    }
+                }
+            };
+            if !line.is_empty() {
+                writeln!(out, "{line}")?;
+            }
+        }
+        if to_write {
+            println!("Removing entries from {}", file_path.display());
+            let mut f = fs::File::create(&file_path)?;
+            write!(f, "{out}")?;
+        }
+    } else {
+        println!("Attribute file does not exist. Nothing to do.");
+    }
+    Ok(())
+}
+
+pub fn uninstall_config(config_type: GitConfigType) -> Result<(), Error> {
+    let cur_dir = std::env::current_dir()?;
+
+    let source = match config_type {
+        GitConfigType::Global => Source::User,
+        GitConfigType::System => Source::System,
+        GitConfigType::Local => Source::Local,
+    };
+    // fails for sources without storage location. We don't use those ones.
+    #[allow(clippy::unwrap_used)]
+    let file_path: PathBuf = match config_type {
+        GitConfigType::Global | GitConfigType::System => source
+            .storage_location(&mut gix_path::env::var)
+            .as_deref()
+            .unwrap()
+            .to_owned(),
+        GitConfigType::Local => {
+            let dotgit = gix_discover::upwards(&cur_dir)?
+                .0
+                .into_repository_and_work_tree_directories()
+                .0;
+            dotgit.join(source.storage_location(&mut gix_path::env::var).unwrap())
+        }
+    };
+    let mut file = if file_path.exists() {
+        gix_config::File::from_path_no_includes(file_path.clone(), source)?
+    } else {
+        println!("Config file does not exist. nothing to do.");
+        return Ok(());
+    };
+
+    let filter_removed = file
+        .remove_section("filter", Some("nbwipers".into()))
+        .is_some();
+    let diff_removed = file
+        .remove_section("diff", Some("nbwipers".into()))
+        .is_some();
+    if filter_removed || diff_removed {
+        println!("Writing to {}", file_path.display());
+        let mut writer = BufWriter::new(fs::File::create(file_path)?);
+        file.write_to(&mut writer)?;
+    }
+
+    Ok(())
+}
 #[cfg(test)]
 mod test {}
