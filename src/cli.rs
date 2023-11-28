@@ -77,6 +77,8 @@ pub enum Commands {
     Check(CheckCommand),
     /// clean a single notebook
     Clean(CleanCommand),
+    /// uninstall nbwipers as a git filter
+    Uninstall(UninstallCommand),
 }
 
 #[derive(Clone, Debug, Parser)]
@@ -117,6 +119,15 @@ pub struct CleanAllCommand {
 }
 #[derive(Clone, Debug, Parser)]
 pub struct InstallCommand {
+    /// Git config type that determines which file to modify
+    #[clap(value_enum)]
+    pub config_type: GitConfigType,
+    /// optional attribute file. If not specified, will write to .git/info/attributes
+    #[arg(long, short)]
+    pub attribute_file: Option<PathBuf>,
+}
+#[derive(Clone, Debug, Parser)]
+pub struct UninstallCommand {
     /// Git config type that determines which file to modify
     #[clap(value_enum)]
     pub config_type: GitConfigType,

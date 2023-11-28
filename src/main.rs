@@ -13,7 +13,10 @@ use std::path::{Path, PathBuf};
 use crate::settings::Settings;
 use anyhow::{anyhow, bail, Error};
 use clap::Parser;
-use cli::{CheckCommand, CleanAllCommand, CleanCommand, Commands, CommonArgs, InstallCommand};
+use cli::{
+    CheckCommand, CleanAllCommand, CleanCommand, Commands, CommonArgs, InstallCommand,
+    UninstallCommand,
+};
 use colored::Colorize;
 use files::{find_notebooks, read_nb, read_nb_stdin, relativize_path, FoundNotebooks};
 use rayon::prelude::*;
@@ -112,6 +115,11 @@ fn install(cmd: &InstallCommand) -> Result<(), Error> {
     install::install_attributes(cmd.config_type, cmd.attribute_file.as_deref())
 }
 
+fn uninstall(cmd: &UninstallCommand) -> Result<(), Error> {
+    install::uninstall_config(cmd.config_type)?;
+    install::uninstall_attributes(cmd.config_type, cmd.attribute_file.as_deref())
+}
+
 fn main() -> Result<(), Error> {
     let cli = cli::Cli::parse();
 
@@ -134,6 +142,7 @@ fn main() -> Result<(), Error> {
         }) => strip_all(files, dry_run, yes, common),
         Commands::Check(CheckCommand { ref files, common }) => check_all(files, common),
         Commands::Install(ref cmd) => install(cmd),
+        Commands::Uninstall(ref cmd) => uninstall(cmd),
     }
 }
 
