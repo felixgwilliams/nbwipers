@@ -30,19 +30,19 @@ pub struct CommonArgs {
     #[arg(long, overrides_with("drop_empty_cells"), hide = true)]
     pub keep_empty_cells: bool,
 
-    #[arg(long, overrides_with("keep_output"), hide = true)]
-    pub drop_output: bool,
-
     /// keep cell output. Disable with `--drop-output`
     #[arg(long, overrides_with("drop_output"))]
     pub keep_output: bool,
 
-    #[arg(long, overrides_with("keep_count"), hide = true)]
-    pub drop_count: bool,
+    #[arg(long, overrides_with("keep_output"), hide = true)]
+    pub drop_output: bool,
 
     /// keep cell exeution count. Disable with `--drop count`
     #[arg(long, overrides_with("drop_count"))]
     pub keep_count: bool,
+
+    #[arg(long, overrides_with("keep_count"), hide = true)]
+    pub drop_count: bool,
 
     /// replace cell ids with sequential ids. Disable with `--keep-id`
     #[arg(long, overrides_with("keep_id"))]
