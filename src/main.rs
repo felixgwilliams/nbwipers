@@ -124,12 +124,12 @@ fn strip(file: &Path, textconv: bool, cli: CommonArgs) -> Result<(), Error> {
 }
 
 fn install(cmd: &InstallCommand) -> Result<(), Error> {
-    install::install_config(cmd.config_type)?;
+    install::install_config(cmd.git_config_file.as_deref(), cmd.config_type)?;
     install::install_attributes(cmd.config_type, cmd.attribute_file.as_deref())
 }
 
 fn uninstall(cmd: &UninstallCommand) -> Result<(), Error> {
-    install::uninstall_config(cmd.config_type)?;
+    install::uninstall_config(cmd.git_config_file.as_deref(), cmd.config_type)?;
     install::uninstall_attributes(cmd.config_type, cmd.attribute_file.as_deref())
 }
 

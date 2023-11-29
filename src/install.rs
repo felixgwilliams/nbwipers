@@ -28,14 +28,14 @@ impl From<GitConfigType> for Source {
     }
 }
 
-pub fn install_config(config_type: GitConfigType) -> Result<(), Error> {
+pub fn install_config(config_file: Option<&Path>, config_type: GitConfigType) -> Result<(), Error> {
     let cur_exe = std::env::current_exe()?;
     let source = config_type.into();
     let cur_exe_str = cur_exe
         .to_str()
         .ok_or_else(|| (anyhow!("Executable path cannot be converted to unicode")))?
         .replace('\\', "/");
-    let file_path = resolve_config_file(config_type)?;
+    let file_path = resolve_config_file(config_file, config_type)?;
 
     let mut file = if file_path.is_file() {
         gix_config::File::from_path_no_includes(file_path.clone(), source)?
@@ -76,25 +76,32 @@ pub fn install_config(config_type: GitConfigType) -> Result<(), Error> {
     Ok(())
 }
 
-fn resolve_config_file(config_type: GitConfigType) -> Result<PathBuf, Error> {
-    let source: Source = config_type.into();
-    let cur_dir = std::env::current_dir()?;
-    #[allow(clippy::unwrap_used)]
-    let file_path = match config_type {
-        GitConfigType::Global | GitConfigType::System => source
-            .storage_location(&mut gix_path::env::var)
-            .as_deref()
-            .unwrap()
-            .to_owned(),
-        GitConfigType::Local => {
-            let dotgit = gix_discover::upwards(&cur_dir)?
-                .0
-                .into_repository_and_work_tree_directories()
-                .0;
-            dotgit.join(source.storage_location(&mut gix_path::env::var).unwrap())
-        }
-    };
-    Ok(file_path)
+fn resolve_config_file(
+    config_file: Option<&Path>,
+    config_type: GitConfigType,
+) -> Result<PathBuf, Error> {
+    if let Some(config_file) = config_file {
+        Ok(config_file.to_path_buf())
+    } else {
+        let source: Source = config_type.into();
+        let cur_dir = std::env::current_dir()?;
+        #[allow(clippy::unwrap_used)]
+        let file_path = match config_type {
+            GitConfigType::Global | GitConfigType::System => source
+                .storage_location(&mut gix_path::env::var)
+                .as_deref()
+                .unwrap()
+                .to_owned(),
+            GitConfigType::Local => {
+                let dotgit = gix_discover::upwards(&cur_dir)?
+                    .0
+                    .into_repository_and_work_tree_directories()
+                    .0;
+                dotgit.join(source.storage_location(&mut gix_path::env::var).unwrap())
+            }
+        };
+        Ok(file_path)
+    }
 }
 
 fn resolve_attribute_file(
@@ -248,9 +255,12 @@ pub fn uninstall_attributes(
     Ok(())
 }
 
-pub fn uninstall_config(config_type: GitConfigType) -> Result<(), Error> {
+pub fn uninstall_config(
+    config_file: Option<&Path>,
+    config_type: GitConfigType,
+) -> Result<(), Error> {
     let source = config_type.into();
-    let file_path = resolve_config_file(config_type)?;
+    let file_path = resolve_config_file(config_file, config_type)?;
     let mut file = if file_path.exists() {
         gix_config::File::from_path_no_includes(file_path.clone(), source)?
     } else {
