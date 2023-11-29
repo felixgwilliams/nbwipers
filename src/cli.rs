@@ -133,6 +133,11 @@ pub struct InstallCommand {
     /// Git config type that determines which file to modify
     #[clap(value_enum)]
     pub config_type: GitConfigType,
+
+    /// Optional path to git config file
+    #[arg(long, short)]
+    pub git_config_file: Option<PathBuf>,
+
     /// optional attribute file. If not specified, will write to .git/info/attributes
     #[arg(long, short)]
     pub attribute_file: Option<PathBuf>,
@@ -142,6 +147,11 @@ pub struct UninstallCommand {
     /// Git config type that determines which file to modify
     #[clap(value_enum)]
     pub config_type: GitConfigType,
+
+    /// Optional path to git config file
+    #[arg(long, short)]
+    pub git_config_file: Option<PathBuf>,
+
     /// optional attribute file. If not specified, will write to .git/info/attributes
     #[arg(long, short)]
     pub attribute_file: Option<PathBuf>,

@@ -49,6 +49,7 @@ Register nbwipers as a git filter for `ipynb` files
 
 ###### **Options:**
 
+* `-g`, `--git-config-file <GIT_CONFIG_FILE>` — Optional path to git config file
 * `-a`, `--attribute-file <ATTRIBUTE_FILE>` — optional attribute file. If not specified, will write to .git/info/attributes
 
 ## `nbwipers clean-all`
@@ -159,6 +160,7 @@ uninstall nbwipers as a git filter
 
 ###### **Options:**
 
+* `-g`, `--git-config-file <GIT_CONFIG_FILE>` — Optional path to git config file
 * `-a`, `--attribute-file <ATTRIBUTE_FILE>` — optional attribute file. If not specified, will write to .git/info/attributes
 
 <hr/>
