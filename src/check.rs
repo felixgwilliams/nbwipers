@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, path::Path};
 
 use crate::{
     extra_keys::partition_extra_keys, files::NBReadError, schema::RawNotebook, settings::Settings,
@@ -8,9 +8,14 @@ use serde::Serialize;
 use serde_json::Value;
 
 #[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+#[serde(tag = "type")]
 pub enum CheckResult {
-    IOError(String),
-    InvalidNotebook(String),
+    IOError {
+        error: String,
+    },
+    InvalidNotebook {
+        error: String,
+    },
     StripMeta {
         extra_key: String,
     },
@@ -34,17 +39,28 @@ pub enum CheckResult {
 impl From<NBReadError> for CheckResult {
     fn from(value: NBReadError) -> Self {
         match value {
-            NBReadError::IO(e) => Self::IOError(e.to_string()),
-            NBReadError::Serde(e) => Self::InvalidNotebook(e.to_string()),
+            NBReadError::IO(e) => Self::IOError {
+                error: e.to_string(),
+            },
+            NBReadError::Serde(e) => Self::InvalidNotebook {
+                error: e.to_string(),
+            },
         }
     }
+}
+
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+pub struct PathCheckResult<'a> {
+    pub path: &'a Path,
+    #[serde(flatten)]
+    pub result: &'a CheckResult,
 }
 
 impl Display for CheckResult {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            CheckResult::IOError(e) => write!(f, "IO Error: {e}"),
-            CheckResult::InvalidNotebook(e) => write!(f, "Invalid notebook: {e}"),
+            CheckResult::IOError { error } => write!(f, "IO Error: {error}"),
+            CheckResult::InvalidNotebook { error } => write!(f, "Invalid notebook: {error}"),
             CheckResult::DropCells { cell_number } => {
                 write!(f, "cell: {cell_number}: Found cell to be dropped")
             }

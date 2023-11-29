@@ -12,10 +12,11 @@ use std::path::{Path, PathBuf};
 
 use crate::settings::Settings;
 use anyhow::{anyhow, bail, Error};
+use check::PathCheckResult;
 use clap::Parser;
 use cli::{
     CheckCommand, CleanAllCommand, CleanCommand, Commands, CommonArgs, InstallCommand,
-    UninstallCommand,
+    OutputFormat, UninstallCommand,
 };
 use colored::Colorize;
 use files::{find_notebooks, read_nb, read_nb_stdin, relativize_path, FoundNotebooks};
@@ -34,7 +35,12 @@ mod settings;
 mod strip;
 mod utils;
 
-fn check_all(files: &[PathBuf], cli: CommonArgs) -> Result<(), Error> {
+fn check_all(
+    files: &[PathBuf],
+    output_format: Option<OutputFormat>,
+    cli: CommonArgs,
+) -> Result<(), Error> {
+    let output_format = output_format.unwrap_or_default();
     let (args, overrides) = cli.partition();
     let settings = Settings::construct(args.config.as_deref(), &overrides)?;
     let nbs = find_notebooks(files)?;
@@ -58,17 +64,24 @@ fn check_all(files: &[PathBuf], cli: CommonArgs) -> Result<(), Error> {
     let mut check_results = Vec::new();
 
     for (path, res) in &check_results_by_file {
-        check_results.extend(res.iter().map(|c| (path, c)));
+        check_results.extend(res.iter().map(|result| PathCheckResult { path, result }));
     }
 
-    for (path, res) in &check_results {
-        let rel_path = relativize_path(path).bold();
-        println!("{rel_path}:{res}");
+    match output_format {
+        OutputFormat::Text => {
+            for PathCheckResult { path, result } in &check_results {
+                let rel_path = relativize_path(path).bold();
+                println!("{rel_path}:{result}");
+            }
+        }
+        OutputFormat::Json => print!("{}", serde_json::to_string_pretty(&check_results)?),
     }
+
     if check_results.is_empty() {
         Ok(())
     } else {
         let n_checks = check_results.len();
+
         Err(anyhow!("Found {n_checks} items to strip"))
     }
 }
@@ -140,7 +153,11 @@ fn main() -> Result<(), Error> {
             yes,
             common,
         }) => strip_all(files, dry_run, yes, common),
-        Commands::Check(CheckCommand { ref files, common }) => check_all(files, common),
+        Commands::Check(CheckCommand {
+            ref files,
+            output_format,
+            common,
+        }) => check_all(files, output_format, common),
         Commands::Install(ref cmd) => install(cmd),
         Commands::Uninstall(ref cmd) => uninstall(cmd),
     }
