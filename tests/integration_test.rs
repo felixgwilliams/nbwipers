@@ -6,6 +6,51 @@ use std::{
 };
 
 use bstr::ByteSlice;
+#[test]
+fn test_install() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+    {
+        let config_file = temp_dir.path().join("gitconfig");
+        let attr_file = temp_dir.path().join("attributes");
+        let output = Command::new(&cur_exe)
+            .args([
+                "install",
+                "local",
+                "-g",
+                config_file.to_str().unwrap(),
+                "-a",
+                attr_file.to_str().unwrap(),
+            ])
+            .output()
+            .expect("command failed");
+        assert!(output.status.success());
+        let config_file_contents = fs::read_to_string(&config_file).unwrap();
+        let attr_file_contents = fs::read_to_string(&attr_file).unwrap();
+
+        assert!(config_file_contents.contains("nbwipers"));
+        assert!(attr_file_contents.contains("nbwipers"));
+
+        let output = Command::new(&cur_exe)
+            .args([
+                "uninstall",
+                "local",
+                "-g",
+                config_file.to_str().unwrap(),
+                "-a",
+                attr_file.to_str().unwrap(),
+            ])
+            .output()
+            .expect("command failed");
+        assert!(output.status.success());
+
+        let config_file_contents = fs::read_to_string(&config_file).unwrap();
+        let attr_file_contents = fs::read_to_string(&attr_file).unwrap();
+
+        assert!(!config_file_contents.contains("nbwipers"));
+        assert!(!attr_file_contents.contains("nbwipers"));
+    }
+}
 
 #[test]
 fn test_invalid_format() {

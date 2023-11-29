@@ -38,3 +38,6 @@ codegen-units = 1
 
 [features]
 markdown-help = ["dep:clap-markdown"]
+
+[dev-dependencies]
+tempfile = "3.8.1"
