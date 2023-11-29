@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning].
 
 - Add uninstall command to reverse install command
 - Allow output in JSON format
+- Allow specifying path to git config file in install and uninstall command
 
 ## [0.1.1] - 2023-11-25
 
