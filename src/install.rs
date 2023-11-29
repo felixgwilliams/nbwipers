@@ -18,36 +18,25 @@ use itertools::Itertools;
 
 use crate::cli::GitConfigType;
 
+impl From<GitConfigType> for Source {
+    fn from(value: GitConfigType) -> Self {
+        match value {
+            GitConfigType::Global => Source::User,
+            GitConfigType::System => Source::System,
+            GitConfigType::Local => Source::Local,
+        }
+    }
+}
+
 pub fn install_config(config_type: GitConfigType) -> Result<(), Error> {
     let cur_exe = std::env::current_exe()?;
-    let cur_dir = std::env::current_dir()?;
+    let source = config_type.into();
     let cur_exe_str = cur_exe
         .to_str()
         .ok_or_else(|| (anyhow!("Executable path cannot be converted to unicode")))?
         .replace('\\', "/");
+    let file_path = resolve_config_file(config_type)?;
 
-    let source = match config_type {
-        GitConfigType::Global => Source::User,
-        GitConfigType::System => Source::System,
-        GitConfigType::Local => Source::Local,
-    };
-
-    // fails for sources without storage location. We don't use those ones.
-    #[allow(clippy::unwrap_used)]
-    let file_path: PathBuf = match config_type {
-        GitConfigType::Global | GitConfigType::System => source
-            .storage_location(&mut gix_path::env::var)
-            .as_deref()
-            .unwrap()
-            .to_owned(),
-        GitConfigType::Local => {
-            let dotgit = gix_discover::upwards(&cur_dir)?
-                .0
-                .into_repository_and_work_tree_directories()
-                .0;
-            dotgit.join(source.storage_location(&mut gix_path::env::var).unwrap())
-        }
-    };
     let mut file = if file_path.is_file() {
         gix_config::File::from_path_no_includes(file_path.clone(), source)?
     } else {
@@ -85,6 +74,27 @@ pub fn install_config(config_type: GitConfigType) -> Result<(), Error> {
     file.write_to(&mut writer)?;
 
     Ok(())
+}
+
+fn resolve_config_file(config_type: GitConfigType) -> Result<PathBuf, Error> {
+    let source: Source = config_type.into();
+    let cur_dir = std::env::current_dir()?;
+    #[allow(clippy::unwrap_used)]
+    let file_path = match config_type {
+        GitConfigType::Global | GitConfigType::System => source
+            .storage_location(&mut gix_path::env::var)
+            .as_deref()
+            .unwrap()
+            .to_owned(),
+        GitConfigType::Local => {
+            let dotgit = gix_discover::upwards(&cur_dir)?
+                .0
+                .into_repository_and_work_tree_directories()
+                .0;
+            dotgit.join(source.storage_location(&mut gix_path::env::var).unwrap())
+        }
+    };
+    Ok(file_path)
 }
 
 fn resolve_attribute_file(
@@ -239,29 +249,8 @@ pub fn uninstall_attributes(
 }
 
 pub fn uninstall_config(config_type: GitConfigType) -> Result<(), Error> {
-    let cur_dir = std::env::current_dir()?;
-
-    let source = match config_type {
-        GitConfigType::Global => Source::User,
-        GitConfigType::System => Source::System,
-        GitConfigType::Local => Source::Local,
-    };
-    // fails for sources without storage location. We don't use those ones.
-    #[allow(clippy::unwrap_used)]
-    let file_path: PathBuf = match config_type {
-        GitConfigType::Global | GitConfigType::System => source
-            .storage_location(&mut gix_path::env::var)
-            .as_deref()
-            .unwrap()
-            .to_owned(),
-        GitConfigType::Local => {
-            let dotgit = gix_discover::upwards(&cur_dir)?
-                .0
-                .into_repository_and_work_tree_directories()
-                .0;
-            dotgit.join(source.storage_location(&mut gix_path::env::var).unwrap())
-        }
-    };
+    let source = config_type.into();
+    let file_path = resolve_config_file(config_type)?;
     let mut file = if file_path.exists() {
         gix_config::File::from_path_no_includes(file_path.clone(), source)?
     } else {
