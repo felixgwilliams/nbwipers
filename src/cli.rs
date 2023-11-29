@@ -86,6 +86,10 @@ pub struct CheckCommand {
     /// paths containing ipynb files to check. Use `-` to read from stdin
     pub files: Vec<PathBuf>,
 
+    /// desired output format for diagnostics
+    #[arg(long, short)]
+    pub output_format: Option<OutputFormat>,
+
     #[clap(flatten)]
     pub common: CommonArgs,
 }
@@ -116,6 +120,13 @@ pub struct CleanAllCommand {
 
     #[clap(flatten)]
     pub common: CommonArgs,
+}
+
+#[derive(Clone, Debug, ValueEnum, Copy, Default)]
+pub enum OutputFormat {
+    #[default]
+    Text,
+    Json,
 }
 #[derive(Clone, Debug, Parser)]
 pub struct InstallCommand {

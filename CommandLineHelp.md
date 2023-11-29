@@ -29,8 +29,6 @@ Wipe clean your Jupyter Notebooks!
 
 * `--markdown-help`
 
-
-
 ## `nbwipers install`
 
 Register nbwipers as a git filter for `ipynb` files
@@ -42,19 +40,16 @@ Register nbwipers as a git filter for `ipynb` files
 * `<CONFIG_TYPE>` — Git config type that determines which file to modify
 
   Possible values:
-  - `system`:
+  * `system`:
     System-wide git config
-  - `global`:
+  * `global`:
     User level git config, typically corresponding to ~/.gitconfig
-  - `local`:
+  * `local`:
     Repository level git config, corresponding to .git/config
-
 
 ###### **Options:**
 
 * `-a`, `--attribute-file <ATTRIBUTE_FILE>` — optional attribute file. If not specified, will write to .git/info/attributes
-
-
 
 ## `nbwipers clean-all`
 
@@ -85,8 +80,6 @@ clean all notebooks in a given path
 * `--drop-tagged-cells <DROP_TAGGED_CELLS>` — comma-separated list of tags that will cause the cell to be dropped
 * `--keep-keys <KEEP_KEYS>` — List of metadata keys that should be kept, regardless of if they appear in
 
-
-
 ## `nbwipers check`
 
 check notebooks in a given path for elements that would be removed by `clean`
@@ -98,6 +91,10 @@ check notebooks in a given path for elements that would be removed by `clean`
 * `<FILES>` — paths containing ipynb files to check. Use `-` to read from stdin
 
 ###### **Options:**
+
+* `-o`, `--output-format <OUTPUT_FORMAT>` — desired output format for diagnostics
+
+  Possible values: `text`, `json`
 
 * `-c`, `--config <CONFIG>` — path to pyproject.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders
 * `--extra-keys <EXTRA_KEYS>` — extra keys to remove in the notebook or cell metadata, separated by commas. Must start with `metadata` or `cell.metadata`
@@ -113,8 +110,6 @@ check notebooks in a given path for elements that would be removed by `clean`
 * `--keep-init-cell`
 * `--drop-tagged-cells <DROP_TAGGED_CELLS>` — comma-separated list of tags that will cause the cell to be dropped
 * `--keep-keys <KEEP_KEYS>` — List of metadata keys that should be kept, regardless of if they appear in
-
-
 
 ## `nbwipers clean`
 
@@ -144,8 +139,6 @@ clean a single notebook
 * `--drop-tagged-cells <DROP_TAGGED_CELLS>` — comma-separated list of tags that will cause the cell to be dropped
 * `--keep-keys <KEEP_KEYS>` — List of metadata keys that should be kept, regardless of if they appear in
 
-
-
 ## `nbwipers uninstall`
 
 uninstall nbwipers as a git filter
@@ -157,19 +150,16 @@ uninstall nbwipers as a git filter
 * `<CONFIG_TYPE>` — Git config type that determines which file to modify
 
   Possible values:
-  - `system`:
+  * `system`:
     System-wide git config
-  - `global`:
+  * `global`:
     User level git config, typically corresponding to ~/.gitconfig
-  - `local`:
+  * `local`:
     Repository level git config, corresponding to .git/config
-
 
 ###### **Options:**
 
 * `-a`, `--attribute-file <ATTRIBUTE_FILE>` — optional attribute file. If not specified, will write to .git/info/attributes
-
-
 
 <hr/>
 
