@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning].
 - create parent directories when creating config/attribute files
 - skip parsing empty lines uninstalling attributes
 - fix a typo in command line docs
+- add pre-commit hook to check install status
 
 ## [0.2.0] - 2023-11-29
 
