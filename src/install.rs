@@ -40,6 +40,9 @@ pub fn install_config(config_file: Option<&Path>, config_type: GitConfigType) ->
     let mut file = if file_path.is_file() {
         gix_config::File::from_path_no_includes(file_path.clone(), source)?
     } else {
+        if let Some(parent) = file_path.parent() {
+            fs::create_dir_all(parent)?;
+        }
         gix_config::File::new(gix_config::file::Metadata::from(source))
     };
 
@@ -184,6 +187,9 @@ pub fn install_attributes(
         }
     } else {
         println!("Writing to {}", file_path.display());
+        if let Some(parent) = file_path.parent() {
+            fs::create_dir_all(parent)?;
+        }
         let mut writer = fs::File::create(file_path)?;
 
         for line in ATTRIBUTE_LINES {
@@ -205,6 +211,9 @@ pub fn uninstall_attributes(
         let mut to_write = false;
         for line in f.lines() {
             let mut line = line?;
+            if line.is_empty() {
+                continue;
+            }
             // let (kind, x, _) = gix_attributes::parse(line.as_bytes()).next().unwrap()?;
             let (kind, x, _) = match gix_attributes::parse(line.as_bytes()).next() {
                 None => bail!("No pattern found in line"),
