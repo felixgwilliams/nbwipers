@@ -37,7 +37,7 @@ pub struct CommonArgs {
     #[arg(long, overrides_with("keep_output"), hide = true)]
     pub drop_output: bool,
 
-    /// keep cell exeution count. Disable with `--drop count`
+    /// keep cell execution count. Disable with `--drop count`
     #[arg(long, overrides_with("drop_count"))]
     pub keep_count: bool,
 
