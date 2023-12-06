@@ -5,6 +5,7 @@ use std::{
     fmt::Write as _,
     fs,
     io::{BufRead, BufReader, BufWriter},
+    ops::{BitOr, BitOrAssign},
     path::Path,
     path::PathBuf,
 };
@@ -139,6 +140,23 @@ fn resolve_attribute_file(
             }
         };
         Ok(file_path)
+    }
+}
+
+fn get_default_attribute_file() -> Result<Option<PathBuf>, Error> {
+    let cur_dir = std::env::current_dir()?;
+    let Some(work_dir) = gix_discover::upwards(&cur_dir)?
+        .0
+        .into_repository_and_work_tree_directories()
+        .1
+    else {
+        return Ok(None);
+    };
+    let attribute_file = work_dir.join(".gitattributes");
+    if attribute_file.is_file() {
+        Ok(Some(attribute_file))
+    } else {
+        Ok(None)
     }
 }
 
@@ -291,5 +309,128 @@ pub fn uninstall_config(
 
     Ok(())
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+struct AttributeInstallToolStatus {
+    pub diff: bool,
+    pub filter: bool,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+struct AttributeInstallStatus {
+    pub nbstripout: AttributeInstallToolStatus,
+    pub nbwipers: AttributeInstallToolStatus,
+}
+
+impl From<AttributeInstallToolStatus> for bool {
+    fn from(value: AttributeInstallToolStatus) -> Self {
+        value.diff & value.filter
+    }
+}
+impl From<AttributeInstallStatus> for bool {
+    fn from(value: AttributeInstallStatus) -> Self {
+        (value.nbstripout | value.nbwipers).into()
+    }
+}
+
+impl BitOr for AttributeInstallToolStatus {
+    type Output = AttributeInstallToolStatus;
+    fn bitor(self, rhs: Self) -> Self::Output {
+        AttributeInstallToolStatus {
+            diff: self.diff | rhs.diff,
+            filter: self.filter | rhs.filter,
+        }
+    }
+}
+
+impl BitOr for AttributeInstallStatus {
+    type Output = AttributeInstallStatus;
+    fn bitor(self, rhs: Self) -> Self::Output {
+        AttributeInstallStatus {
+            nbstripout: self.nbstripout | rhs.nbstripout,
+            nbwipers: self.nbwipers | rhs.nbwipers,
+        }
+    }
+}
+impl BitOrAssign for AttributeInstallToolStatus {
+    fn bitor_assign(&mut self, rhs: Self) {
+        self.diff |= rhs.diff;
+        self.filter |= rhs.filter;
+    }
+}
+impl BitOrAssign for AttributeInstallStatus {
+    fn bitor_assign(&mut self, rhs: Self) {
+        self.nbstripout |= rhs.nbstripout;
+        self.nbwipers |= rhs.nbwipers;
+    }
+}
+
+fn check_attribute_file(attr_file_path: &Path) -> Result<AttributeInstallStatus, Error> {
+    if attr_file_path.is_file() {
+        let mut status = AttributeInstallStatus::default();
+
+        let bytes = fs::read(attr_file_path)?;
+        let lines = gix_attributes::parse(&bytes);
+        for line in lines {
+            let (kind, assignments, _) = line?;
+
+            if let Kind::Pattern(patt) = kind {
+                if patt.to_string() == "*.ipynb" {
+                    for assignment in assignments {
+                        let assignment = assignment?;
+                        if let StateRef::Value(s) = assignment.state {
+                            if s.as_bstr() == "nbwipers" {
+                                status.nbwipers.filter |= assignment.name.as_str() == "filter";
+                                status.nbwipers.diff |= assignment.name.as_str() == "diff";
+                            }
+                            if s.as_bstr() == "ipynb" {
+                                status.nbstripout.diff |= assignment.name.as_str() == "diff";
+                            }
+                            if s.as_bstr() == "nbstripout" {
+                                status.nbstripout.filter |= assignment.name.as_str() == "filter";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Ok(status)
+    } else {
+        Ok(AttributeInstallStatus::default())
+    }
+}
+
+pub fn check_install_config_type(config_type: GitConfigType) -> Result<(), Error> {
+    let attribute_file = get_default_attribute_file().ok().flatten();
+    let mut attr_install_status = match attribute_file {
+        Some(ref attr) => check_attribute_file(attr)?,
+        None => AttributeInstallStatus::default(),
+    };
+    let attr_file_path = resolve_attribute_file(config_type, None)?;
+
+    attr_install_status |= check_attribute_file(&attr_file_path)?;
+    Ok(())
+}
+pub fn check_install_no_config_type() -> Result<(), Error> {
+    let attribute_file = get_default_attribute_file().ok().flatten();
+    let mut attr_install_status = match attribute_file {
+        Some(ref attr) => check_attribute_file(attr)?,
+        None => AttributeInstallStatus::default(),
+    };
+    let config_types = vec![
+        GitConfigType::Local,
+        GitConfigType::Global,
+        GitConfigType::System,
+    ];
+
+    for config_type in &config_types {
+        let attr_file_path = resolve_attribute_file(*config_type, None)?;
+
+        attr_install_status |= check_attribute_file(&attr_file_path)?;
+    }
+    println!("{attr_install_status:?}");
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod test {}
