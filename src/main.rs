@@ -135,9 +135,9 @@ fn uninstall(cmd: &UninstallCommand) -> Result<(), Error> {
 
 fn check_install(cmd: &CheckInstallCommand) -> Result<(), Error> {
     if let Some(config_type) = cmd.config_type {
-        install::check_install_config_type(config_type)
+        install::check_install_some_type(config_type)
     } else {
-        install::check_install_no_config_type()
+        install::check_install_none_type()
     }
 }
 

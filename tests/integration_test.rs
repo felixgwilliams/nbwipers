@@ -53,6 +53,57 @@ fn test_install() {
 }
 
 #[test]
+fn test_check_install() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+
+    let git_init_out = Command::new("git")
+        .current_dir(&temp_dir)
+        .args(["init"])
+        .output()
+        .expect("git init failed");
+    assert!(git_init_out.status.success());
+    let output = Command::new(&cur_exe)
+        .current_dir(&temp_dir)
+        .args(["install", "local"])
+        .output()
+        .expect("command failed");
+    assert!(output.status.success());
+    let output = Command::new(&cur_exe)
+        .current_dir(&temp_dir)
+        .args(["check-install"])
+        .output()
+        .expect("command failed");
+    assert!(output.status.success());
+    let output = Command::new(&cur_exe)
+        .current_dir(&temp_dir)
+        .args(["check-install", "local"])
+        .output()
+        .expect("command failed");
+    assert!(output.status.success());
+
+    let output = Command::new(&cur_exe)
+        .current_dir(&temp_dir)
+        .args(["uninstall", "local"])
+        .output()
+        .expect("command failed");
+    assert!(output.status.success());
+
+    let output = Command::new(&cur_exe)
+        .current_dir(&temp_dir)
+        .args(["check-install"])
+        .output()
+        .expect("command failed");
+    assert!(!output.status.success());
+    let output = Command::new(&cur_exe)
+        .current_dir(&temp_dir)
+        .args(["check-install", "local"])
+        .output()
+        .expect("command failed");
+    assert!(!output.status.success());
+}
+
+#[test]
 fn test_invalid_format() {
     let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
 
