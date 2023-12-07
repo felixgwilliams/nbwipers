@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
 
+## [0.3.0] - 2023-12-07
+
+### Added
+
+- add subcommand to check install status
+- add pre-commit hook to check install status
+
+### Fixed
+
+- create parent directories when creating config/attribute files
+- skip parsing empty lines uninstalling attributes
+
 ## [0.2.0] - 2023-11-29
 
 ### Added

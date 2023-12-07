@@ -7,6 +7,10 @@ repos:
       - id: check-yaml
       - id: check-added-large-files
       - id: check-merge-conflict
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.16.23
+    hooks:
+      - id: typos
   - repo: https://github.com/doublify/pre-commit-rust
     rev: v1.0
     hooks:

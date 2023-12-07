@@ -10,6 +10,7 @@ This document contains the help content for the `nbwipers` command-line program.
 * [`nbwipers check`↴](#nbwipers-check)
 * [`nbwipers clean`↴](#nbwipers-clean)
 * [`nbwipers uninstall`↴](#nbwipers-uninstall)
+* [`nbwipers check-install`↴](#nbwipers-check-install)
 
 ## `nbwipers`
 
@@ -24,6 +25,7 @@ Wipe clean your Jupyter Notebooks!
 * `check` — check notebooks in a given path for elements that would be removed by `clean`
 * `clean` — clean a single notebook
 * `uninstall` — uninstall nbwipers as a git filter
+* `check-install` — check whether nbwipers is setup as a git filter
 
 ###### **Options:**
 
@@ -72,7 +74,7 @@ clean all notebooks in a given path
 * `--keep-empty-cells`
 * `--keep-output` — keep cell output. Disable with `--drop-output`
 * `--drop-output`
-* `--keep-count` — keep cell exeution count. Disable with `--drop count`
+* `--keep-count` — keep cell execution count. Disable with `--drop count`
 * `--drop-count`
 * `--drop-id` — replace cell ids with sequential ids. Disable with `--keep-id`
 * `--keep-id`
@@ -103,7 +105,7 @@ check notebooks in a given path for elements that would be removed by `clean`
 * `--keep-empty-cells`
 * `--keep-output` — keep cell output. Disable with `--drop-output`
 * `--drop-output`
-* `--keep-count` — keep cell exeution count. Disable with `--drop count`
+* `--keep-count` — keep cell execution count. Disable with `--drop count`
 * `--drop-count`
 * `--drop-id` — replace cell ids with sequential ids. Disable with `--keep-id`
 * `--keep-id`
@@ -131,7 +133,7 @@ clean a single notebook
 * `--keep-empty-cells`
 * `--keep-output` — keep cell output. Disable with `--drop-output`
 * `--drop-output`
-* `--keep-count` — keep cell exeution count. Disable with `--drop count`
+* `--keep-count` — keep cell execution count. Disable with `--drop count`
 * `--drop-count`
 * `--drop-id` — replace cell ids with sequential ids. Disable with `--keep-id`
 * `--keep-id`
@@ -162,6 +164,24 @@ uninstall nbwipers as a git filter
 
 * `-g`, `--git-config-file <GIT_CONFIG_FILE>` — Optional path to git config file
 * `-a`, `--attribute-file <ATTRIBUTE_FILE>` — optional attribute file. If not specified, will write to .git/info/attributes
+
+## `nbwipers check-install`
+
+check whether nbwipers is setup as a git filter
+
+**Usage:** `nbwipers check-install [CONFIG_TYPE]`
+
+###### **Arguments:**
+
+* `<CONFIG_TYPE>` — Git config type to check
+
+  Possible values:
+  * `system`:
+    System-wide git config
+  * `global`:
+    User level git config, typically corresponding to ~/.gitconfig
+  * `local`:
+    Repository level git config, corresponding to .git/config
 
 <hr/>
 

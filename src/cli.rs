@@ -37,7 +37,7 @@ pub struct CommonArgs {
     #[arg(long, overrides_with("keep_output"), hide = true)]
     pub drop_output: bool,
 
-    /// keep cell exeution count. Disable with `--drop count`
+    /// keep cell execution count. Disable with `--drop count`
     #[arg(long, overrides_with("drop_count"))]
     pub keep_count: bool,
 
@@ -79,6 +79,8 @@ pub enum Commands {
     Clean(CleanCommand),
     /// uninstall nbwipers as a git filter
     Uninstall(UninstallCommand),
+    /// check whether nbwipers is setup as a git filter
+    CheckInstall(CheckInstallCommand),
 }
 
 #[derive(Clone, Debug, Parser)]
@@ -155,6 +157,13 @@ pub struct UninstallCommand {
     /// optional attribute file. If not specified, will write to .git/info/attributes
     #[arg(long, short)]
     pub attribute_file: Option<PathBuf>,
+}
+
+#[derive(Clone, Debug, Parser)]
+pub struct CheckInstallCommand {
+    /// Git config type to check
+    #[clap(value_enum)]
+    pub config_type: Option<GitConfigType>,
 }
 
 #[derive(Clone, Debug, ValueEnum, Copy)]

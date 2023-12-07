@@ -12,6 +12,8 @@ nbwipers has a few subcommands that provide functionality related to cleaning Ju
 - `check`: check notebooks in a given path for elements that would be removed by `clean`. This could be used in a CI context to enforce clean notebooks.
 - `clean-all` clean all notebooks in a given path. This one should be used carefully!
 - `install` register nbwipers as a git filter for `ipynb` files. Equivalent to `nbstripout --install`
+- `uninstall` remove nbwipers as a git filter
+- `check-install` check that `nbwipers` or `nbstripout` is installed in the local repo. This is used in the pre-commit hook.
 
 The full options can be found in [`CommandLineHelp.md`](CommandLineHelp.md).
 
@@ -27,6 +29,17 @@ To check the notebooks in your folder
 
 ```shell
 nbwipers check .
+```
+
+### pre-commit
+
+You can add the following to your `pre-commit-config.yaml` file to ensure that `nbwipers` or `nbstripout` is installed in your repo, as a friendly reminder
+
+```yaml
+  - repo: https://github.com/felixgwilliams/nbwipers
+    rev: v0.3.0
+    hooks:
+      - id: nbwipers-check-install
 ```
 
 ## Motivation

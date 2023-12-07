@@ -1,0 +1,9 @@
+- id: nbwipers-check-install
+  name: nbwipers check install
+  description: Check nbwipers is installed
+  language: rust
+  entry: nbwipers
+  args: [check-install]
+  stages: [commit, merge-commit, push, manual]
+  always_run: true
+  pass_filenames: false

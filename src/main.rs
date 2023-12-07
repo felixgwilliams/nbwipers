@@ -15,8 +15,8 @@ use anyhow::{anyhow, bail, Error};
 use check::PathCheckResult;
 use clap::Parser;
 use cli::{
-    CheckCommand, CleanAllCommand, CleanCommand, Commands, CommonArgs, InstallCommand,
-    OutputFormat, UninstallCommand,
+    CheckCommand, CheckInstallCommand, CleanAllCommand, CleanCommand, Commands, CommonArgs,
+    InstallCommand, OutputFormat, UninstallCommand,
 };
 use colored::Colorize;
 use files::{find_notebooks, read_nb, read_nb_stdin, relativize_path, FoundNotebooks};
@@ -133,6 +133,14 @@ fn uninstall(cmd: &UninstallCommand) -> Result<(), Error> {
     install::uninstall_attributes(cmd.config_type, cmd.attribute_file.as_deref())
 }
 
+fn check_install(cmd: &CheckInstallCommand) -> Result<(), Error> {
+    if let Some(config_type) = cmd.config_type {
+        install::check_install_some_type(config_type)
+    } else {
+        install::check_install_none_type()
+    }
+}
+
 fn main() -> Result<(), Error> {
     let cli = cli::Cli::parse();
 
@@ -160,6 +168,7 @@ fn main() -> Result<(), Error> {
         }) => check_all(files, output_format, common),
         Commands::Install(ref cmd) => install(cmd),
         Commands::Uninstall(ref cmd) => uninstall(cmd),
+        Commands::CheckInstall(ref cmd) => check_install(cmd),
     }
 }
 
