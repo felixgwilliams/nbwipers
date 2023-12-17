@@ -75,6 +75,16 @@ Once you do this and get a working rust installation, pre-commit will use that t
 An alternative is install rust [rustup](https://rustup.rs/), but customize the installation to specify `x86_64-pc-windows-gnu` as the default host triple.
 This way you do not need to install the multi-gigabyte MSVC dependencies.
 
+## Testing Coverage
+
+To test coverage, use the command:
+
+```shell
+cargo tarpaulin -o stdout -o html -o lcov --engine llvm
+```
+
+Using the `llvm` engine means that integration tests contribute to coverage.
+
 ## Acknowledgements
 
 nbwipers relies on inspiration and code from several projects.

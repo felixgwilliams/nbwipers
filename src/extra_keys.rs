@@ -35,16 +35,16 @@ pub struct StripKey {
 pub enum ExtraKeyParseError {
     #[error("Key must start with `cell.metadata` or `metadata`")]
     NotCellOrMetadata,
-    #[error("No dot")]
-    NoDot,
-    #[error("Empty")]
+    #[error("Empty Subkey")]
+    EmptySubKey,
+    #[error("Empty Key")]
     Empty,
 }
 
 impl StripKey {
     pub fn try_from_slice(parts: &[&str]) -> Result<Self, ExtraKeyParseError> {
-        if parts.is_empty() {
-            Err(ExtraKeyParseError::Empty)
+        if parts.is_empty() || parts == [""] {
+            Err(ExtraKeyParseError::EmptySubKey)
         } else {
             Ok(StripKey {
                 parts: parts.iter().map(|x| String::from(*x)).collect(),
@@ -66,8 +66,9 @@ impl FromStr for ExtraKey {
             },
 
             Some((&"metadata", tail)) => StripKey::try_from_slice(tail).map(ExtraKey::Metadata),
+            Some((&"", [])) => Err(ExtraKeyParseError::Empty),
             Some(_) => Err(ExtraKeyParseError::NotCellOrMetadata),
-            None => Err(ExtraKeyParseError::NoDot),
+            None => unreachable!(),
         }
     }
 }
@@ -107,11 +108,13 @@ mod tests {
     use serde_json::json;
 
     use crate::{
+        extra_keys::ExtraKeyParseError,
         schema::Cell,
         utils::{pop_cell_key, pop_value_child},
     };
 
     use super::ExtraKey;
+    use crate::config::EXTRA_KEYS;
     use std::str::FromStr;
 
     #[test]
@@ -138,5 +141,51 @@ mod tests {
         println!("{extra_key:?}");
         pop_cell_key(&mut cell, &extra_key);
         println!("{cell:?}");
+    }
+    #[test]
+    fn test_key_roundtrip() {
+        for key in EXTRA_KEYS {
+            let parsed_key = ExtraKey::from_str(key).unwrap();
+            let key2 = parsed_key.to_string();
+            assert!(key == &key2);
+        }
+    }
+
+    #[test]
+    fn test_key_parse_errors() {
+        assert!(matches!(
+            ExtraKey::from_str("hello.world"),
+            Err(ExtraKeyParseError::NotCellOrMetadata)
+        ));
+        assert!(matches!(
+            ExtraKey::from_str("metadata."),
+            Err(ExtraKeyParseError::EmptySubKey)
+        ));
+        assert!(matches!(
+            ExtraKey::from_str("metadata"),
+            Err(ExtraKeyParseError::EmptySubKey)
+        ));
+        assert!(matches!(
+            ExtraKey::from_str(""),
+            Err(ExtraKeyParseError::Empty)
+        ));
+        assert!(matches!(
+            ExtraKey::from_str(".world"),
+            Err(ExtraKeyParseError::NotCellOrMetadata)
+        ));
+        assert!(matches!(
+            ExtraKey::from_str("cell.interlinked.world"),
+            Err(ExtraKeyParseError::NotCellOrMetadata)
+        ));
+    }
+
+    #[test]
+    fn test_deserialize() {
+        let valid_key: serde_json::Result<ExtraKey> =
+            serde_json::from_str("\"metadata.hello.world\"");
+        let invalid_key: serde_json::Result<ExtraKey> = serde_json::from_str("\"hello.world\"");
+
+        assert!(valid_key.is_ok());
+        assert!(invalid_key.is_err());
     }
 }

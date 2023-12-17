@@ -153,3 +153,6 @@ impl Cell {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {}

@@ -96,3 +96,63 @@ pub enum SourceValue {
     String(String),
     StringArray(Vec<String>),
 }
+
+#[allow(clippy::unwrap_used)]
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_cell_types() {
+        let empty_nb_str = r##"{
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 123,
+                    "metadata": {},
+                    "outputs": [],
+                    "source": [
+                        "print(\"hello world\")",
+                        "print(\"goodbye\")"
+                    ]
+                },
+                {
+                    "cell_type": "raw",
+                    "metadata": {},
+                    "source": [
+                        "I am a raw cell"
+                    ]
+                },
+                {
+                    "cell_type": "markdown",
+                    "metadata": {},
+                    "source": "# Welcome to the documentation"
+                    
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5
+        }"##;
+
+        let mut parsed: RawNotebook = serde_json::from_str(empty_nb_str).unwrap();
+
+        let [code, raw, Cell::Markdown(markdown)] = &mut parsed.cells[..] else {
+            panic!();
+        };
+        let code = code.as_codecell_mut().unwrap();
+        assert!(raw.as_codecell().is_none());
+        assert!(matches!(raw, Cell::Raw(_)));
+
+        assert!(matches!(raw.get_source(), SourceValue::StringArray(_)));
+        assert!(matches!(markdown.source, SourceValue::String(_)));
+
+        assert!(code.is_clear_outputs());
+        assert!(!code.is_clear_exec_count());
+        assert!(code.should_clear_output(true, true));
+        code.clear_counts();
+        code.clear_outputs();
+        assert!(code.is_clear_outputs());
+        assert!(code.is_clear_exec_count());
+    }
+}
