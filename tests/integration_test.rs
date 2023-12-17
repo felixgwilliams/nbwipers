@@ -28,6 +28,24 @@ fn test_install() {
 
         let output = Command::new(&cur_exe)
             .args([
+                "install",
+                "local",
+                "-g",
+                config_file.to_str().unwrap(),
+                "-a",
+                attr_file.to_str().unwrap(),
+            ])
+            .output()
+            .expect("command failed");
+        assert!(output.status.success());
+
+        let config_file_contents2 = fs::read_to_string(&config_file).unwrap();
+        let attr_file_contents2 = fs::read_to_string(&attr_file).unwrap();
+        assert!(config_file_contents == config_file_contents2);
+        assert!(attr_file_contents == attr_file_contents2);
+
+        let output = Command::new(&cur_exe)
+            .args([
                 "uninstall",
                 "local",
                 "-g",
@@ -166,4 +184,17 @@ fn test_strip_all_error() {
     dbg!(&stdout);
     assert!(!output.status.success());
     assert!(stdout.contains("Read error"));
+}
+
+#[test]
+fn test_check_all() {
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+    let output = Command::new(cur_exe)
+        .current_dir("tests/e2e_notebooks")
+        .args(["check", ".", "--drop-empty-cells", "--drop-id"])
+        .output()
+        .expect("command failed");
+
+    // let stdout = output.stdout.to_str_lossy();
+    assert!(!output.status.success());
 }
