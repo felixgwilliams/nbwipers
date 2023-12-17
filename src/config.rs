@@ -19,7 +19,7 @@ pub struct Configuration {
     pub keep_keys: Option<Vec<ExtraKey>>,
 }
 
-const EXTRA_KEYS: &[&str] = &[
+pub const EXTRA_KEYS: &[&str] = &[
     "metadata.signature",
     "metadata.widgets",
     "cell.metadata.collapsed",

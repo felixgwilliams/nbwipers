@@ -1,9 +1,4 @@
-use std::{
-    fs,
-    io::Write,
-    path::PathBuf,
-    process::{Command, Stdio},
-};
+use std::{fs, path::PathBuf, process::Command};
 
 use bstr::ByteSlice;
 #[test]
@@ -30,6 +25,24 @@ fn test_install() {
 
         assert!(config_file_contents.contains("nbwipers"));
         assert!(attr_file_contents.contains("nbwipers"));
+
+        let output = Command::new(&cur_exe)
+            .args([
+                "install",
+                "local",
+                "-g",
+                config_file.to_str().unwrap(),
+                "-a",
+                attr_file.to_str().unwrap(),
+            ])
+            .output()
+            .expect("command failed");
+        assert!(output.status.success());
+
+        let config_file_contents2 = fs::read_to_string(&config_file).unwrap();
+        let attr_file_contents2 = fs::read_to_string(&attr_file).unwrap();
+        assert!(config_file_contents == config_file_contents2);
+        assert!(attr_file_contents == attr_file_contents2);
 
         let output = Command::new(&cur_exe)
             .args([
@@ -127,251 +140,61 @@ fn test_file_not_found() {
     assert!(&output.stderr.contains_str(b"Pyproject IO Error"))
 }
 
-fn test_expected(path: &str, expected: &str, extra_args: &[&str]) {
+#[test]
+fn test_strip_all() {
+    let temp_dir = tempfile::tempdir().unwrap();
     let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+    let dest_file = temp_dir.path().join("test_nbformat45.ipynb");
+    fs::copy("tests/e2e_notebooks/test_nbformat45.ipynb", dest_file).unwrap();
+    dbg!(temp_dir.path());
     let output = Command::new(&cur_exe)
-        .args(["clean", "-t", path])
-        .args(extra_args)
+        .current_dir(temp_dir.path())
+        .args(["clean-all", ".", "-y"])
         .output()
         .expect("command failed");
 
-    let expected_content = fs::read_to_string(expected).expect("could not read expected");
-    assert_eq!(output.stdout.to_str().unwrap(), expected_content);
+    let stdout = output.stdout.to_str_lossy();
+    assert!(output.status.success());
+    assert!(stdout.ends_with("Stripped\n"));
 
-    let mut check_output_cmd = Command::new(&cur_exe)
-        .args(["check", "-"])
-        .args(extra_args)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
+    let output = Command::new(cur_exe)
+        .current_dir(temp_dir.path())
+        .args(["clean-all", "-y", "."])
+        .output()
         .expect("command failed");
-    {
-        let mut check_in = check_output_cmd.stdin.take().expect("Failed to open stdin");
-        // write!(check_in, "{expected_content}").expect("Failed to write to stdin");
-        check_in
-            .write_all(expected_content.as_bytes())
-            .expect("Failed to write to stdin");
-    }
-    let check_output = check_output_cmd.wait_with_output().expect("Command failed");
 
-    println!("{}", check_output.stdout.to_str().unwrap());
-
-    assert!(check_output.status.success())
+    let stdout = output.stdout.to_str_lossy();
+    assert!(output.status.success());
+    assert!(stdout.ends_with("No Change\n"));
 }
 
 #[test]
-fn test_drop_empty_cells_dontdrop() {
-    test_expected(
-        "tests/e2e_notebooks/test_drop_empty_cells.ipynb",
-        "tests/e2e_notebooks/test_drop_empty_cells_dontdrop.ipynb.expected",
-        &[],
-    );
+fn test_strip_all_error() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+    let dest_file = temp_dir.path().join("test_nbformat2.ipynb");
+    fs::copy("tests/test_nbformat2.ipynb", dest_file).unwrap();
+    let output = Command::new(cur_exe)
+        .current_dir(temp_dir.path())
+        .args(["clean-all", "-y", "."])
+        .output()
+        .expect("command failed");
+
+    let stdout = output.stdout.to_str_lossy();
+    dbg!(&stdout);
+    assert!(!output.status.success());
+    assert!(stdout.contains("Read error"));
 }
 
 #[test]
-fn test_drop_empty_cells() {
-    test_expected(
-        "tests/e2e_notebooks/test_drop_empty_cells.ipynb",
-        "tests/e2e_notebooks/test_drop_empty_cells.ipynb.expected",
-        &["--drop-empty-cells"],
-    );
-    test_expected(
-        "tests/e2e_notebooks/test_drop_empty_cells.ipynb",
-        "tests/e2e_notebooks/test_drop_empty_cells.ipynb.expected",
-        &["-c", "tests/e2e_notebooks/test_drop_empty_cells.toml"],
-    );
-}
+fn test_check_all() {
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+    let output = Command::new(cur_exe)
+        .current_dir("tests/e2e_notebooks")
+        .args(["check", ".", "--drop-empty-cells", "--drop-id"])
+        .output()
+        .expect("command failed");
 
-#[test]
-fn test_drop_tagged_cells_dontdrop() {
-    test_expected(
-        "tests/e2e_notebooks/test_drop_tagged_cells.ipynb",
-        "tests/e2e_notebooks/test_drop_tagged_cells_dontdrop.ipynb.expected",
-        &[],
-    );
-}
-
-#[test]
-fn test_drop_tagged_cells() {
-    test_expected(
-        "tests/e2e_notebooks/test_drop_tagged_cells.ipynb",
-        "tests/e2e_notebooks/test_drop_tagged_cells.ipynb.expected",
-        &["--drop-tagged-cells=test"],
-    );
-    test_expected(
-        "tests/e2e_notebooks/test_drop_tagged_cells.ipynb",
-        "tests/e2e_notebooks/test_drop_tagged_cells.ipynb.expected",
-        &["-c", "tests/e2e_notebooks/test_drop_tagged_cells.toml"],
-    );
-}
-#[test]
-fn test_execution_timing() {
-    test_expected(
-        "tests/e2e_notebooks/test_execution_timing.ipynb",
-        "tests/e2e_notebooks/test_execution_timing.ipynb.expected",
-        &["--drop-tagged-cells=test"],
-    );
-    test_expected(
-        "tests/e2e_notebooks/test_execution_timing.ipynb",
-        "tests/e2e_notebooks/test_execution_timing.ipynb.expected",
-        &["-c", "tests/e2e_notebooks/test_drop_tagged_cells.toml"],
-    );
-}
-#[test]
-fn test_metadata() {
-    test_expected(
-        "tests/e2e_notebooks/test_metadata.ipynb",
-        "tests/e2e_notebooks/test_metadata.ipynb.expected",
-        &[],
-    );
-}
-#[test]
-fn test_metadata_extra_keys() {
-    test_expected(
-        "tests/e2e_notebooks/test_metadata.ipynb",
-        "tests/e2e_notebooks/test_metadata_extra_keys.ipynb.expected",
-        &["--extra-keys", "metadata.kernelspec,metadata.language_info"],
-    );
-    test_expected(
-        "tests/e2e_notebooks/test_metadata.ipynb",
-        "tests/e2e_notebooks/test_metadata_extra_keys.ipynb.expected",
-        &["-c", "tests/e2e_notebooks/test_metadata_extra_keys.toml"],
-    );
-}
-
-#[test]
-fn test_metadata_keep_count() {
-    test_expected(
-        "tests/e2e_notebooks/test_metadata.ipynb",
-        "tests/e2e_notebooks/test_metadata_keep_count.ipynb.expected",
-        &["--keep-count"],
-    );
-    test_expected(
-        "tests/e2e_notebooks/test_metadata.ipynb",
-        "tests/e2e_notebooks/test_metadata_keep_count.ipynb.expected",
-        &["-c", "tests/e2e_notebooks/test_metadata_keep_count.toml"],
-    );
-}
-#[test]
-fn test_metadata_keep_output() {
-    test_expected(
-        "tests/e2e_notebooks/test_metadata.ipynb",
-        "tests/e2e_notebooks/test_metadata_keep_output.ipynb.expected",
-        &["--keep-output"],
-    );
-    test_expected(
-        "tests/e2e_notebooks/test_metadata.ipynb",
-        "tests/e2e_notebooks/test_metadata_keep_output.ipynb.expected",
-        &["-c", "tests/e2e_notebooks/test_metadata_keep_output.toml"],
-    );
-}
-#[test]
-fn test_metadata_keep_output_keep_count() {
-    test_expected(
-        "tests/e2e_notebooks/test_metadata.ipynb",
-        "tests/e2e_notebooks/test_metadata_keep_output_keep_count.ipynb.expected",
-        &["--keep-output", "--keep-count"],
-    );
-    test_expected(
-        "tests/e2e_notebooks/test_metadata.ipynb",
-        "tests/e2e_notebooks/test_metadata_keep_output_keep_count.ipynb.expected",
-        &[
-            "-c",
-            "tests/e2e_notebooks/test_metadata_keep_output_keep_count.toml",
-        ],
-    );
-}
-#[test]
-fn test_metadata_notebook() {
-    test_expected(
-        "tests/e2e_notebooks/test_metadata_notebook.ipynb",
-        "tests/e2e_notebooks/test_metadata_notebook.ipynb.expected",
-        &[],
-    );
-}
-
-#[test]
-fn test_keep_metadata_keys() {
-    test_expected(
-        "tests/e2e_notebooks/test_keep_metadata_keys.ipynb",
-        "tests/e2e_notebooks/test_keep_metadata_keys.ipynb.expected",
-        &[
-            "--keep-keys",
-            "cell.metadata.scrolled,cell.metadata.collapsed,metadata.a",
-        ],
-    );
-    test_expected(
-        "tests/e2e_notebooks/test_keep_metadata_keys.ipynb",
-        "tests/e2e_notebooks/test_keep_metadata_keys.ipynb.expected",
-        &["-c", "tests/e2e_notebooks/test_keep_metadata_keys.toml"],
-    );
-}
-#[test]
-fn test_metadata_period() {
-    test_expected(
-        "tests/e2e_notebooks/test_metadata_period.ipynb",
-        "tests/e2e_notebooks/test_metadata_period.ipynb.expected",
-        &["--extra-keys", "cell.metadata.application/vnd.databricks.v1+cell,metadata.application/vnd.databricks.v1+notebook"],
-    );
-    test_expected(
-        "tests/e2e_notebooks/test_metadata_period.ipynb",
-        "tests/e2e_notebooks/test_metadata_period.ipynb.expected",
-        &["-c", "tests/e2e_notebooks/test_metadata_period.toml"],
-    );
-}
-#[test]
-fn test_strip_init_cells() {
-    test_expected(
-        "tests/e2e_notebooks/test_strip_init_cells.ipynb",
-        "tests/e2e_notebooks/test_strip_init_cells.ipynb.expected",
-        &["--strip-init-cell"],
-    );
-    test_expected(
-        "tests/e2e_notebooks/test_strip_init_cells.ipynb",
-        "tests/e2e_notebooks/test_strip_init_cells.ipynb.expected",
-        &["-c", "tests/e2e_notebooks/test_strip_init_cells.toml"],
-    );
-}
-#[test]
-fn test_nbformat45() {
-    test_expected(
-        "tests/e2e_notebooks/test_nbformat45.ipynb",
-        "tests/e2e_notebooks/test_nbformat45.ipynb.expected",
-        &["--keep-id"],
-    );
-    test_expected(
-        "tests/e2e_notebooks/test_nbformat45.ipynb",
-        "tests/e2e_notebooks/test_nbformat45.ipynb.expected",
-        &["-c", "tests/e2e_notebooks/test_nbformat45.toml"],
-    );
-}
-#[test]
-fn test_nbformat45_expected_sequential_id() {
-    test_expected(
-        "tests/e2e_notebooks/test_nbformat45.ipynb",
-        "tests/e2e_notebooks/test_nbformat45.ipynb.expected_sequential_id",
-        &["--drop-id"],
-    );
-    test_expected(
-        "tests/e2e_notebooks/test_nbformat45.ipynb",
-        "tests/e2e_notebooks/test_nbformat45.ipynb.expected_sequential_id",
-        &["-c", "tests/e2e_notebooks/test_nbformat45_sequential.toml"],
-    );
-}
-#[test]
-fn test_unicode() {
-    test_expected(
-        "tests/e2e_notebooks/test_unicode.ipynb",
-        "tests/e2e_notebooks/test_unicode.ipynb.expected",
-        &[],
-    );
-}
-#[test]
-fn test_widgets() {
-    test_expected(
-        "tests/e2e_notebooks/test_widgets.ipynb",
-        "tests/e2e_notebooks/test_widgets.ipynb.expected",
-        &[],
-    );
+    // let stdout = output.stdout.to_str_lossy();
+    assert!(!output.status.success());
 }

@@ -107,7 +107,7 @@ pub enum NBReadError {
 pub enum NBWriteError {
     #[error("File IO error")]
     IO(#[from] std::io::Error),
-    #[error("JSON read error")]
+    #[error("JSON write error")]
     Serde(#[from] serde_json::Error),
 }
 

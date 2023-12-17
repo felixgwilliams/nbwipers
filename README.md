@@ -1,5 +1,11 @@
 # nbwipers
 
+![Test](https://github.com/felixgwilliams/nbwipers/actions/workflows/testing.yml/badge.svg)
+[![PyPI - Version](https://img.shields.io/pypi/v/nbwipers)](https://pypi.org/project/nbwipers/)
+[![Crates.io](https://img.shields.io/crates/v/nbwipers)](https://crates.io/crates/nbwipers)
+[![Conda](https://img.shields.io/conda/v/conda-forge/nbwipers)](https://anaconda.org/conda-forge/nbwipers)
+[![codecov](https://codecov.io/gh/felixgwilliams/nbwipers/graph/badge.svg?token=PLGJFNRHSQ)](https://codecov.io/gh/felixgwilliams/nbwipers)
+
 nbwipers is a command line tool to wipe clean jupyter notebooks, written in Rust.
 
 The interface and functionality are based on [nbsripout](https://github.com/kynan/nbstripout) and the idea to implement it in rust comes from [nbstripout-fast](https://github.com/deshaw/nbstripout-fast).
@@ -74,6 +80,16 @@ Once you do this and get a working rust installation, pre-commit will use that t
 
 An alternative is install rust [rustup](https://rustup.rs/), but customize the installation to specify `x86_64-pc-windows-gnu` as the default host triple.
 This way you do not need to install the multi-gigabyte MSVC dependencies.
+
+## Testing Coverage
+
+To test coverage, use the command:
+
+```shell
+cargo tarpaulin -o stdout -o html -o lcov --engine llvm
+```
+
+Using the `llvm` engine means that integration tests contribute to coverage.
 
 ## Acknowledgements
 

@@ -106,10 +106,15 @@ fn strip_all(files: &[PathBuf], dry_run: bool, yes: bool, cli: CommonArgs) -> Re
         .map(|nb_path| strip_single(nb_path, dry_run, &settings).into())
         .collect();
 
+    let any_errors = strip_results.iter().any(StripResult::is_err);
+
     for (nb_path, res) in nbs.iter().zip(strip_results) {
         let rel_path = relativize_path(nb_path).bold();
 
         println!("{rel_path}: {res}");
+    }
+    if any_errors {
+        bail!("IO Errors found")
     }
     Ok(())
 }

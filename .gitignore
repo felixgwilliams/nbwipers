@@ -1,3 +1,6 @@
+# coverage
+lcov.info
+
 /target
 *.profraw
 *.html

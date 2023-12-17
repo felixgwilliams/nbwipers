@@ -178,3 +178,9 @@ impl StripSuccess {
         }
     }
 }
+
+impl StripResult {
+    pub fn is_err(&self) -> bool {
+        matches!(self, StripResult::ReadError(_) | StripResult::WriteError(_))
+    }
+}

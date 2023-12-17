@@ -19,3 +19,22 @@ jobs:
         run: cargo clippy --all-targets --all-features
       - name: Run Tests
         run: cargo test --verbose
+  coverage:
+    name: coverage
+    needs: [test-rust]
+    runs-on: ubuntu-latest
+    container:
+      image: xd009642/tarpaulin:develop-nightly
+      options: --security-opt seccomp=unconfined
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate code coverage
+        run: |
+          cargo +nightly tarpaulin --verbose --all-features --workspace --timeout 1200 --out xml --engine llvm
+
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{secrets.CODECOV_TOKEN}}
