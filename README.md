@@ -1,6 +1,7 @@
 # nbwipers
 
 ![Test](https://github.com/felixgwilliams/nbwipers/actions/workflows/testing.yml/badge.svg)
+[![License:MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PyPI - Version](https://img.shields.io/pypi/v/nbwipers)](https://pypi.org/project/nbwipers/)
 [![Crates.io](https://img.shields.io/crates/v/nbwipers)](https://crates.io/crates/nbwipers)
 [![Conda](https://img.shields.io/conda/v/conda-forge/nbwipers)](https://anaconda.org/conda-forge/nbwipers)
