@@ -121,3 +121,49 @@ fn test_file_not_found() {
     assert!(!output.status.success());
     assert!(&output.stderr.contains_str(b"Pyproject IO Error"))
 }
+
+#[test]
+fn test_strip_all() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+    let dest_file = temp_dir.path().join("test_nbformat45.ipynb");
+    fs::copy("tests/e2e_notebooks/test_nbformat45.ipynb", dest_file).unwrap();
+    dbg!(temp_dir.path());
+    let output = Command::new(&cur_exe)
+        .current_dir(temp_dir.path())
+        .args(["clean-all", ".", "-y"])
+        .output()
+        .expect("command failed");
+
+    let stdout = output.stdout.to_str_lossy();
+    assert!(output.status.success());
+    assert!(stdout.ends_with("Stripped\n"));
+
+    let output = Command::new(cur_exe)
+        .current_dir(temp_dir.path())
+        .args(["clean-all", "-y", "."])
+        .output()
+        .expect("command failed");
+
+    let stdout = output.stdout.to_str_lossy();
+    assert!(output.status.success());
+    assert!(stdout.ends_with("No Change\n"));
+}
+
+#[test]
+fn test_strip_all_error() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+    let dest_file = temp_dir.path().join("test_nbformat2.ipynb");
+    fs::copy("tests/test_nbformat2.ipynb", dest_file).unwrap();
+    let output = Command::new(cur_exe)
+        .current_dir(temp_dir.path())
+        .args(["clean-all", "-y", "."])
+        .output()
+        .expect("command failed");
+
+    let stdout = output.stdout.to_str_lossy();
+    dbg!(&stdout);
+    assert!(!output.status.success());
+    assert!(stdout.contains("Read error"));
+}

@@ -127,7 +127,7 @@ mod tests {
                     "cell_type": "markdown",
                     "metadata": {},
                     "source": "# Welcome to the documentation"
-                    
+
                 }
             ],
             "metadata": {},
