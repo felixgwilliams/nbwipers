@@ -9,7 +9,7 @@
 
 nbwipers is a command line tool to wipe clean jupyter notebooks, written in Rust.
 
-The interface and functionality are based on [nbsripout](https://github.com/kynan/nbstripout) and the idea to implement it in rust comes from [nbstripout-fast](https://github.com/deshaw/nbstripout-fast).
+The interface and functionality are based on [nbstripout](https://github.com/kynan/nbstripout) and the idea to implement it in rust comes from [nbstripout-fast](https://github.com/deshaw/nbstripout-fast).
 
 ## Usage
 
@@ -87,7 +87,7 @@ Using the `llvm` engine means that integration tests contribute to coverage.
 nbwipers relies on inspiration and code from several projects.
 For the projects whose code was used please see [`LICENSE`](LICENSE) for the third-party notices.
 
-### [nbsripout](https://github.com/kynan/nbstripout)
+### [nbstripout](https://github.com/kynan/nbstripout)
 
 > strip output from Jupyter and IPython notebooks
 
