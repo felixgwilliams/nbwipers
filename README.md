@@ -40,14 +40,16 @@ nbwipers check .
 
 ### pre-commit
 
-You can add the following to your `pre-commit-config.yaml` file to ensure that `nbwipers` or `nbstripout` is installed in your repo, as a friendly reminder
+You can add the following to your `pre-commit-config.yaml` file to ensure that `nbwipers` or `nbstripout` is installed in your repo, in order to prevent Jupyter notebook outputs from being committed to version control.
 
 ```yaml
-  - repo: https://github.com/felixgwilliams/nbwipers
-    rev: v0.3.0
+  - repo: https://github.com/felixgwilliams/nbwipers-pre-commit
+    rev: v0.3.1
     hooks:
       - id: nbwipers-check-install
 ```
+
+Alternatively, you can use the URL for this repo in your config, but this will compile `nbwipers` from source, rather than retrieving the binary from PyPI, and is therefore not recommended.
 
 ## Motivation
 
@@ -69,18 +71,6 @@ Moreover, including notebook outputs in version control
 - risks leaking sensitive data
 
 By using nbwipers or nbstripout as a git filter, the problematic parts of the notebook are removed from the version of the file that git sees, while leaving your working copy intact.
-
-## Note on pre-commit for Windows users
-
-Using the above pre-commit hook requires compiling nbwipers from source.
-If you do not have rust installed on your system, pre-commit can create a temporary rust installation to do the compilation, but this can fail on Windows
-if the [prerequisites](https://rust-lang.github.io/rustup/installation/windows-msvc.html) for the MSVC toolchain are not met.
-
-Running the [rustup](https://rustup.rs/) installer will give you an opportunity to automatically install the prerequisites.
-Once you do this and get a working rust installation, pre-commit will use that to compile.
-
-An alternative is install rust [rustup](https://rustup.rs/), but customize the installation to specify `x86_64-pc-windows-gnu` as the default host triple.
-This way you do not need to install the multi-gigabyte MSVC dependencies.
 
 ## Testing Coverage
 
