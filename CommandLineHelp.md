@@ -169,7 +169,7 @@ uninstall nbwipers as a git filter
 
 check whether nbwipers is setup as a git filter
 
-**Usage:** `nbwipers check-install [CONFIG_TYPE]`
+**Usage:** `nbwipers check-install [OPTIONS] [CONFIG_TYPE]`
 
 ###### **Arguments:**
 
@@ -182,6 +182,10 @@ check whether nbwipers is setup as a git filter
     User level git config, typically corresponding to ~/.gitconfig
   * `local`:
     Repository level git config, corresponding to .git/config
+
+###### **Options:**
+
+* `--exit-zero` — Exit zero regardless of install status
 
 <hr/>
 

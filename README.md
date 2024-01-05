@@ -51,6 +51,8 @@ You can add the following to your `pre-commit-config.yaml` file to ensure that `
 
 Alternatively, you can use the URL for this repo in your config, but this will compile `nbwipers` from source, rather than retrieving the binary from PyPI, and is therefore not recommended.
 
+If you are using your pre-commit configuration as part of CI, you should set the environment variable `NBWIPERS_CHECK_INSTALL_EXIT_ZERO` which forces this check to pass, since you do not need `nbwipers` configured in your CI environment.
+
 ## Motivation
 
 A working copy of a Jupyter notebook contains

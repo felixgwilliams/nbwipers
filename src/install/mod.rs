@@ -3,6 +3,7 @@ mod gitconfig;
 use anyhow::{bail, Error};
 
 use std::{
+    env,
     ops::{BitAnd, BitOrAssign},
     path::PathBuf,
 };
@@ -153,6 +154,14 @@ pub fn check_install_none_type() -> Result<(), Error> {
     let config_install_status = check_install_config_file(&config_file);
 
     combine_install_status(attr_install_status, config_install_status)
+}
+
+pub fn check_should_exit_zero(exit_zero: bool) -> bool {
+    if exit_zero {
+        exit_zero
+    } else {
+        env::var("NBWIPERS_CHECK_INSTALL_EXIT_ZERO").is_ok()
+    }
 }
 
 #[cfg(test)]
