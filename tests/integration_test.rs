@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf, process::Command};
+use std::{env, fs, path::PathBuf, process::Command};
 
 use bstr::ByteSlice;
 #[test]
@@ -108,12 +108,28 @@ fn test_check_install() {
         .output()
         .expect("command failed");
     assert!(!output.status.success());
+
     let output = Command::new(&cur_exe)
         .current_dir(&temp_dir)
         .args(["check-install", "local"])
         .output()
         .expect("command failed");
     assert!(!output.status.success());
+
+    let output = Command::new(&cur_exe)
+        .current_dir(&temp_dir)
+        .args(["check-install", "--exit-zero"])
+        .output()
+        .expect("command failed");
+    assert!(output.status.success());
+
+    env::set_var("NBWIPERS_CHECK_INSTALL_EXIT_ZERO", "1");
+    let output = Command::new(&cur_exe)
+        .current_dir(&temp_dir)
+        .args(["check-install"])
+        .output()
+        .expect("command failed");
+    assert!(output.status.success());
 }
 
 #[test]
