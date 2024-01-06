@@ -161,6 +161,9 @@ pub struct UninstallCommand {
 
 #[derive(Clone, Debug, Parser)]
 pub struct CheckInstallCommand {
+    /// Exit zero regardless of install status
+    #[arg(long)]
+    pub exit_zero: bool,
     /// Git config type to check
     #[clap(value_enum)]
     pub config_type: Option<GitConfigType>,
