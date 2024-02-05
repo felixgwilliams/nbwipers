@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
 
+## [0.3.3] - 2024-02-05
+
+### Added
+
+- Added flag `--allow-no-notebooks` to suppress errors if no notebooks were found in the path.
+
 ## [0.3.2] - 2024-01-06
 
 ### Added
