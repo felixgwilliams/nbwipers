@@ -10,7 +10,7 @@ fn test_no_notebooks() {
         let py_file = temp_dir.path().join("script.py");
         fs::write(py_file, "print('hello, world')").unwrap();
 
-        let output = Command::new(cur_exe)
+        let output = Command::new(&cur_exe)
             .current_dir(&temp_dir)
             .args(["check", "."])
             .output()
@@ -21,6 +21,12 @@ fn test_no_notebooks() {
             .to_str()
             .unwrap()
             .contains("Error: Could not find any notebooks in path(s)"));
+        let output = Command::new(&cur_exe)
+            .current_dir(&temp_dir)
+            .args(["check", ".", "--allow-no-notebooks"])
+            .output()
+            .expect("command failed");
+        assert!(output.status.success());
     }
 }
 

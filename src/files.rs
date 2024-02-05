@@ -35,6 +35,7 @@ pub fn relativize_path<P: AsRef<Path>>(path: P) -> String {
 
 pub enum FoundNotebooks {
     Stdin,
+    NoFiles,
     Files(Vec<PathBuf>),
 }
 
@@ -82,7 +83,7 @@ pub fn find_notebooks(paths: &[PathBuf]) -> Result<FoundNotebooks, Error> {
     });
     let out = files.into_inner()?;
     if out.is_empty() {
-        Err(anyhow!("Could not find any notebooks in path(s)"))
+        Ok(FoundNotebooks::NoFiles)
     } else {
         Ok(FoundNotebooks::Files(out))
     }
