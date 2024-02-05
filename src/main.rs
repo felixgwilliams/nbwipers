@@ -49,6 +49,12 @@ fn check_all(
             Ok(nb) => vec![(Path::new("-"), check::check_nb(&nb, &settings))],
             Err(e) => vec![(Path::new("-"), vec![e.into()])],
         },
+        FoundNotebooks::NoFiles => {
+            if args.allow_no_notebooks {
+                return Ok(());
+            }
+            bail!("Could not find any notebooks in path(s)")
+        }
         FoundNotebooks::Files(ref nbs) => {
             nbs.par_iter()
                 .map(|nb_path| {

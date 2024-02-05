@@ -1,6 +1,35 @@
 use std::{env, fs, path::PathBuf, process::Command};
 
 use bstr::ByteSlice;
+
+#[test]
+fn test_no_notebooks() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+    {
+        let py_file = temp_dir.path().join("script.py");
+        fs::write(py_file, "print('hello, world')").unwrap();
+
+        let output = Command::new(&cur_exe)
+            .current_dir(&temp_dir)
+            .args(["check", "."])
+            .output()
+            .expect("command failed");
+        assert!(!output.status.success());
+        assert!(output
+            .stderr
+            .to_str()
+            .unwrap()
+            .contains("Error: Could not find any notebooks in path(s)"));
+        let output = Command::new(&cur_exe)
+            .current_dir(&temp_dir)
+            .args(["check", ".", "--allow-no-notebooks"])
+            .output()
+            .expect("command failed");
+        assert!(output.status.success());
+    }
+}
+
 #[test]
 fn test_install() {
     let temp_dir = tempfile::tempdir().unwrap();

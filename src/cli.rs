@@ -19,6 +19,10 @@ pub struct CommonArgs {
     #[arg(long, short)]
     pub config: Option<PathBuf>,
 
+    /// Do not return an error if no notebooks are found
+    #[arg(long)]
+    pub allow_no_notebooks: bool,
+
     /// extra keys to remove in the notebook or cell metadata, separated by commas. Must start with `metadata` or `cell.metadata`
     #[arg(long, value_delimiter = ',')]
     pub extra_keys: Option<Vec<ExtraKey>>,
@@ -192,6 +196,7 @@ pub struct ConfigOverrides {
 
 pub struct Args {
     pub config: Option<PathBuf>,
+    pub allow_no_notebooks: bool,
 }
 
 fn resolve_bool_arg(yes: bool, no: bool) -> Option<bool> {
@@ -208,6 +213,7 @@ impl CommonArgs {
         (
             Args {
                 config: self.config,
+                allow_no_notebooks: self.allow_no_notebooks,
             },
             ConfigOverrides {
                 extra_keys: self.extra_keys,
