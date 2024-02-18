@@ -33,8 +33,8 @@ jobs:
       - name: Generate code coverage
         run: |
           cargo +nightly tarpaulin --verbose --all-features --workspace --timeout 1200 --out xml --engine llvm
-
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Upload to codecov.io
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           token: ${{secrets.CODECOV_TOKEN}}
