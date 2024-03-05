@@ -50,12 +50,12 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels
+          name: wheels-${{ matrix.target }}-linux
           path: dist
       - name: "Upload binary"
         uses: actions/upload-artifact@v4
         with:
-          name: binaries
+          name: binaries-${{ matrix.target }}-linux
           path: |
             *.tar.gz
             *.sha256
@@ -89,12 +89,12 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels
+          name: wheels-${{ matrix.target }}-windows
           path: dist
       - name: "Upload binary"
         uses: actions/upload-artifact@v4
         with:
-          name: binaries
+          name: binaries-${{ matrix.target }}-windows
           path: |
             *.zip
             *.sha256
@@ -128,12 +128,12 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels
+          name: wheels-${{ matrix.target }}-macos
           path: dist
       - name: "Upload binary"
         uses: actions/upload-artifact@v4
         with:
-          name: binaries
+          name: binaries-${{ matrix.target }}-macos
           path: |
             *.tar.gz
             *.sha256
@@ -151,7 +151,7 @@ jobs:
       - name: Upload sdist
         uses: actions/upload-artifact@v4
         with:
-          name: wheels
+          name: wheels-sdist
           path: dist
 
   check_tag:
@@ -186,11 +186,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: wheels
+          pattern: wheels-*
+          merge-multiple: true
           path: wheels
       - uses: actions/download-artifact@v4
         with:
-          name: binaries
+          pattern: binaries-*
+          merge-multiple: true
           path: binaries
       - run: |
           gh release create ${{ inputs.tag }} --generate-notes -d wheels/* binaries/*
@@ -203,7 +205,8 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: wheels
+          pattern: wheels-*
+          merge-multiple: true
       - name: Publish to PyPI
         uses: PyO3/maturin-action@v1
         env:
