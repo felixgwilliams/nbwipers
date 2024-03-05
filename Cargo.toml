@@ -1,6 +1,6 @@
 [package]
 name = "nbwipers"
-version = "0.3.3"
+version = "0.3.4"
 edition = "2021"
 license = "MIT"
 description = "Wipe clean your Jupyter Notebooks!"
@@ -21,7 +21,7 @@ gix-config = { version = "0.34.0" }
 gix-discover = "0.29.0"
 gix-path = "0.10.5"
 ignore = "0.4.22"
-inquire = "0.6.2"
+inquire = "0.7.0"
 itertools = "0.12.1"
 path-absolutize = { version = "3.1.1", features = ["once_cell_cache"] }
 rayon = "1.8.1"

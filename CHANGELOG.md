@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
 
+## [version] - 2024-03-05
+
+### Security
+
+- Updated `mio` version in lockfile per security alert
+
 ## [0.3.3] - 2024-02-05
 
 ### Added
