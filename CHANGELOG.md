@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
 
+- Expand documentation in README
+
 ## [version] - 2024-03-05
 
 ### Security

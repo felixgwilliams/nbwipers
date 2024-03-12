@@ -15,11 +15,11 @@ The interface and functionality are based on [nbstripout](https://github.com/kyn
 
 nbwipers has a few subcommands that provide functionality related to cleaning Jupyter notebooks.
 
-- `clean`: clean a single notebook. This is more-or-less equivalent to `nbstripout`
+- `clean`: clean a single notebook. This is more-or-less equivalent to `nbstripout`.
 - `check`: check notebooks in a given path for elements that would be removed by `clean`. This could be used in a CI context to enforce clean notebooks.
 - `clean-all` clean all notebooks in a given path. This one should be used carefully!
 - `install` register nbwipers as a git filter for `ipynb` files. Equivalent to `nbstripout --install`
-- `uninstall` remove nbwipers as a git filter
+- `uninstall` remove nbwipers as a git filter.
 - `check-install` check that `nbwipers` or `nbstripout` is installed in the local repo. This is used in the pre-commit hook.
 
 The full options can be found in [`CommandLineHelp.md`](CommandLineHelp.md).
@@ -32,7 +32,14 @@ To set up nbwipers as a git filter in your repository, use
 nbwipers install local
 ```
 
-To check the notebooks in your folder
+If this step is performed on a pre-existing repo, you can `touch` your notebooks so that git can detect the changes.
+In bash:
+
+```bash
+for f in $(git ls-files '*.ipynb'); do touch $f; done
+```
+
+To check the notebooks in your folder, you can run the following
 
 ```shell
 nbwipers check .
@@ -55,24 +62,46 @@ If you are using your pre-commit configuration as part of CI, you should set the
 
 ## Motivation
 
-A working copy of a Jupyter notebook contains
+A working copy of a Jupyter notebook contains:
 
-1. Code written by the author
+1. Code written by the author.
 2. Notebook outputs: tables, logs, tracebacks, images, widgets and so on...
-3. Execution counts
+3. Execution counts.
 4. Metadata, such as whether cells are collapsed, scrollable etc.
 
-Of these categories of data, only the first &mdash; code written by the author &mdash; should definitely be tracked by version control, since it is the product of the author's intension and hard work.
-The other categories of data are subject to change outside of the explicit intensions of the author, and are generally noisy from a version control perspective.
+Of these categories of data, only the first &mdash; code written by the author &mdash; should definitely be tracked by version control, since it is the product of the author's intention and hard work.
+The other categories of data are subject to change outside of the explicit intentions of the author and are generally noisy from a version control perspective.
 
 Moreover, including notebook outputs in version control
 
-- makes diffs harder to interpret, as they will contain lots of unintended changes
-- increases the risk of a tricky merge conflict if different users run the same cell and get a slightly different result
-- increases the amount of data committed, which can degrade repository performance
-- risks leaking sensitive data
+- makes diffs harder to interpret, as they will contain lots of unintended changes.
+- increases the risk of a tricky merge conflict if different users run the same cell and get a slightly different result.
+- increases the amount of data committed, which can degrade repository performance.
+- risks leaking sensitive data.
 
-By using nbwipers or nbstripout as a git filter, the problematic parts of the notebook are removed from the version of the file that git sees, while leaving your working copy intact.
+An effective way to ensure you do not commit problematic parts of your notebooks is to use `nbwipers` or `nbstripout` as a git filter.
+
+A git filter sits between your actual files and what git sees when you stage and commit your changes.
+This way, git only sees the transformed version of the file without the problematic elements.
+At the same time, you do not have to lose them from your local copy.
+
+An exception is when you checkout a branch or do a git pull, which results in changes to the notebook.
+In this case, your local copy will be replaced by the clean version and you will lose your cell outputs.
+
+## Configuration
+
+Configuration is currently done via the `tool.nbwipers` section of the `pyproject.toml` file.
+Most of the command line options can be set per-project in the `pyproject.toml` file.
+
+For example you can use `extra-keys` to specify additional notebook elements you want to ignore.
+If you don't need the python version or the details about the Jupyter Kernel, you can include the following:
+
+```toml
+[tool.nbwipers]
+extra-keys = ["metadata.kernelspec", "metadata.language_info.version"]
+```
+
+This can be useful when collaborating, as the precise python version and the name assigned to the kernel are ephemeral and can change from person to person.
 
 ## Testing Coverage
 
@@ -87,7 +116,7 @@ Using the `llvm` engine means that integration tests contribute to coverage.
 ## Acknowledgements
 
 nbwipers relies on inspiration and code from several projects.
-For the projects whose code was used please see [`LICENSE`](LICENSE) for the third-party notices.
+For the projects, whose code was used please see [`LICENSE`](LICENSE) for the third-party notices.
 
 ### [nbstripout](https://github.com/kynan/nbstripout)
 
