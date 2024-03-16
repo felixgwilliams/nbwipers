@@ -181,8 +181,7 @@ fn test_partial_install() {
         fs::write(
             &attr_file,
             r#"*.ipynb filter=nbwipers
-*.ipynb filter=banana
-"#,
+*.ipynb filter=banana"#,
         )
         .unwrap();
 
@@ -224,10 +223,10 @@ fn test_handle_multiple_assignments() {
         fs::write(
             &config_file,
             r#"
-        [filter "nbwipers"]
+[filter "nbwipers"]
         clean = \"/home/felix/.local/pipx/venvs/nbwipers/bin/nbwipers\" clean -
         smudge = cat
-        "#,
+"#,
         )
         .unwrap();
         fs::write(
@@ -323,14 +322,13 @@ fn test_check_install() {
         .expect("command failed");
     assert!(output.status.success());
 
-    let attr_file = temp_dir.path().join(".git/info/attributes");
+    let attr_file = temp_dir.path().join(".gitattributes");
     let config_file = temp_dir.path().join(".git/config");
     fs::write(
         attr_file,
         r#"*.ipynb filter=nbstripout
 *.zpln filter=nbstripout
-*.ipynb diff=ipynb
-"#,
+*.ipynb diff=ipynb"#,
     )
     .unwrap();
     fs::write(
