@@ -427,7 +427,24 @@ fn test_check_all() {
     let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
     let output = Command::new(cur_exe)
         .current_dir("tests/e2e_notebooks")
-        .args(["check", ".", "--drop-empty-cells", "--drop-id"])
+        .args([
+            "check",
+            ".",
+            "../test_nbformat2.ipynb",
+            "--drop-empty-cells",
+            "--drop-id",
+        ])
+        .output()
+        .expect("command failed");
+
+    // let stdout = output.stdout.to_str_lossy();
+    assert!(!output.status.success());
+}
+#[test]
+fn test_nothing() {
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+    let output = Command::new(cur_exe)
+        .args(["check", "--drop-empty-cells", "--drop-id"])
         .output()
         .expect("command failed");
 

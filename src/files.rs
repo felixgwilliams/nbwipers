@@ -18,9 +18,11 @@ use crate::schema::RawNotebook;
 fn normalize_path<P: AsRef<Path>>(path: P) -> PathBuf {
     let path = path.as_ref();
     if let Ok(path) = path.absolutize() {
-        return path.to_path_buf();
+        path.to_path_buf()
+    } else {
+        #[cfg(not(tarpaulin_include))]
+        path.to_path_buf()
     }
-    path.to_path_buf()
 }
 pub fn relativize_path<P: AsRef<Path>>(path: P) -> String {
     let path = path.as_ref();
@@ -28,9 +30,10 @@ pub fn relativize_path<P: AsRef<Path>>(path: P) -> String {
     let cwd = path_absolutize::path_dedot::CWD.as_path();
 
     if let Ok(path) = path.strip_prefix(cwd) {
-        return format!("{}", path.display());
+        format!("{}", path.display())
+    } else {
+        format!("{}", path.display())
     }
-    format!("{}", path.display())
 }
 
 pub enum FoundNotebooks {
@@ -116,4 +119,29 @@ pub fn read_nb_stdin() -> Result<RawNotebook, NBReadError> {
     let handle = stdin().lock();
     let out = serde_json::from_reader(handle)?;
     Ok(out)
+}
+
+#[allow(clippy::unwrap_used)]
+#[cfg(test)]
+mod tests {
+    use std::env::current_dir;
+
+    use super::normalize_path;
+    use super::relativize_path;
+
+    #[test]
+    fn test_normalize() {
+        let cur_dir = current_dir().unwrap();
+
+        let rel_dir = "subdir";
+        let subdir = cur_dir.join(rel_dir);
+
+        assert_eq!(normalize_path(format!("./{rel_dir}")), subdir);
+        dbg!(&subdir);
+        dbg!(relativize_path(&subdir));
+        assert_eq!(rel_dir, relativize_path(&subdir));
+        if let Some(parent) = cur_dir.parent() {
+            assert_eq!(parent.to_str().unwrap(), relativize_path(parent));
+        }
+    }
 }
