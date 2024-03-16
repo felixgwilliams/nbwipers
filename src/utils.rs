@@ -118,6 +118,9 @@ pub fn get_value_child<'a, T: AsRef<str>>(value: &'a Value, path: &[T]) -> Optio
 mod test {
     use std::str::FromStr;
 
+    use crate::schema::CodeCell;
+    use crate::schema::SourceValue;
+
     use super::*;
     use serde_json::json;
 
@@ -144,5 +147,27 @@ mod test {
         pop_value_child(&mut metadata, key.get_parts());
 
         assert!(metadata.as_object().is_some_and(serde_json::Map::is_empty));
+    }
+    #[test]
+    fn test_pop_nothing() {
+        let mut cell = Cell::Code(CodeCell {
+            execution_count: None,
+            id: None,
+            metadata: json!({"hello": "world"}),
+            outputs: vec![],
+            source: SourceValue::StringArray(vec![]),
+        });
+        let nothing = pop_cell_key(&mut cell, &ExtraKey::from_str("metadata.hello").unwrap());
+        assert!(nothing.is_none());
+
+        let mut nb = RawNotebook {
+            cells: vec![],
+            nbformat: 4,
+            nbformat_minor: 5,
+            metadata: json!({"hello": "world"}),
+        };
+
+        let nothing = pop_meta_key(&mut nb, &ExtraKey::from_str("cell.metadata.hello").unwrap());
+        assert!(nothing.is_none());
     }
 }

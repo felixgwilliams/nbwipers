@@ -86,6 +86,7 @@ pub fn strip_single(
             let stdout = std::io::stdout();
             match write_nb(stdout, &strip_nb) {
                 Ok(()) => Ok(StripSuccess::from_stripped(stripped)),
+                #[cfg(not(tarpaulin_include))]
                 Err(e) => Err(e.into()),
             }
         }
@@ -95,6 +96,7 @@ pub fn strip_single(
             let writer = BufWriter::new(f);
             match write_nb(writer, &strip_nb) {
                 Ok(()) => Ok(StripSuccess::Stripped),
+                #[cfg(not(tarpaulin_include))]
                 Err(e) => Err(e.into()),
             }
         }
@@ -182,5 +184,25 @@ impl StripSuccess {
 impl StripResult {
     pub fn is_err(&self) -> bool {
         matches!(self, StripResult::ReadError(_) | StripResult::WriteError(_))
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_strip_error_to_strip_result() {
+        let read_error = StripError::ReadError(NBReadError::IO(std::io::Error::from(
+            std::io::ErrorKind::NotFound,
+        )));
+        let write_error = StripError::WriteError(NBWriteError::IO(std::io::Error::from(
+            std::io::ErrorKind::PermissionDenied,
+        )));
+        let read_error_res: StripResult = read_error.into();
+        let write_error_res: StripResult = write_error.into();
+        assert!(matches!(read_error_res, StripResult::ReadError(..)));
+        assert!(matches!(write_error_res, StripResult::WriteError(..)));
+
+        assert!(write_error_res.to_string().starts_with("Write error:"));
     }
 }

@@ -15,6 +15,7 @@ use attributes::check_install_attr_files;
 pub use attributes::{install_attributes, uninstall_attributes};
 use gitconfig::{check_install_config_file, resolve_config_file};
 pub use gitconfig::{install_config, uninstall_config};
+use gix_config::File;
 
 impl From<GitConfigType> for Source {
     fn from(value: GitConfigType) -> Self {
@@ -28,9 +29,8 @@ impl From<GitConfigType> for Source {
 
 fn get_git_repo_and_work_tree() -> Result<(PathBuf, Option<PathBuf>), Error> {
     let cur_dir = std::env::current_dir()?;
-    Ok(gix_discover::upwards(&cur_dir)?
-        .0
-        .into_repository_and_work_tree_directories())
+    let (git_dir, _) = gix_discover::upwards(&cur_dir)?;
+    Ok(git_dir.into_repository_and_work_tree_directories())
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -136,8 +136,7 @@ pub fn check_install_some_type(config_type: GitConfigType) -> Result<(), Error> 
     let attr_install_status = check_install_attr_files(&[config_type])?;
 
     let file_path = resolve_config_file(None, config_type)?;
-    let config_file =
-        gix_config::File::from_path_no_includes(file_path.clone(), config_type.into())?;
+    let config_file = File::from_path_no_includes(file_path.clone(), config_type.into())?;
     let config_install_status = check_install_config_file(&config_file);
 
     combine_install_status(attr_install_status, config_install_status)
@@ -150,7 +149,7 @@ pub fn check_install_none_type() -> Result<(), Error> {
     ];
 
     let attr_install_status = check_install_attr_files(&config_types)?;
-    let config_file = gix_config::File::from_git_dir(get_git_repo_and_work_tree()?.0)?;
+    let config_file = File::from_git_dir(get_git_repo_and_work_tree()?.0)?;
     let config_install_status = check_install_config_file(&config_file);
 
     combine_install_status(attr_install_status, config_install_status)
@@ -165,4 +164,33 @@ pub fn check_should_exit_zero(exit_zero: bool) -> bool {
 }
 
 #[cfg(test)]
-mod test {}
+mod test {
+    use super::*;
+    use std::{
+        env::{current_dir, set_current_dir},
+        fs::create_dir_all,
+        process::Command,
+    };
+
+    #[allow(clippy::unwrap_used)]
+    #[test]
+    fn test_git_discovery() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        {
+            let git_init_out = Command::new("git")
+                .current_dir(&temp_dir)
+                .args(["init"])
+                .output()
+                .expect("git init failed");
+            assert!(git_init_out.status.success());
+            let subdir = temp_dir.path().join("subdir/");
+            create_dir_all(&subdir).unwrap();
+            let old_dir = current_dir().unwrap();
+
+            set_current_dir(&subdir).unwrap();
+            let res = get_git_repo_and_work_tree();
+            assert_eq!(res.unwrap().1.unwrap(), temp_dir.path());
+            set_current_dir(old_dir).unwrap();
+        }
+    }
+}

@@ -148,3 +148,21 @@ pub fn check_nb(nb: &RawNotebook, settings: &Settings) -> Vec<CheckResult> {
 
     out
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_check_result_convert() {
+        let ioerror = NBReadError::IO(std::io::Error::from(std::io::ErrorKind::NotFound));
+        let check_result: CheckResult = ioerror.into();
+        assert!(matches!(check_result, CheckResult::IOError { .. }));
+    }
+    #[test]
+    fn test_display_ioerror() {
+        let ioerror = NBReadError::IO(std::io::Error::from(std::io::ErrorKind::NotFound));
+        let check_result: CheckResult = ioerror.into();
+        let displayed = check_result.to_string();
+        assert!(displayed.starts_with("IO Error"));
+    }
+}
