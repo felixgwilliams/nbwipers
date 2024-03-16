@@ -155,4 +155,27 @@ impl Cell {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use serde_json::json;
+
+    use super::*;
+
+    #[test]
+    fn test_empty_single_string() {
+        let sv = SourceValue::String("  ".into());
+        assert!(sv.is_empty());
+    }
+
+    #[test]
+    fn test_clear_cell_without_meta() {
+        let cell = CodeCell {
+            execution_count: None,
+            id: None,
+            metadata: json!([]),
+            outputs: vec![],
+            source: SourceValue::StringArray(vec![]),
+        };
+        assert!(cell.should_clear_output(true, true));
+        assert!(!cell.should_clear_output(false, true));
+    }
+}
