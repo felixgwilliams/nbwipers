@@ -93,6 +93,169 @@ fn test_install() {
         assert!(!attr_file_contents.contains("nbwipers"));
     }
 }
+#[test]
+fn test_config_subdir() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+    {
+        let config_file = temp_dir.path().join("new/subdir/").join("gitconfig");
+        let attr_file = temp_dir.path().join("new/subdir/").join("attributes");
+
+        let output = Command::new(&cur_exe)
+            .args([
+                "install",
+                "local",
+                "-g",
+                config_file.to_str().unwrap(),
+                "-a",
+                attr_file.to_str().unwrap(),
+            ])
+            .output()
+            .expect("command failed");
+        dbg!(output.stdout.as_bstr());
+        assert!(output.status.success());
+        assert!(config_file.exists());
+
+        let config_file_contents = fs::read_to_string(&config_file).unwrap();
+        let attr_file_contents = fs::read_to_string(&attr_file).unwrap();
+
+        let _output = Command::new(&cur_exe)
+            .args([
+                "install",
+                "local",
+                "-g",
+                config_file.to_str().unwrap(),
+                "-a",
+                attr_file.to_str().unwrap(),
+            ])
+            .output()
+            .expect("command failed");
+        assert_eq!(
+            config_file_contents,
+            fs::read_to_string(&config_file).unwrap(),
+        );
+        assert_eq!(attr_file_contents, fs::read_to_string(&attr_file).unwrap());
+    }
+}
+#[test]
+fn test_uninstall_nothing() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+    {
+        let config_file = temp_dir.path().join("bananas");
+        let attributes_file = temp_dir.path().join("pineapples");
+        let output = Command::new(cur_exe)
+            .args([
+                "uninstall",
+                "local",
+                "-g",
+                config_file.to_str().unwrap(),
+                "-a",
+                attributes_file.to_str().unwrap(),
+            ])
+            .output()
+            .expect("command failed");
+        dbg!(output.stdout.as_bstr());
+
+        assert!(output.status.success());
+    }
+}
+
+#[test]
+fn test_partial_install() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+    {
+        let config_file = temp_dir.path().join("gitconfig");
+        let attr_file = temp_dir.path().join("attributes");
+
+        fs::write(
+            &config_file,
+            r#"
+        [filter "nbwipers"]
+        clean = \"/home/felix/.local/pipx/venvs/nbwipers/bin/nbwipers\" clean -
+        smudge = cat
+        "#,
+        )
+        .unwrap();
+        fs::write(
+            &attr_file,
+            r#"*.ipynb filter=nbwipers
+*.ipynb filter=banana
+"#,
+        )
+        .unwrap();
+
+        let output = Command::new(&cur_exe)
+            .args([
+                "install",
+                "local",
+                "-g",
+                config_file.to_str().unwrap(),
+                "-a",
+                attr_file.to_str().unwrap(),
+            ])
+            .output()
+            .expect("command failed");
+        assert!(output.status.success());
+        let output = Command::new(&cur_exe)
+            .args([
+                "uninstall",
+                "local",
+                "-g",
+                config_file.to_str().unwrap(),
+                "-a",
+                attr_file.to_str().unwrap(),
+            ])
+            .output()
+            .expect("command failed");
+        assert!(output.status.success());
+    }
+}
+
+#[test]
+fn test_handle_multiple_assignments() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+    {
+        let config_file = temp_dir.path().join("gitconfig");
+        let attr_file = temp_dir.path().join("attributes");
+
+        fs::write(
+            &config_file,
+            r#"
+        [filter "nbwipers"]
+        clean = \"/home/felix/.local/pipx/venvs/nbwipers/bin/nbwipers\" clean -
+        smudge = cat
+        "#,
+        )
+        .unwrap();
+        fs::write(
+            &attr_file,
+            r#"
+            *.ipynb filter=nbwipers filter=banana argh
+        "#,
+        )
+        .unwrap();
+
+        let output = Command::new(cur_exe)
+            .args([
+                "uninstall",
+                "local",
+                "-g",
+                config_file.to_str().unwrap(),
+                "-a",
+                attr_file.to_str().unwrap(),
+            ])
+            .output()
+            .expect("command failed");
+        dbg!(output.stdout.as_bstr());
+        dbg!(output.stderr.as_bstr());
+        let attr_file_contents = fs::read_to_string(&attr_file).unwrap();
+        dbg!(attr_file_contents);
+        assert!(output.status.success());
+    }
+}
 
 #[test]
 fn test_check_install() {
@@ -156,6 +319,33 @@ fn test_check_install() {
     let output = Command::new(&cur_exe)
         .current_dir(&temp_dir)
         .args(["check-install"])
+        .output()
+        .expect("command failed");
+    assert!(output.status.success());
+
+    let attr_file = temp_dir.path().join(".git/info/attributes");
+    let config_file = temp_dir.path().join(".git/config");
+    fs::write(
+        attr_file,
+        r#"*.ipynb filter=nbstripout
+*.zpln filter=nbstripout
+*.ipynb diff=ipynb
+"#,
+    )
+    .unwrap();
+    fs::write(
+        config_file,
+        r#"[filter "nbstripout"]
+        clean = \"/home/felix/mambaforge/bin/python3.11\" -m nbstripout
+        smudge = cat
+[diff "ipynb"]
+        textconv = \"/home/felix/mambaforge/bin/python3.11\" -m nbstripout -t
+"#,
+    )
+    .unwrap();
+    let output = Command::new(&cur_exe)
+        .current_dir(&temp_dir)
+        .args(["check-install", "local"])
         .output()
         .expect("command failed");
     assert!(output.status.success());

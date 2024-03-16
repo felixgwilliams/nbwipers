@@ -131,12 +131,12 @@ pub fn uninstall_attributes(
         let mut to_write = false;
         for line in f.lines() {
             let mut line = line?;
-            if line.is_empty() {
+            if line.trim().is_empty() {
                 continue;
             }
             // let (kind, x, _) = gix_attributes::parse(line.as_bytes()).next().unwrap()?;
             let (kind, x, _) = match gix_attributes::parse(line.as_bytes()).next() {
-                None => bail!("No pattern found in line"),
+                None => bail!("No pattern found in line : {line}"),
                 Some(Ok(res)) => res,
                 Some(res) => res?,
             };

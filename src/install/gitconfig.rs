@@ -12,10 +12,12 @@ use crate::cli::GitConfigType;
 pub fn install_config(config_file: Option<&Path>, config_type: GitConfigType) -> Result<(), Error> {
     let cur_exe = std::env::current_exe()?;
     let source = config_type.into();
-    let cur_exe_str = cur_exe
-        .to_str()
-        .ok_or_else(|| (anyhow!("Executable path cannot be converted to unicode")))?
-        .replace('\\', "/");
+    let cur_exe_str = match cur_exe.to_str() {
+        Some(s) => Ok(s),
+        #[cfg(not(tarpaulin_include))]
+        None => Err(anyhow!("Executable path cannot be converted to unicode")),
+    }?
+    .replace('\\', "/");
     let file_path = resolve_config_file(config_file, config_type)?;
 
     let mut file = if file_path.is_file() {
@@ -55,9 +57,10 @@ pub fn install_config(config_file: Option<&Path>, config_type: GitConfigType) ->
         BStr::new(format!("\"{}\" clean -t", cur_exe_str.as_str()).as_str()),
     );
     println!("Writing to {}", file_path.display());
-    let mut writer = BufWriter::new(fs::File::create(file_path)?);
-    file.write_to(&mut writer)?;
-
+    {
+        let mut writer = BufWriter::new(fs::File::create(file_path)?);
+        file.write_to(&mut writer)?;
+    }
     Ok(())
 }
 
@@ -135,5 +138,15 @@ pub(super) fn check_install_config_file(config_file: &gix_config::File) -> Insta
     InstallStatus {
         nbstripout: check_config_sections(&filter_section_nbstripout, &diff_section_nbstripout),
         nbwipers: check_config_sections(&filter_section, &diff_section),
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_resolve() {
+        assert!(resolve_config_file(None, GitConfigType::Global).is_ok());
+        assert!(resolve_config_file(None, GitConfigType::System).is_ok());
     }
 }
