@@ -269,7 +269,7 @@ fn test_check_install() {
     assert!(git_init_out.status.success());
     let output = Command::new(&cur_exe)
         .current_dir(&temp_dir)
-        .args(["install", "local"])
+        .args(["install", "local", "-a", ".gitattributes"])
         .output()
         .expect("command failed");
     assert!(output.status.success());
@@ -325,19 +325,19 @@ fn test_check_install() {
     let attr_file = temp_dir.path().join(".gitattributes");
     let config_file = temp_dir.path().join(".git/config");
     fs::write(
-        attr_file,
+        &attr_file,
         r#"*.ipynb filter=nbstripout
 *.zpln filter=nbstripout
 *.ipynb diff=ipynb"#,
     )
     .unwrap();
     fs::write(
-        config_file,
+        &config_file,
         r#"[filter "nbstripout"]
-        clean = \"/home/felix/mambaforge/bin/python3.11\" -m nbstripout
+        clean = \"python3.11\" -m nbstripout
         smudge = cat
 [diff "ipynb"]
-        textconv = \"/home/felix/mambaforge/bin/python3.11\" -m nbstripout -t
+        textconv = \"python3.11\" -m nbstripout -t
 "#,
     )
     .unwrap();
@@ -347,6 +347,9 @@ fn test_check_install() {
         .output()
         .expect("command failed");
     assert!(output.status.success());
+
+    fs::write(&attr_file, "").unwrap();
+    fs::write(&config_file, "").unwrap();
 }
 
 #[test]
