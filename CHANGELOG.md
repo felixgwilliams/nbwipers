@@ -7,9 +7,18 @@ and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
 
-- Expand documentation in README
+## [0.3.5] - 2024-03-17
 
-## [version] - 2024-03-05
+### Changed
+
+- Expand documentation in README
+- improve coverage
+
+### Fixed
+
+- ignore whitespace lines in git attribute files
+
+## [0.3.4] - 2024-03-05
 
 ### Security
 
