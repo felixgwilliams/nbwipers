@@ -7,6 +7,8 @@ description = "Wipe clean your Jupyter Notebooks!"
 repository = "https://github.com/felixgwilliams/nbwipers"
 homepage = "https://github.com/felixgwilliams/nbwipers"
 readme = "README.md"
+categories = ["command-line-utilities", "development-tools"]
+keywords = ["python", "notebook", "jupyter", "ci", "pre-commit"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

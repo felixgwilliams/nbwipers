@@ -6,8 +6,8 @@ use crate::schema::{Cell, CodeCell, SourceValue};
 impl SourceValue {
     fn is_empty(&self) -> bool {
         match self {
-            SourceValue::String(ref s) => s.trim().is_empty(),
-            SourceValue::StringArray(ref s_vec) => s_vec.iter().all(|s| s.trim().is_empty()),
+            Self::String(ref s) => s.trim().is_empty(),
+            Self::StringArray(ref s_vec) => s_vec.iter().all(|s| s.trim().is_empty()),
         }
     }
 }
@@ -65,15 +65,15 @@ impl CodeCell {
 }
 
 impl Cell {
-    pub fn as_codecell(&self) -> Option<&CodeCell> {
-        if let Cell::Code(codecell) = self {
+    pub const fn as_codecell(&self) -> Option<&CodeCell> {
+        if let Self::Code(codecell) = self {
             Some(codecell)
         } else {
             None
         }
     }
     pub fn as_codecell_mut(&mut self) -> Option<&mut CodeCell> {
-        if let Cell::Code(codecell) = self {
+        if let Self::Code(codecell) = self {
             Some(codecell)
         } else {
             None
@@ -84,45 +84,45 @@ impl Cell {
         id.is_none() || id.as_ref().is_some_and(|id| id == &cell_number.to_string())
     }
 
-    pub fn get_source(&self) -> &SourceValue {
+    pub const fn get_source(&self) -> &SourceValue {
         match self {
-            Cell::Code(ref c) => &c.source,
-            Cell::Markdown(ref c) => &c.source,
-            Cell::Raw(ref c) => &c.source,
+            Self::Code(ref c) => &c.source,
+            Self::Markdown(ref c) => &c.source,
+            Self::Raw(ref c) => &c.source,
         }
     }
 
-    pub fn get_metadata(&self) -> &Value {
+    pub const fn get_metadata(&self) -> &Value {
         match self {
-            Cell::Code(ref c) => &c.metadata,
-            Cell::Markdown(ref c) => &c.metadata,
-            Cell::Raw(ref c) => &c.metadata,
+            Self::Code(ref c) => &c.metadata,
+            Self::Markdown(ref c) => &c.metadata,
+            Self::Raw(ref c) => &c.metadata,
         }
     }
     pub fn get_metadata_mut(&mut self) -> &mut Value {
         match self {
-            Cell::Code(ref mut c) => &mut c.metadata,
-            Cell::Markdown(ref mut c) => &mut c.metadata,
-            Cell::Raw(ref mut c) => &mut c.metadata,
+            Self::Code(ref mut c) => &mut c.metadata,
+            Self::Markdown(ref mut c) => &mut c.metadata,
+            Self::Raw(ref mut c) => &mut c.metadata,
         }
     }
-    pub fn get_id(&self) -> &Option<String> {
+    pub const fn get_id(&self) -> &Option<String> {
         match self {
-            Cell::Code(ref c) => &c.id,
-            Cell::Markdown(ref c) => &c.id,
-            Cell::Raw(ref c) => &c.id,
+            Self::Code(ref c) => &c.id,
+            Self::Markdown(ref c) => &c.id,
+            Self::Raw(ref c) => &c.id,
         }
     }
     pub fn set_id(&mut self, new_id: Option<String>) -> Option<String> {
         let prev_id = match self {
-            Cell::Code(c) => c.id.clone(),
-            Cell::Markdown(c) => c.id.clone(),
-            Cell::Raw(c) => c.id.clone(),
+            Self::Code(c) => c.id.clone(),
+            Self::Markdown(c) => c.id.clone(),
+            Self::Raw(c) => c.id.clone(),
         };
         match self {
-            Cell::Code(ref mut c) => c.id = new_id,
-            Cell::Markdown(ref mut c) => c.id = new_id,
-            Cell::Raw(ref mut c) => c.id = new_id,
+            Self::Code(ref mut c) => c.id = new_id,
+            Self::Markdown(ref mut c) => c.id = new_id,
+            Self::Raw(ref mut c) => c.id = new_id,
         };
         prev_id
     }
@@ -144,13 +144,11 @@ impl Cell {
             .and_then(|x| x.get("tags"))
             .and_then(|x| x.as_array());
 
-        if let Some(tags) = tags {
+        tags.map_or(false, |tags| {
             tags.iter()
                 .filter_map(|v| v.as_str())
                 .any(|s| drop_tagged_cells.contains(s))
-        } else {
-            false
-        }
+        })
     }
 }
 

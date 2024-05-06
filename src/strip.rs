@@ -172,7 +172,7 @@ impl Display for StripResult {
 }
 
 impl StripSuccess {
-    pub fn from_stripped(stripped: bool) -> Self {
+    pub const fn from_stripped(stripped: bool) -> Self {
         if stripped {
             Self::Stripped
         } else {
@@ -182,8 +182,8 @@ impl StripSuccess {
 }
 
 impl StripResult {
-    pub fn is_err(&self) -> bool {
-        matches!(self, StripResult::ReadError(_) | StripResult::WriteError(_))
+    pub const fn is_err(&self) -> bool {
+        matches!(self, Self::ReadError(_) | Self::WriteError(_))
     }
 }
 #[cfg(test)]

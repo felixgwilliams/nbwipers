@@ -12,12 +12,13 @@ use crate::cli::GitConfigType;
 pub fn install_config(config_file: Option<&Path>, config_type: GitConfigType) -> Result<(), Error> {
     let cur_exe = std::env::current_exe()?;
     let source = config_type.into();
-    let cur_exe_str = match cur_exe.to_str() {
-        Some(s) => Ok(s),
-        #[cfg(not(tarpaulin_include))]
-        None => Err(anyhow!("Executable path cannot be converted to unicode")),
-    }?
-    .replace('\\', "/");
+    let cur_exe_str = cur_exe
+        .to_str()
+        .map_or_else(
+            || Err(anyhow!("Executable path cannot be converted to unicode")),
+            Ok,
+        )?
+        .replace('\\', "/");
     let file_path = resolve_config_file(config_file, config_type)?;
 
     let mut file = if file_path.is_file() {

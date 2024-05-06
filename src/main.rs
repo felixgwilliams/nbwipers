@@ -1,7 +1,8 @@
-#![warn(clippy::all, clippy::pedantic)]
+#![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
 #![allow(clippy::module_name_repetitions)]
 #![warn(clippy::unwrap_used)]
 #![warn(missing_docs)]
+#![allow(clippy::multiple_crate_versions)] // can't do anything about these
 
 /*! nbwipers is a command line tool to wipe clean Jupyter Notebooks
  *
@@ -145,11 +146,11 @@ fn uninstall(cmd: &UninstallCommand) -> Result<(), Error> {
 }
 
 fn check_install(cmd: &CheckInstallCommand) -> Result<(), Error> {
-    let check_result = if let Some(config_type) = cmd.config_type {
-        install::check_install_some_type(config_type)
-    } else {
-        install::check_install_none_type()
-    };
+    let check_result = cmd
+        .config_type
+        .map_or_else(install::check_install_none_type, |config_type| {
+            install::check_install_some_type(config_type)
+        });
     if install::check_should_exit_zero(cmd.exit_zero) {
         Ok(())
     } else {

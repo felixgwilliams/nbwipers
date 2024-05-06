@@ -10,9 +10,9 @@ pub enum ExtraKey {
 }
 
 impl ExtraKey {
-    pub fn get_parts(&self) -> &Vec<String> {
+    pub const fn get_parts(&self) -> &Vec<String> {
         match self {
-            ExtraKey::Metadata(ref c) | ExtraKey::CellMeta(ref c) => &c.parts,
+            Self::Metadata(ref c) | Self::CellMeta(ref c) => &c.parts,
         }
     }
 }
@@ -31,7 +31,7 @@ pub struct StripKey {
     pub(crate) parts: Vec<String>,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy, Error)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Error)]
 pub enum ExtraKeyParseError {
     #[error("Key must start with `cell.metadata` or `metadata`")]
     NotCellOrMetadata,
@@ -46,7 +46,7 @@ impl StripKey {
         if parts.is_empty() || parts == [""] {
             Err(ExtraKeyParseError::EmptySubKey)
         } else {
-            Ok(StripKey {
+            Ok(Self {
                 parts: parts.iter().map(|x| String::from(*x)).collect(),
             })
         }

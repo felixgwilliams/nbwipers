@@ -59,26 +59,26 @@ pub struct PathCheckResult<'a> {
 impl Display for CheckResult {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            CheckResult::IOError { error } => write!(f, "IO Error: {error}"),
-            CheckResult::InvalidNotebook { error } => write!(f, "Invalid notebook: {error}"),
-            CheckResult::DropCells { cell_number } => {
+            Self::IOError { error } => write!(f, "IO Error: {error}"),
+            Self::InvalidNotebook { error } => write!(f, "Invalid notebook: {error}"),
+            Self::DropCells { cell_number } => {
                 write!(f, "cell: {cell_number}: Found cell to be dropped")
             }
-            CheckResult::StripMeta { extra_key } => {
+            Self::StripMeta { extra_key } => {
                 write!(f, "Found notebook metadata: {extra_key}")
             }
 
-            CheckResult::CellStripMeta {
+            Self::CellStripMeta {
                 cell_number,
                 extra_key,
             } => write!(f, "cell {cell_number}: Found cell metadata {extra_key}"),
-            CheckResult::ClearCount { cell_number } => {
+            Self::ClearCount { cell_number } => {
                 write!(f, "cell {cell_number}: Found cell with execution count")
             }
-            CheckResult::ClearId { cell_number } => {
+            Self::ClearId { cell_number } => {
                 write!(f, "cell {cell_number}: Found cell with Id")
             }
-            CheckResult::ClearOutput { cell_number } => {
+            Self::ClearOutput { cell_number } => {
                 write!(f, "cell {cell_number}: Found cell with output")
             }
         }

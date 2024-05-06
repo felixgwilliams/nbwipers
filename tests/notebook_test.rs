@@ -229,12 +229,12 @@ fn test_nbformat45() {
 fn test_nbformat45_expected_sequential_id() {
     test_expected(
         "tests/e2e_notebooks/test_nbformat45.ipynb",
-        "tests/e2e_notebooks/test_nbformat45.ipynb.expected_sequential_id",
+        "tests/e2e_notebooks/test_nbformat45.sequential_id.ipynb.expected",
         &["--drop-id"],
     );
     test_expected(
         "tests/e2e_notebooks/test_nbformat45.ipynb",
-        "tests/e2e_notebooks/test_nbformat45.ipynb.expected_sequential_id",
+        "tests/e2e_notebooks/test_nbformat45.sequential_id.ipynb.expected",
         &["-c", "tests/e2e_notebooks/test_nbformat45_sequential.toml"],
     );
 }

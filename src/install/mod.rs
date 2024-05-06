@@ -20,9 +20,9 @@ use gix_config::File;
 impl From<GitConfigType> for Source {
     fn from(value: GitConfigType) -> Self {
         match value {
-            GitConfigType::Global => Source::User,
-            GitConfigType::System => Source::System,
-            GitConfigType::Local => Source::Local,
+            GitConfigType::Global => Self::User,
+            GitConfigType::System => Self::System,
+            GitConfigType::Local => Self::Local,
         }
     }
 }
@@ -45,7 +45,7 @@ struct InstallStatus {
 }
 
 impl InstallToolStatus {
-    fn is_installed(&self) -> bool {
+    const fn is_installed(&self) -> bool {
         self.diff && self.filter
     }
 }
@@ -61,9 +61,9 @@ impl InstallToolStatus {
 // }
 
 impl BitAnd for InstallToolStatus {
-    type Output = InstallToolStatus;
+    type Output = Self;
     fn bitand(self, rhs: Self) -> Self::Output {
-        InstallToolStatus {
+        Self {
             diff: self.diff & rhs.diff,
             filter: self.filter & rhs.filter,
         }
@@ -90,9 +90,9 @@ impl BitAnd for InstallToolStatus {
 //     }
 // }
 impl BitAnd for InstallStatus {
-    type Output = InstallStatus;
+    type Output = Self;
     fn bitand(self, rhs: Self) -> Self::Output {
-        InstallStatus {
+        Self {
             nbstripout: self.nbstripout & rhs.nbstripout,
             nbwipers: self.nbwipers & rhs.nbwipers,
         }
@@ -136,7 +136,7 @@ pub fn check_install_some_type(config_type: GitConfigType) -> Result<(), Error> 
     let attr_install_status = check_install_attr_files(&[config_type])?;
 
     let file_path = resolve_config_file(None, config_type)?;
-    let config_file = File::from_path_no_includes(file_path.clone(), config_type.into())?;
+    let config_file = File::from_path_no_includes(file_path, config_type.into())?;
     let config_install_status = check_install_config_file(&config_file);
 
     combine_install_status(attr_install_status, config_install_status)
