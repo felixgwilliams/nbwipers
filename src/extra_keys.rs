@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{fmt::Display, str::FromStr};
 
 use serde::{de, Deserialize};
 use thiserror::Error;
@@ -17,11 +17,11 @@ impl ExtraKey {
     }
 }
 
-impl ToString for ExtraKey {
-    fn to_string(&self) -> String {
+impl Display for ExtraKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::CellMeta(cellmeta) => format!("cell.metadata.{}", cellmeta.parts.join(".")),
-            Self::Metadata(meta) => format!("metadata.{}", meta.parts.join(".")),
+            Self::CellMeta(cellmeta) => write!(f, "cell.metadata.{}", cellmeta.parts.join(".")),
+            Self::Metadata(meta) => write!(f, "metadata.{}", meta.parts.join(".")),
         }
     }
 }
