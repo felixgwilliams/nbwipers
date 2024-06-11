@@ -17,11 +17,12 @@ use check::PathCheckResult;
 use clap::Parser;
 use cli::{
     CheckCommand, CheckInstallCommand, CleanAllCommand, CleanCommand, Commands, CommonArgs,
-    InstallCommand, OutputFormat, UninstallCommand,
+    InstallCommand, OutputFormat, ShowConfigCommand, UninstallCommand,
 };
 use colored::Colorize;
 use files::{find_notebooks, read_nb, read_nb_stdin, relativize_path, FoundNotebooks};
 use rayon::prelude::*;
+use std::io::Write;
 use strip::{strip_single, StripResult};
 
 mod cell_impl;
@@ -158,6 +159,15 @@ fn check_install(cmd: &CheckInstallCommand) -> Result<(), Error> {
     }
 }
 
+fn show_config(common: CommonArgs) -> Result<(), Error> {
+    let (args, overrides) = common.partition();
+    let settings = Settings::construct(args.config.as_deref(), &overrides)?;
+    let settings_str = toml::to_string(&settings)?;
+    let mut stdout = std::io::stdout();
+    writeln!(stdout, "{settings_str}")?;
+
+    Ok(())
+}
 fn main() -> Result<(), Error> {
     let cli = cli::Cli::parse();
 
@@ -186,6 +196,7 @@ fn main() -> Result<(), Error> {
         Commands::Install(ref cmd) => install(cmd),
         Commands::Uninstall(ref cmd) => uninstall(cmd),
         Commands::CheckInstall(ref cmd) => check_install(cmd),
+        Commands::ShowConfig(ShowConfigCommand { common }) => show_config(common),
     }
 }
 

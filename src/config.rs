@@ -68,16 +68,37 @@ struct Tools {
     nbwipers: Option<Configuration>,
 }
 
-pub fn find_pyproject() -> Option<PathBuf> {
+pub fn nbwipers_enabled<P: AsRef<Path>>(path: P) -> Result<bool, PyprojectError> {
+    let config = read_pyproject(path)?;
+    Ok(config.is_some())
+}
+
+fn settings_for_dir<P: AsRef<Path>>(path: P) -> Result<Option<PathBuf>, PyprojectError> {
+    let nbwipers_toml = path.as_ref().join(".nbwipers.toml");
+    if nbwipers_toml.is_file() {
+        return Ok(Some(nbwipers_toml));
+    }
+    let nbwipers_toml = path.as_ref().join("nbwipers.toml");
+    if nbwipers_toml.is_file() {
+        return Ok(Some(nbwipers_toml));
+    }
+    // Check for `pyproject.toml`.
+    let pyproject_toml = path.as_ref().join("pyproject.toml");
+    if pyproject_toml.is_file() && nbwipers_enabled(&pyproject_toml)? {
+        return Ok(Some(pyproject_toml));
+    }
+    Ok(None)
+}
+
+pub fn find_settings() -> Result<Option<PathBuf>, PyprojectError> {
     let cwd = path_absolutize::path_dedot::CWD.as_path();
 
     for ancestor in cwd.ancestors() {
-        let pyproject = ancestor.join("pyproject.toml");
-        if pyproject.is_file() {
-            return Some(pyproject);
+        if let Some(settings_file) = settings_for_dir(ancestor)? {
+            return Ok(Some(settings_file));
         }
     }
-    None
+    Ok(None)
 }
 
 #[derive(Debug, Error)]
@@ -89,11 +110,24 @@ pub enum PyprojectError {
     ParseError(#[from] toml::de::Error),
 }
 
-pub fn read_pyproject(path: &Path) -> Result<Option<Configuration>, PyprojectError> {
+pub fn read_pyproject<P: AsRef<Path>>(path: P) -> Result<Option<Configuration>, PyprojectError> {
     let contents = std::fs::read_to_string(path)?;
     let pyproject: Pyproject = toml::from_str(&contents)?;
     let config = pyproject.tool.and_then(|tools| tools.nbwipers);
     Ok(config)
+}
+pub fn read_nbwipers<P: AsRef<Path>>(path: P) -> Result<Option<Configuration>, PyprojectError> {
+    let contents = std::fs::read_to_string(path)?;
+    let config: Configuration = toml::from_str(&contents)?;
+    Ok(Some(config))
+}
+
+fn read_settings<P: AsRef<Path>>(path: P) -> Result<Option<Configuration>, PyprojectError> {
+    if path.as_ref().ends_with("pyproject.toml") {
+        read_pyproject(&path)
+    } else {
+        read_nbwipers(path)
+    }
 }
 
 pub fn resolve(config_file: Option<&Path>) -> Result<Configuration, PyprojectError> {
@@ -101,8 +135,8 @@ pub fn resolve(config_file: Option<&Path>) -> Result<Configuration, PyprojectErr
     if let Some(config_file) = config_file {
         let config = read_pyproject(config_file)?;
         Ok(config.unwrap_or_default())
-    } else if let Some(pyproject_file) = find_pyproject() {
-        let config = read_pyproject(&pyproject_file)?;
+    } else if let Some(settings_file) = find_settings()? {
+        let config = read_settings(settings_file)?;
         Ok(config.unwrap_or_default())
     } else {
         Ok(Configuration::default())

@@ -85,8 +85,15 @@ pub enum Commands {
     Uninstall(UninstallCommand),
     /// check whether nbwipers is setup as a git filter
     CheckInstall(CheckInstallCommand),
+    /// Show configuration
+    ShowConfig(ShowConfigCommand),
 }
 
+#[derive(Clone, Debug, Parser)]
+pub struct ShowConfigCommand {
+    #[clap(flatten)]
+    pub common: CommonArgs,
+}
 #[derive(Clone, Debug, Parser)]
 pub struct CheckCommand {
     /// paths containing ipynb files to check. Use `-` to read from stdin

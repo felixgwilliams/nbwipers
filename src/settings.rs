@@ -2,10 +2,11 @@ use crate::cli::ConfigOverrides;
 use crate::config::{resolve, PyprojectError};
 use crate::extra_keys::ExtraKey;
 use rustc_hash::FxHashSet;
+use serde::Serialize;
 use std::path::Path;
 
 #[allow(clippy::struct_excessive_bools)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Settings {
     pub extra_keys: FxHashSet<ExtraKey>,
     pub drop_tagged_cells: FxHashSet<String>,

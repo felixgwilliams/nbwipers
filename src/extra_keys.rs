@@ -1,9 +1,9 @@
 use std::{fmt::Display, str::FromStr};
 
-use serde::{de, Deserialize};
+use serde::{de, Deserialize, Serialize};
 use thiserror::Error;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
 pub enum ExtraKey {
     CellMeta(StripKey),
     Metadata(StripKey),
@@ -26,7 +26,7 @@ impl Display for ExtraKey {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
 pub struct StripKey {
     pub(crate) parts: Vec<String>,
 }
