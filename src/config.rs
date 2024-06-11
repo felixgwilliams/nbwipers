@@ -134,7 +134,7 @@ fn read_settings<P: AsRef<Path>>(path: P) -> Result<Option<Configuration>, Pypro
 pub fn resolve(config_file: Option<&Path>) -> Result<Configuration, PyprojectError> {
     // config_file.unwrap().is_file()
     if let Some(config_file) = config_file {
-        let config = read_pyproject(config_file)?;
+        let config = read_settings(config_file)?;
         Ok(config.unwrap_or_default())
     } else if let Some(settings_file) = find_settings()? {
         let config = read_settings(settings_file)?;

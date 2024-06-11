@@ -1,2 +1,1 @@
-[tool.nbwipers]
 extra-keys = ["metadata.kernelspec", "metadata.language_info"]

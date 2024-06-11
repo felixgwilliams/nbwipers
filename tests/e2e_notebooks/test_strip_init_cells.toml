@@ -1,2 +1,1 @@
-[tool.nbwipers]
 strip-init-cell = true

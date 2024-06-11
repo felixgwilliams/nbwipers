@@ -15,7 +15,7 @@ pub struct Cli {
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Parser, Debug, Clone)]
 pub struct CommonArgs {
-    /// path to pyproject.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders.
+    /// path to pyproject.toml/.nbwipers.toml/nbwipers.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders.
     #[arg(long, short)]
     pub config: Option<PathBuf>,
 
