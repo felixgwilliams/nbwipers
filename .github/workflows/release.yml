@@ -63,7 +63,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        target: [x64, x86, aarch64]
+        target: [x64, x86] # disabling aarch64 for now
     steps:
       - uses: actions/checkout@v4
       - name: Build wheels
