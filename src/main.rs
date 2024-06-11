@@ -16,12 +16,14 @@ use anyhow::{anyhow, bail, Error};
 use check::PathCheckResult;
 use clap::Parser;
 use cli::{
-    CheckCommand, CheckInstallCommand, CleanAllCommand, CleanCommand, Commands, CommonArgs,
-    InstallCommand, OutputFormat, UninstallCommand,
+    resolve_bool_arg, CheckCommand, CheckInstallCommand, CleanAllCommand, CleanCommand, Commands,
+    CommonArgs, InstallCommand, OutputFormat, ShowConfigCommand, UninstallCommand,
 };
 use colored::Colorize;
+use config::resolve;
 use files::{find_notebooks, read_nb, read_nb_stdin, relativize_path, FoundNotebooks};
 use rayon::prelude::*;
+use std::io::Write;
 use strip::{strip_single, StripResult};
 
 mod cell_impl;
@@ -158,6 +160,22 @@ fn check_install(cmd: &CheckInstallCommand) -> Result<(), Error> {
     }
 }
 
+fn show_config(common: CommonArgs, show_all: bool) -> Result<(), Error> {
+    let (args, overrides) = common.partition();
+    let settings_str = if show_all {
+        let settings = Settings::construct(args.config.as_deref(), &overrides)?;
+        toml::to_string(&settings)?
+    } else {
+        let mut config = resolve(args.config.as_deref())?;
+        config = overrides.override_config(config);
+        toml::to_string(&config)?
+    };
+
+    let mut stdout = std::io::stdout();
+    writeln!(stdout, "{settings_str}")?;
+
+    Ok(())
+}
 fn main() -> Result<(), Error> {
     let cli = cli::Cli::parse();
 
@@ -186,8 +204,37 @@ fn main() -> Result<(), Error> {
         Commands::Install(ref cmd) => install(cmd),
         Commands::Uninstall(ref cmd) => uninstall(cmd),
         Commands::CheckInstall(ref cmd) => check_install(cmd),
+        Commands::ShowConfig(ShowConfigCommand {
+            common,
+            show_all,
+            no_show_defaults,
+        }) => show_config(
+            common,
+            resolve_bool_arg(show_all, no_show_defaults).unwrap_or(false),
+        ),
     }
 }
 
 #[cfg(test)]
 mod test {}
+#[allow(clippy::unwrap_used)]
+#[cfg(test)]
+pub(crate) mod test_helpers {
+    use lazy_static::lazy_static;
+    use std::{env::set_current_dir, path::Path, sync::Mutex};
+    lazy_static! {
+        pub static ref CWD_MUTEX: Mutex<()> = Mutex::new(());
+    }
+
+    pub fn with_dir<P: AsRef<Path>, T: Sized>(dir: P, f: impl FnOnce() -> T) -> T {
+        let _lock = CWD_MUTEX.lock().unwrap();
+        let cur_dir = crate::files::get_cwd();
+        dbg!(&cur_dir);
+        set_current_dir(&dir).unwrap();
+        dbg!(dir.as_ref());
+        let res = f();
+        dbg!(dir.as_ref());
+        set_current_dir(cur_dir).unwrap();
+        res
+    }
+}

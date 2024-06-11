@@ -15,7 +15,7 @@ pub struct Cli {
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Parser, Debug, Clone)]
 pub struct CommonArgs {
-    /// path to pyproject.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders.
+    /// path to pyproject.toml/.nbwipers.toml/nbwipers.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders.
     #[arg(long, short)]
     pub config: Option<PathBuf>,
 
@@ -85,8 +85,21 @@ pub enum Commands {
     Uninstall(UninstallCommand),
     /// check whether nbwipers is setup as a git filter
     CheckInstall(CheckInstallCommand),
+    /// Show configuration
+    ShowConfig(ShowConfigCommand),
 }
 
+#[derive(Clone, Debug, Parser)]
+pub struct ShowConfigCommand {
+    /// Show all config including defaults Disable with `--no-show-defaults`
+    #[arg(long, overrides_with("no_show_defaults"))]
+    pub show_all: bool,
+
+    #[arg(long, overrides_with("show_all"), hide = true)]
+    pub no_show_defaults: bool,
+    #[clap(flatten)]
+    pub common: CommonArgs,
+}
 #[derive(Clone, Debug, Parser)]
 pub struct CheckCommand {
     /// paths containing ipynb files to check. Use `-` to read from stdin
@@ -199,7 +212,7 @@ pub struct Args {
     pub allow_no_notebooks: bool,
 }
 
-fn resolve_bool_arg(yes: bool, no: bool) -> Option<bool> {
+pub fn resolve_bool_arg(yes: bool, no: bool) -> Option<bool> {
     match (yes, no) {
         (true, false) => Some(true),
         (false, true) => Some(false),

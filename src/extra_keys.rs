@@ -1,12 +1,21 @@
 use std::{fmt::Display, str::FromStr};
 
-use serde::{de, Deserialize};
+use serde::{de, Deserialize, Serialize};
 use thiserror::Error;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ExtraKey {
     CellMeta(StripKey),
     Metadata(StripKey),
+}
+
+impl Serialize for ExtraKey {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
 }
 
 impl ExtraKey {
@@ -26,7 +35,7 @@ impl Display for ExtraKey {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
 pub struct StripKey {
     pub(crate) parts: Vec<String>,
 }
@@ -137,10 +146,8 @@ mod tests {
 
         let mut cell: Cell = serde_json::from_value(cell_value).unwrap();
         let extra_key = ExtraKey::from_str("cell.metadata.banana").unwrap();
-        println!("{cell:?}");
-        println!("{extra_key:?}");
         pop_cell_key(&mut cell, &extra_key);
-        println!("{cell:?}");
+        assert_eq!(cell.get_metadata().as_object().unwrap().len(), 0);
     }
     #[test]
     fn test_key_roundtrip() {

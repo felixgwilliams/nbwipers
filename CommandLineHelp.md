@@ -11,6 +11,7 @@ This document contains the help content for the `nbwipers` command-line program.
 * [`nbwipers clean`↴](#nbwipers-clean)
 * [`nbwipers uninstall`↴](#nbwipers-uninstall)
 * [`nbwipers check-install`↴](#nbwipers-check-install)
+* [`nbwipers show-config`↴](#nbwipers-show-config)
 
 ## `nbwipers`
 
@@ -26,6 +27,7 @@ Wipe clean your Jupyter Notebooks!
 * `clean` — clean a single notebook
 * `uninstall` — uninstall nbwipers as a git filter
 * `check-install` — check whether nbwipers is setup as a git filter
+* `show-config` — Show configuration
 
 ###### **Options:**
 
@@ -68,7 +70,7 @@ clean all notebooks in a given path
 
 * `-d`, `--dry-run` — set to true to avoid writing to files
 * `-y`, `--yes` — skip confirmation and assume yes
-* `-c`, `--config <CONFIG>` — path to pyproject.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders
+* `-c`, `--config <CONFIG>` — path to pyproject.toml/.nbwipers.toml/nbwipers.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders
 * `--allow-no-notebooks` — Do not return an error if no notebooks are found
 * `--extra-keys <EXTRA_KEYS>` — extra keys to remove in the notebook or cell metadata, separated by commas. Must start with `metadata` or `cell.metadata`
 * `--drop-empty-cells` — drop empty cells. Disable with `--keep-empty-cells`
@@ -100,7 +102,7 @@ check notebooks in a given path for elements that would be removed by `clean`
 
   Possible values: `text`, `json`
 
-* `-c`, `--config <CONFIG>` — path to pyproject.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders
+* `-c`, `--config <CONFIG>` — path to pyproject.toml/.nbwipers.toml/nbwipers.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders
 * `--allow-no-notebooks` — Do not return an error if no notebooks are found
 * `--extra-keys <EXTRA_KEYS>` — extra keys to remove in the notebook or cell metadata, separated by commas. Must start with `metadata` or `cell.metadata`
 * `--drop-empty-cells` — drop empty cells. Disable with `--keep-empty-cells`
@@ -129,7 +131,7 @@ clean a single notebook
 ###### **Options:**
 
 * `-t`, `--textconv` — write cleaned file to stdout instead of to the file
-* `-c`, `--config <CONFIG>` — path to pyproject.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders
+* `-c`, `--config <CONFIG>` — path to pyproject.toml/.nbwipers.toml/nbwipers.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders
 * `--allow-no-notebooks` — Do not return an error if no notebooks are found
 * `--extra-keys <EXTRA_KEYS>` — extra keys to remove in the notebook or cell metadata, separated by commas. Must start with `metadata` or `cell.metadata`
 * `--drop-empty-cells` — drop empty cells. Disable with `--keep-empty-cells`
@@ -189,6 +191,32 @@ check whether nbwipers is setup as a git filter
 ###### **Options:**
 
 * `--exit-zero` — Exit zero regardless of install status
+
+## `nbwipers show-config`
+
+Show configuration
+
+**Usage:** `nbwipers show-config [OPTIONS]`
+
+###### **Options:**
+
+* `--show-all` — Show all config including defaults Disable with `--no-show-defaults`
+* `--no-show-defaults`
+* `-c`, `--config <CONFIG>` — path to pyproject.toml/.nbwipers.toml/nbwipers.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders
+* `--allow-no-notebooks` — Do not return an error if no notebooks are found
+* `--extra-keys <EXTRA_KEYS>` — extra keys to remove in the notebook or cell metadata, separated by commas. Must start with `metadata` or `cell.metadata`
+* `--drop-empty-cells` — drop empty cells. Disable with `--keep-empty-cells`
+* `--keep-empty-cells`
+* `--keep-output` — keep cell output. Disable with `--drop-output`
+* `--drop-output`
+* `--keep-count` — keep cell execution count. Disable with `--drop count`
+* `--drop-count`
+* `--drop-id` — replace cell ids with sequential ids. Disable with `--keep-id`
+* `--keep-id`
+* `--strip-init-cell` — Strip init cell. Disable with `--keep-init-cell`
+* `--keep-init-cell`
+* `--drop-tagged-cells <DROP_TAGGED_CELLS>` — comma-separated list of tags that will cause the cell to be dropped
+* `--keep-keys <KEEP_KEYS>` — List of metadata keys that should be kept, regardless of if they appear in
 
 <hr/>
 

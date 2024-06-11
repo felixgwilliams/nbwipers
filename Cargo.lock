@@ -882,7 +882,7 @@ dependencies = [
 
 [[package]]
 name = "nbwipers"
-version = "0.3.6"
+version = "0.3.7"
 dependencies = [
  "anyhow",
  "bstr",
@@ -896,6 +896,7 @@ dependencies = [
  "ignore",
  "inquire",
  "itertools",
+ "lazy_static",
  "path-absolutize",
  "rayon",
  "rustc-hash",

@@ -91,13 +91,21 @@ In this case, your local copy will be replaced by the clean version and you will
 ## Configuration
 
 Configuration is currently done via the `tool.nbwipers` section of the `pyproject.toml` file.
-Most of the command line options can be set per-project in the `pyproject.toml` file.
+Most of the command line options can be set per-project in the `pyproject.toml`, `nbwipers.toml` or `.nbwipers.toml` file.
+If you use `pyroject.toml`, you need to put the configuration under `[tool.nbwipers]`.
+If you use `nbwipers.toml` or `.nbwipers.toml`, the configuration needs to be at the top level.
 
 For example you can use `extra-keys` to specify additional notebook elements you want to ignore.
-If you don't need the python version or the details about the Jupyter Kernel, you can include the following:
+If you don't need the python version or the details about the Jupyter Kernel, you can include the following in your `pyproject.toml` file:
 
 ```toml
 [tool.nbwipers]
+extra-keys = ["metadata.kernelspec", "metadata.language_info.version"]
+```
+
+The equivalent for `nbwipers.toml` or `.nbwipers.toml` is just
+
+```toml
 extra-keys = ["metadata.kernelspec", "metadata.language_info.version"]
 ```
 

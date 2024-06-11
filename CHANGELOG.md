@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
 
+## [0.3.7] - 2024-06-11
+
+## Added
+
+- Enabled configuration via `nbwipers.toml` and `.nbwipers.toml` files.
+
+## [0.3.6] - 2024-05-22
+
+### Security
+
+- Fixed security advisory #13 gix package
+
+### Fixed
+
+- Fixed clippy lint #13
+
 ## [0.3.5] - 2024-03-17
 
 ### Changed

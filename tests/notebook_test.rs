@@ -39,6 +39,37 @@ fn test_expected(path: &str, expected: &str, extra_args: &[&str]) {
     assert!(check_output.status.success())
 }
 
+fn test_config_match(config_file: &str, extra_args: &[&str]) {
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+    let output = Command::new(&cur_exe)
+        .args(["show-config", "-c", config_file])
+        .output()
+        .expect("command failed");
+    let output_args = Command::new(&cur_exe)
+        .args(["show-config"])
+        .args(extra_args)
+        .output()
+        .expect("command failed");
+    assert_eq!(
+        output.stdout.to_str().unwrap(),
+        output_args.stdout.to_str().unwrap()
+    );
+
+    let output = Command::new(&cur_exe)
+        .args(["show-config", "--show-all", "-c", config_file])
+        .output()
+        .expect("command failed");
+    let output_args = Command::new(&cur_exe)
+        .args(["show-config", "--show-all"])
+        .args(extra_args)
+        .output()
+        .expect("command failed");
+    assert_eq!(
+        output.stdout.to_str().unwrap(),
+        output_args.stdout.to_str().unwrap()
+    );
+}
+
 #[test]
 fn test_drop_empty_cells_dontdrop() {
     test_expected(
@@ -59,6 +90,10 @@ fn test_drop_empty_cells() {
         "tests/e2e_notebooks/test_drop_empty_cells.ipynb",
         "tests/e2e_notebooks/test_drop_empty_cells.ipynb.expected",
         &["-c", "tests/e2e_notebooks/test_drop_empty_cells.toml"],
+    );
+    test_config_match(
+        "tests/e2e_notebooks/test_drop_empty_cells.toml",
+        &["--drop-empty-cells"],
     );
 }
 
@@ -83,6 +118,10 @@ fn test_drop_tagged_cells() {
         "tests/e2e_notebooks/test_drop_tagged_cells.ipynb.expected",
         &["-c", "tests/e2e_notebooks/test_drop_tagged_cells.toml"],
     );
+    test_config_match(
+        "tests/e2e_notebooks/test_drop_tagged_cells.toml",
+        &["--drop-tagged-cells=test"],
+    );
 }
 #[test]
 fn test_execution_timing() {
@@ -95,6 +134,10 @@ fn test_execution_timing() {
         "tests/e2e_notebooks/test_execution_timing.ipynb",
         "tests/e2e_notebooks/test_execution_timing.ipynb.expected",
         &["-c", "tests/e2e_notebooks/test_drop_tagged_cells.toml"],
+    );
+    test_config_match(
+        "tests/e2e_notebooks/test_drop_tagged_cells.toml",
+        &["--drop-tagged-cells=test"],
     );
 }
 #[test]
@@ -117,6 +160,11 @@ fn test_metadata_extra_keys() {
         "tests/e2e_notebooks/test_metadata_extra_keys.ipynb.expected",
         &["-c", "tests/e2e_notebooks/test_metadata_extra_keys.toml"],
     );
+
+    test_config_match(
+        "tests/e2e_notebooks/test_metadata_extra_keys.toml",
+        &["--extra-keys", "metadata.kernelspec,metadata.language_info"],
+    );
 }
 
 #[test]
@@ -131,6 +179,10 @@ fn test_metadata_keep_count() {
         "tests/e2e_notebooks/test_metadata_keep_count.ipynb.expected",
         &["-c", "tests/e2e_notebooks/test_metadata_keep_count.toml"],
     );
+    test_config_match(
+        "tests/e2e_notebooks/test_metadata_keep_count.toml",
+        &["--keep-count"],
+    );
 }
 #[test]
 fn test_metadata_keep_output() {
@@ -143,6 +195,10 @@ fn test_metadata_keep_output() {
         "tests/e2e_notebooks/test_metadata.ipynb",
         "tests/e2e_notebooks/test_metadata_keep_output.ipynb.expected",
         &["-c", "tests/e2e_notebooks/test_metadata_keep_output.toml"],
+    );
+    test_config_match(
+        "tests/e2e_notebooks/test_metadata_keep_output.toml",
+        &["--keep-output"],
     );
 }
 #[test]
@@ -159,6 +215,11 @@ fn test_metadata_keep_output_keep_count() {
             "-c",
             "tests/e2e_notebooks/test_metadata_keep_output_keep_count.toml",
         ],
+    );
+
+    test_config_match(
+        "tests/e2e_notebooks/test_metadata_keep_output_keep_count.toml",
+        &["--keep-output", "--keep-count"],
     );
 }
 #[test]
@@ -185,6 +246,14 @@ fn test_keep_metadata_keys() {
         "tests/e2e_notebooks/test_keep_metadata_keys.ipynb.expected",
         &["-c", "tests/e2e_notebooks/test_keep_metadata_keys.toml"],
     );
+
+    test_config_match(
+        "tests/e2e_notebooks/test_keep_metadata_keys.toml",
+        &[
+            "--keep-keys",
+            "cell.metadata.scrolled,cell.metadata.collapsed,metadata.a",
+        ],
+    );
 }
 #[test]
 fn test_metadata_period() {
@@ -197,6 +266,11 @@ fn test_metadata_period() {
         "tests/e2e_notebooks/test_metadata_period.ipynb",
         "tests/e2e_notebooks/test_metadata_period.ipynb.expected",
         &["-c", "tests/e2e_notebooks/test_metadata_period.toml"],
+    );
+
+    test_config_match(
+        "tests/e2e_notebooks/test_metadata_period.toml",
+        &["--extra-keys", "cell.metadata.application/vnd.databricks.v1+cell,metadata.application/vnd.databricks.v1+notebook"],
     );
 }
 #[test]
@@ -211,6 +285,11 @@ fn test_strip_init_cells() {
         "tests/e2e_notebooks/test_strip_init_cells.ipynb.expected",
         &["-c", "tests/e2e_notebooks/test_strip_init_cells.toml"],
     );
+
+    test_config_match(
+        "tests/e2e_notebooks/test_strip_init_cells.toml",
+        &["--strip-init-cell"],
+    );
 }
 #[test]
 fn test_nbformat45() {
@@ -224,6 +303,8 @@ fn test_nbformat45() {
         "tests/e2e_notebooks/test_nbformat45.ipynb.expected",
         &["-c", "tests/e2e_notebooks/test_nbformat45.toml"],
     );
+
+    test_config_match("tests/e2e_notebooks/test_nbformat45.toml", &["--keep-id"]);
 }
 #[test]
 fn test_nbformat45_expected_sequential_id() {
@@ -236,6 +317,10 @@ fn test_nbformat45_expected_sequential_id() {
         "tests/e2e_notebooks/test_nbformat45.ipynb",
         "tests/e2e_notebooks/test_nbformat45.sequential_id.ipynb.expected",
         &["-c", "tests/e2e_notebooks/test_nbformat45_sequential.toml"],
+    );
+    test_config_match(
+        "tests/e2e_notebooks/test_nbformat45_sequential.toml",
+        &["--drop-id"],
     );
 }
 #[test]

@@ -1,6 +1,6 @@
 [package]
 name = "nbwipers"
-version = "0.3.6"
+version = "0.3.7"
 edition = "2021"
 license = "MIT"
 description = "Wipe clean your Jupyter Notebooks!"
@@ -39,4 +39,5 @@ toml = "0.8.9"
 markdown-help = ["dep:clap-markdown"]
 
 [dev-dependencies]
+lazy_static = "1.4.0"
 tempfile = "3.10.0"
