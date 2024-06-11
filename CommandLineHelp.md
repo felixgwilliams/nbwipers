@@ -200,6 +200,8 @@ Show configuration
 
 ###### **Options:**
 
+* `--show-all` — Show all config including defaults Disable with `--no-show-defaults`
+* `--no-show-defaults`
 * `-c`, `--config <CONFIG>` — path to pyproject.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders
 * `--allow-no-notebooks` — Do not return an error if no notebooks are found
 * `--extra-keys <EXTRA_KEYS>` — extra keys to remove in the notebook or cell metadata, separated by commas. Must start with `metadata` or `cell.metadata`

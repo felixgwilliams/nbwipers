@@ -1,12 +1,12 @@
 use crate::{extra_keys::ExtraKey, settings::Settings};
 use rustc_hash::FxHashSet;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::io;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use thiserror::Error;
 
-#[derive(Debug, Clone, Default, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, Deserialize, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Configuration {
     pub extra_keys: Option<Vec<ExtraKey>>,

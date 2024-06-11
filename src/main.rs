@@ -16,10 +16,11 @@ use anyhow::{anyhow, bail, Error};
 use check::PathCheckResult;
 use clap::Parser;
 use cli::{
-    CheckCommand, CheckInstallCommand, CleanAllCommand, CleanCommand, Commands, CommonArgs,
-    InstallCommand, OutputFormat, ShowConfigCommand, UninstallCommand,
+    resolve_bool_arg, CheckCommand, CheckInstallCommand, CleanAllCommand, CleanCommand, Commands,
+    CommonArgs, InstallCommand, OutputFormat, ShowConfigCommand, UninstallCommand,
 };
 use colored::Colorize;
+use config::resolve;
 use files::{find_notebooks, read_nb, read_nb_stdin, relativize_path, FoundNotebooks};
 use rayon::prelude::*;
 use std::io::Write;
@@ -159,10 +160,17 @@ fn check_install(cmd: &CheckInstallCommand) -> Result<(), Error> {
     }
 }
 
-fn show_config(common: CommonArgs) -> Result<(), Error> {
+fn show_config(common: CommonArgs, show_all: bool) -> Result<(), Error> {
     let (args, overrides) = common.partition();
-    let settings = Settings::construct(args.config.as_deref(), &overrides)?;
-    let settings_str = toml::to_string(&settings)?;
+    let settings_str = if show_all {
+        let settings = Settings::construct(args.config.as_deref(), &overrides)?;
+        toml::to_string(&settings)?
+    } else {
+        let mut config = resolve(args.config.as_deref())?;
+        config = overrides.override_config(config);
+        toml::to_string(&config)?
+    };
+
     let mut stdout = std::io::stdout();
     writeln!(stdout, "{settings_str}")?;
 
@@ -196,7 +204,14 @@ fn main() -> Result<(), Error> {
         Commands::Install(ref cmd) => install(cmd),
         Commands::Uninstall(ref cmd) => uninstall(cmd),
         Commands::CheckInstall(ref cmd) => check_install(cmd),
-        Commands::ShowConfig(ShowConfigCommand { common }) => show_config(common),
+        Commands::ShowConfig(ShowConfigCommand {
+            common,
+            show_all,
+            no_show_defaults,
+        }) => show_config(
+            common,
+            resolve_bool_arg(show_all, no_show_defaults).unwrap_or(false),
+        ),
     }
 }
 

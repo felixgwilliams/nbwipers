@@ -91,6 +91,12 @@ pub enum Commands {
 
 #[derive(Clone, Debug, Parser)]
 pub struct ShowConfigCommand {
+    /// Show all config including defaults Disable with `--no-show-defaults`
+    #[arg(long, overrides_with("no_show_defaults"))]
+    pub show_all: bool,
+
+    #[arg(long, overrides_with("show_all"), hide = true)]
+    pub no_show_defaults: bool,
     #[clap(flatten)]
     pub common: CommonArgs,
 }
@@ -206,7 +212,7 @@ pub struct Args {
     pub allow_no_notebooks: bool,
 }
 
-fn resolve_bool_arg(yes: bool, no: bool) -> Option<bool> {
+pub fn resolve_bool_arg(yes: bool, no: bool) -> Option<bool> {
     match (yes, no) {
         (true, false) => Some(true),
         (false, true) => Some(false),

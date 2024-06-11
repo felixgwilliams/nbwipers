@@ -3,10 +3,19 @@ use std::{fmt::Display, str::FromStr};
 use serde::{de, Deserialize, Serialize};
 use thiserror::Error;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ExtraKey {
     CellMeta(StripKey),
     Metadata(StripKey),
+}
+
+impl Serialize for ExtraKey {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
 }
 
 impl ExtraKey {
