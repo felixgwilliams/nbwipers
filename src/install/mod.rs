@@ -165,32 +165,27 @@ pub fn check_should_exit_zero(exit_zero: bool) -> bool {
 
 #[cfg(test)]
 mod test {
+    use crate::test_helpers::with_dir;
+
     use super::*;
-    use std::{
-        env::{current_dir, set_current_dir},
-        fs::create_dir_all,
-        process::Command,
-    };
+    use std::{fs::create_dir_all, process::Command};
 
     #[allow(clippy::unwrap_used)]
     #[test]
     fn test_git_discovery() {
         let temp_dir = tempfile::tempdir().unwrap();
-        {
-            let git_init_out = Command::new("git")
-                .current_dir(&temp_dir)
-                .args(["init"])
-                .output()
-                .expect("git init failed");
-            assert!(git_init_out.status.success());
-            let subdir = temp_dir.path().join("subdir/");
-            create_dir_all(&subdir).unwrap();
-            let old_dir = current_dir().unwrap();
 
-            set_current_dir(&subdir).unwrap();
+        let git_init_out = Command::new("git")
+            .current_dir(&temp_dir)
+            .args(["init"])
+            .output()
+            .expect("git init failed");
+        assert!(git_init_out.status.success());
+        let subdir = temp_dir.path().join("subdir/");
+        create_dir_all(&subdir).unwrap();
+        with_dir(&subdir, || {
             let res = get_git_repo_and_work_tree();
             assert_eq!(res.unwrap().1.unwrap(), temp_dir.path());
-            set_current_dir(old_dir).unwrap();
-        }
+        });
     }
 }

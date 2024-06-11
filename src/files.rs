@@ -13,6 +13,21 @@ use thiserror::Error;
 
 use crate::schema::RawNotebook;
 
+#[inline]
+#[cfg(not(test))]
+pub fn get_cwd() -> PathBuf {
+    path_absolutize::path_dedot::CWD.to_owned()
+    // current_dir().unwrap().absolutize().unwrap().into_owned()
+}
+#[allow(clippy::unwrap_used)]
+#[cfg(test)]
+pub fn get_cwd() -> PathBuf {
+    use std::env::current_dir;
+
+    // path_absolutize::path_dedot::CWD.to_owned()
+    current_dir().unwrap().absolutize().unwrap().into_owned()
+}
+
 // normalize_path and relative_path are from Ruff, used under the MIT license
 
 fn normalize_path<P: AsRef<Path>>(path: P) -> PathBuf {
@@ -23,7 +38,7 @@ fn normalize_path<P: AsRef<Path>>(path: P) -> PathBuf {
 pub fn relativize_path<P: AsRef<Path>>(path: P) -> String {
     let path = path.as_ref();
 
-    let cwd = path_absolutize::path_dedot::CWD.as_path();
+    let cwd = get_cwd();
 
     path.strip_prefix(cwd).map_or_else(
         |_| format!("{}", path.display()),
@@ -118,18 +133,20 @@ pub fn read_nb_stdin() -> Result<RawNotebook, NBReadError> {
 #[allow(clippy::unwrap_used)]
 #[cfg(test)]
 mod tests {
-    use std::env::current_dir;
 
+    use crate::test_helpers::CWD_MUTEX;
+
+    use super::get_cwd;
     use super::normalize_path;
     use super::relativize_path;
 
     #[test]
     fn test_normalize() {
-        let cur_dir = current_dir().unwrap();
-
+        let _lock = CWD_MUTEX.lock();
+        let cur_dir = get_cwd();
+        dbg!(&cur_dir);
         let rel_dir = "subdir";
         let subdir = cur_dir.join(rel_dir);
-
         assert_eq!(normalize_path(format!("./{rel_dir}")), subdir);
         dbg!(&subdir);
         dbg!(relativize_path(&subdir));

@@ -146,10 +146,8 @@ mod tests {
 
         let mut cell: Cell = serde_json::from_value(cell_value).unwrap();
         let extra_key = ExtraKey::from_str("cell.metadata.banana").unwrap();
-        println!("{cell:?}");
-        println!("{extra_key:?}");
         pop_cell_key(&mut cell, &extra_key);
-        println!("{cell:?}");
+        assert_eq!(cell.get_metadata().as_object().unwrap().len(), 0);
     }
     #[test]
     fn test_key_roundtrip() {

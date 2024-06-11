@@ -1,3 +1,4 @@
+use crate::files::get_cwd;
 use crate::{extra_keys::ExtraKey, settings::Settings};
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
@@ -91,7 +92,7 @@ fn settings_for_dir<P: AsRef<Path>>(path: P) -> Result<Option<PathBuf>, Pyprojec
 }
 
 pub fn find_settings() -> Result<Option<PathBuf>, PyprojectError> {
-    let cwd = path_absolutize::path_dedot::CWD.as_path();
+    let cwd = get_cwd();
 
     for ancestor in cwd.ancestors() {
         if let Some(settings_file) = settings_for_dir(ancestor)? {
@@ -143,4 +144,49 @@ pub fn resolve(config_file: Option<&Path>) -> Result<Configuration, PyprojectErr
     }
     // let to_read = config_file.map_or_else(find_pyproject, |x| Some(x.to_owned()));
     // to_read.and_then(|p| read_pyproject(&p)).unwrap_or_default()
+}
+
+#[allow(clippy::unwrap_used)]
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_helpers::with_dir;
+    use std::fs;
+
+    #[test]
+    fn test_nbwipers_priority() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        with_dir(&temp_dir, || {
+            let dot_nbwipers = temp_dir.path().join(".nbwipers.toml");
+            fs::write(&dot_nbwipers, "extra-keys = [\"metadata.bananas\"]").unwrap();
+            let nbwipers = temp_dir.path().join("nbwipers.toml");
+            fs::write(&nbwipers, "extra-keys = [\"metadata.kiwis\"]").unwrap();
+            let pyproject = temp_dir.path().join("pyproject.toml");
+            fs::write(
+                pyproject,
+                "[tool.nbwipers]\nextra-keys = [\"metadata.pineapples\"]\n",
+            )
+            .unwrap();
+
+            let settings = resolve(None).unwrap();
+            assert_eq!(
+                settings.extra_keys,
+                Some(vec![ExtraKey::from_str("metadata.bananas").unwrap()])
+            );
+            fs::remove_file(dot_nbwipers).unwrap();
+            let settings = resolve(None).unwrap();
+
+            assert_eq!(
+                settings.extra_keys,
+                Some(vec![ExtraKey::from_str("metadata.kiwis").unwrap()])
+            );
+            fs::remove_file(nbwipers).unwrap();
+            let settings = resolve(None).unwrap();
+
+            assert_eq!(
+                settings.extra_keys,
+                Some(vec![ExtraKey::from_str("metadata.pineapples").unwrap()])
+            );
+        });
+    }
 }
