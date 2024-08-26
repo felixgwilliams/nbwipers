@@ -2,7 +2,7 @@ use anyhow::{anyhow, Error};
 
 use std::{fs, io::BufWriter, path::Path, path::PathBuf};
 
-use gix_config::{parse::section::Key, Source};
+use gix_config::{parse::section::ValueName, Source};
 
 use super::{get_git_repo_and_work_tree, InstallStatus, InstallToolStatus};
 use bstr::BStr;
@@ -38,12 +38,12 @@ pub fn install_config(config_file: Option<&Path>, config_type: GitConfigType) ->
     // fails for invalid section names. This one is ok
     #[allow(clippy::unwrap_used)]
     nbwipers_section.set(
-        Key::try_from("clean").unwrap(),
+        ValueName::try_from("clean").unwrap(),
         BStr::new(format!("\"{}\" clean -", cur_exe_str.as_str()).as_str()),
     );
 
     #[allow(clippy::unwrap_used)]
-    nbwipers_section.set(Key::try_from("smudge").unwrap(), BStr::new("cat"));
+    nbwipers_section.set(ValueName::try_from("smudge").unwrap(), BStr::new("cat"));
 
     // fails for invalid section names. This one is ok
     #[allow(clippy::unwrap_used)]
@@ -54,7 +54,7 @@ pub fn install_config(config_file: Option<&Path>, config_type: GitConfigType) ->
     // fails for invalid section names. This one is ok
     #[allow(clippy::unwrap_used)]
     diff_section.set(
-        Key::try_from("textconv").unwrap(),
+        ValueName::try_from("textconv").unwrap(),
         BStr::new(format!("\"{}\" clean -t", cur_exe_str.as_str()).as_str()),
     );
     println!("Writing to {}", file_path.display());
@@ -123,10 +123,10 @@ fn check_config_sections(
     InstallToolStatus {
         diff: diff_section
             .as_ref()
-            .is_ok_and(|x| x.contains_key("textconv")),
+            .is_ok_and(|x| x.contains_value_name("textconv")),
         filter: filter_section
             .as_ref()
-            .is_ok_and(|x| x.contains_key("clean") && x.contains_key("smudge")),
+            .is_ok_and(|x| x.contains_value_name("clean") && x.contains_value_name("smudge")),
     }
 }
 

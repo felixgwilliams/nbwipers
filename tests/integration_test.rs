@@ -313,8 +313,9 @@ fn test_check_install() {
         .output()
         .expect("command failed");
     assert!(output.status.success());
-
-    env::set_var("NBWIPERS_CHECK_INSTALL_EXIT_ZERO", "1");
+    unsafe {
+        env::set_var("NBWIPERS_CHECK_INSTALL_EXIT_ZERO", "1");
+    }
     let output = Command::new(&cur_exe)
         .current_dir(&temp_dir)
         .args(["check-install"])

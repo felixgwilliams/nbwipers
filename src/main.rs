@@ -9,7 +9,10 @@
  *
  */
 
-use std::path::{Path, PathBuf};
+use std::{
+    // fmt::write,
+    path::{Path, PathBuf},
+};
 
 use crate::settings::Settings;
 use anyhow::{anyhow, bail, Error};
@@ -22,6 +25,7 @@ use cli::{
 use colored::Colorize;
 use config::resolve;
 use files::{find_notebooks, read_nb, read_nb_stdin, relativize_path, FoundNotebooks};
+use hooks::hooks;
 use rayon::prelude::*;
 use std::io::Write;
 use strip::{strip_single, StripResult};
@@ -32,6 +36,7 @@ mod cli;
 mod config;
 mod extra_keys;
 mod files;
+mod hooks;
 mod install;
 mod schema;
 mod settings;
@@ -176,6 +181,7 @@ fn show_config(common: CommonArgs, show_all: bool) -> Result<(), Error> {
 
     Ok(())
 }
+
 fn main() -> Result<(), Error> {
     let cli = cli::Cli::parse();
 
@@ -212,6 +218,7 @@ fn main() -> Result<(), Error> {
             common,
             resolve_bool_arg(show_all, no_show_defaults).unwrap_or(false),
         ),
+        Commands::Hook(ref cmd) => hooks(cmd),
     }
 }
 

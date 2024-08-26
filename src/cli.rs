@@ -87,6 +87,26 @@ pub enum Commands {
     CheckInstall(CheckInstallCommand),
     /// Show configuration
     ShowConfig(ShowConfigCommand),
+    /// Commands for pre-commit hooks
+    #[command(subcommand)]
+    Hook(HookCommands),
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum HookCommands {
+    CheckLargeFiles(CheckLargeFilesCommand),
+}
+
+#[derive(Clone, Debug, Parser)]
+pub struct CheckLargeFilesCommand {
+    /// Files to check for large files.
+    pub filenames: Vec<PathBuf>,
+    /// Check all files not just staged files
+    #[arg(long, action)]
+    pub enforce_all: bool,
+    /// Max size in KB to consider a file large
+    #[arg(long("maxkb"))]
+    pub maxkb: Option<u64>,
 }
 
 #[derive(Clone, Debug, Parser)]
@@ -196,6 +216,7 @@ pub enum GitConfigType {
     Local,
 }
 
+#[derive(Clone, Debug, Default)]
 pub struct ConfigOverrides {
     pub extra_keys: Option<Vec<ExtraKey>>,
     pub drop_empty_cells: Option<bool>,
