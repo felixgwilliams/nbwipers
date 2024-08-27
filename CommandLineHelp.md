@@ -212,9 +212,11 @@ Commands for pre-commit hooks
 
 ###### **Subcommands:**
 
-* `check-large-files` —
+* `check-large-files` — Check for large files, but measure ipynb sizes after clearning
 
 ## `nbwipers hook check-large-files`
+
+Check for large files, but measure ipynb sizes after clearning
 
 **Usage:** `nbwipers hook check-large-files [OPTIONS] [FILENAMES]...`
 
@@ -226,6 +228,7 @@ Commands for pre-commit hooks
 
 * `--enforce-all` — Check all files not just staged files
 * `--maxkb <MAXKB>` — Max size in KB to consider a file large
+* `-c`, `--config <CONFIG>` — path to pyproject.toml/.nbwipers.toml/nbwipers.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders
 
 <hr/>
 

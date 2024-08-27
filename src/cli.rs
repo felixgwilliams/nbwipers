@@ -103,6 +103,7 @@ pub enum Commands {
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum HookCommands {
+    /// Check for large files, but measure ipynb sizes after clearning
     CheckLargeFiles(CheckLargeFilesCommand),
 }
 
@@ -116,6 +117,9 @@ pub struct CheckLargeFilesCommand {
     /// Max size in KB to consider a file large
     #[arg(long("maxkb"))]
     pub maxkb: Option<u64>,
+    /// path to pyproject.toml/.nbwipers.toml/nbwipers.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders.
+    #[arg(long, short)]
+    pub config: Option<PathBuf>,
 }
 
 #[derive(Clone, Debug, Parser)]

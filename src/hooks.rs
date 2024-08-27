@@ -9,7 +9,7 @@ use crate::cli::{CheckLargeFilesCommand, ConfigOverrides, HookCommands};
 use crate::files::read_nb;
 use crate::settings::Settings;
 use crate::strip::{strip_nb, write_nb};
-use anyhow::{bail, Context, Error};
+use anyhow::{anyhow, bail, Context, Error};
 use itertools::Itertools;
 
 use rayon::prelude::*;
@@ -21,7 +21,9 @@ pub fn hooks(cmd: &HookCommands) -> Result<(), Error> {
     }
 }
 const DEFAULT_MAX_SIZE_KB: u64 = 500; // 500 KB
-
+fn check_normal_filesize<P: AsRef<Path>>(path: P) -> Result<u64, Error> {
+    Ok(std::fs::metadata(path)?.len())
+}
 fn check_large_files(cmd: &CheckLargeFilesCommand) -> Result<(), Error> {
     let max_size_kb = cmd.maxkb.unwrap_or(DEFAULT_MAX_SIZE_KB);
     let mut files: FxHashSet<PathBuf> = cmd.filenames.iter().map(PathBuf::to_owned).collect();
@@ -36,17 +38,19 @@ fn check_large_files(cmd: &CheckLargeFilesCommand) -> Result<(), Error> {
         .par_iter()
         .map(|f| {
             match f.extension().and_then(OsStr::to_str) {
-                Some("ipynb") => lazy_settings.stripped_size(f).map_or_else(
-                    |_| {
-                        eprintln!(
-                            "Could not parse nb file {}. Using on-disk size",
-                            f.to_string_lossy()
-                        );
-                        Ok((f.as_path(), std::fs::metadata(f)?.len()))
-                    },
-                    |size| Ok((f.as_path(), size)),
-                ),
-                _ => Ok((f.as_path(), std::fs::metadata(f)?.len())),
+                Some("ipynb") => lazy_settings
+                    .stripped_size(f, cmd.config.as_deref())
+                    .map_or_else(
+                        |_| {
+                            eprintln!(
+                                "Could not parse nb file {}. Using on-disk size",
+                                f.to_string_lossy()
+                            );
+                            Ok((f.as_path(), check_normal_filesize(f)?))
+                        },
+                        |size| Ok((f.as_path(), size)),
+                    ),
+                _ => Ok((f.as_path(), check_normal_filesize(f)?)),
             }
             // don't worry about
         })
@@ -82,25 +86,37 @@ impl SizeFinder {
         }
     }
     #[allow(clippy::unwrap_used)]
-    fn load_settings(&self) -> Result<(), Error> {
+    fn load_settings(&self, config_file: Option<&Path>) -> Result<(), Error> {
         if self.settings.read().unwrap().is_none() {
             let mut s = self.settings.write().unwrap();
-            *s = Some(Settings::construct(None, &ConfigOverrides::default())?);
+            *s = Some(Settings::construct(
+                config_file,
+                &ConfigOverrides::default(),
+            )?);
         }
         Ok(())
     }
     #[allow(clippy::unwrap_used)]
-    fn stripped_size(&self, path: &Path) -> Result<u64, Error> {
-        self.load_settings()?;
+    fn stripped_size(&self, path: &Path, config_file: Option<&Path>) -> Result<u64, Error> {
+        self.load_settings(config_file)?;
+        let binding = self.settings.read().unwrap();
+
+        let x = binding.as_ref().expect("settings should be loaded");
+        let file_name = path.file_name().ok_or_else(|| anyhow!("Invalid file"))?;
+
+        if x.exclude_.is_match(path)
+            || x.exclude_.is_match(file_name)
+            || x.extend_exclude_.is_match(path)
+            || x.extend_exclude_.is_match(file_name)
+        {
+            // we're not treating this one as a candidate for stripping
+            return check_normal_filesize(path);
+        }
+
         let nb = read_nb(path)?;
-        let (stripped_nb, _) = strip_nb(
-            nb,
-            self.settings
-                .read()
-                .unwrap()
-                .as_ref()
-                .expect("settings not loaded"),
-        );
+
+        let (stripped_nb, _) = strip_nb(nb, binding.as_ref().expect("settings should be loaded"));
+        drop(binding); // release lock early at clippy's suggestion
         let mut out: Vec<u8> = Vec::new();
 
         write_nb(&mut out, &stripped_nb)?;

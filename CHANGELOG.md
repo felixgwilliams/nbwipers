@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
 
+## [0.4.0] - 2024-08-27
+
+### Added
+
+- exclude and extend-exclude for excluding files and directories
+- add a subcommand hooks, to be used with e.g. pre-commit
+- add a hook check-large-files to check for large files after cleaning notebooks
+
 ## [0.3.7] - 2024-06-11
 
 ## Added
