@@ -24,6 +24,23 @@ pub struct RawNotebook {
     pub nbformat_minor: i64,
 }
 
+impl RawNotebook {
+    pub fn new() -> Self {
+        Self {
+            cells: Vec::new(),
+            metadata: Value::Null,
+            nbformat: 4,
+            nbformat_minor: 5,
+        }
+    }
+}
+
+impl Default for RawNotebook {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// String identifying the type of cell.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(tag = "cell_type")]

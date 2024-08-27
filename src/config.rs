@@ -3,7 +3,7 @@ use crate::{extra_keys::ExtraKey, settings::Settings};
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
-use std::fmt::{Display, Formatter};
+// use std::fmt::{Display, Formatter};
 use std::io;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -118,11 +118,11 @@ impl FilePattern {
     }
 }
 
-impl Display for FilePattern {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self.pattern.as_str())
-    }
-}
+// impl Display for FilePattern {
+//     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "{:?}", self.pattern.as_str())
+//     }
+// }
 
 impl FromStr for FilePattern {
     type Err = anyhow::Error;

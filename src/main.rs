@@ -14,34 +14,23 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::settings::Settings;
 use anyhow::{anyhow, bail, Error};
-use check::PathCheckResult;
 use clap::Parser;
-use cli::{
-    resolve_bool_arg, CheckCommand, CheckInstallCommand, CleanAllCommand, CleanCommand, Commands,
-    CommonArgs, InstallCommand, OutputFormat, ShowConfigCommand, UninstallCommand,
-};
 use colored::Colorize;
-use config::{resolve, Configuration};
-use files::{find_notebooks, read_nb, read_nb_stdin, relativize_path, FoundNotebooks};
-use hooks::hooks;
+use nbwipers::check::{self as check, PathCheckResult};
+use nbwipers::cli::{
+    self as cli, resolve_bool_arg, CheckCommand, CheckInstallCommand, CleanAllCommand,
+    CleanCommand, Commands, CommonArgs, InstallCommand, OutputFormat, ShowConfigCommand,
+    UninstallCommand,
+};
+use nbwipers::config::{resolve, Configuration};
+use nbwipers::files::{find_notebooks, read_nb, read_nb_stdin, relativize_path, FoundNotebooks};
+use nbwipers::hooks::hooks;
+use nbwipers::install;
+use nbwipers::settings::Settings;
+use nbwipers::strip::{strip_single, StripResult};
 use rayon::prelude::*;
 use std::io::Write;
-use strip::{strip_single, StripResult};
-
-mod cell_impl;
-mod check;
-mod cli;
-mod config;
-mod extra_keys;
-mod files;
-mod hooks;
-mod install;
-mod schema;
-mod settings;
-mod strip;
-mod utils;
 
 fn check_all(
     files: &[PathBuf],
@@ -54,7 +43,7 @@ fn check_all(
     let nbs = find_notebooks(files, &settings)?;
     let check_results_by_file = match nbs {
         FoundNotebooks::Stdin => match read_nb_stdin() {
-            Ok(nb) => vec![(Path::new("-"), check::check_nb(&nb, &settings))],
+            Ok(nb) => vec![(Path::new("-"), nbwipers::check::check_nb(&nb, &settings))],
             Err(e) => vec![(Path::new("-"), vec![e.into()])],
         },
         FoundNotebooks::NoFiles => {
@@ -229,24 +218,3 @@ fn main() -> Result<(), Error> {
 
 #[cfg(test)]
 mod test {}
-#[allow(clippy::unwrap_used)]
-#[cfg(test)]
-pub(crate) mod test_helpers {
-    use lazy_static::lazy_static;
-    use std::{env::set_current_dir, path::Path, sync::Mutex};
-    lazy_static! {
-        pub static ref CWD_MUTEX: Mutex<()> = Mutex::new(());
-    }
-
-    pub fn with_dir<P: AsRef<Path>, T: Sized>(dir: P, f: impl FnOnce() -> T) -> T {
-        let _lock = CWD_MUTEX.lock().unwrap();
-        let cur_dir = crate::files::get_cwd();
-        dbg!(&cur_dir);
-        set_current_dir(&dir).unwrap();
-        dbg!(dir.as_ref());
-        let res = f();
-        dbg!(dir.as_ref());
-        set_current_dir(cur_dir).unwrap();
-        res
-    }
-}

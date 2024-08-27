@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning].
 - add a subcommand hooks, to be used with e.g. pre-commit
 - add a hook check-large-files to check for large files after cleaning notebooks
 - add `--isolated` flag to ignore configuration files
+- add lib.rs to the crate
 
 ## [0.3.7] - 2024-06-11
 
