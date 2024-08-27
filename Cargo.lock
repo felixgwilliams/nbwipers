@@ -927,6 +927,7 @@ dependencies = [
  "gix-config",
  "gix-discover",
  "gix-path",
+ "globset",
  "ignore",
  "inquire",
  "itertools",

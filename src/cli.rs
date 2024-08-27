@@ -2,7 +2,10 @@ use std::path::PathBuf;
 
 use clap::{command, Parser, Subcommand, ValueEnum};
 
-use crate::{config::Configuration, extra_keys::ExtraKey};
+use crate::{
+    config::{Configuration, FilePattern},
+    extra_keys::ExtraKey,
+};
 
 #[derive(Parser, Debug, Clone)]
 #[command(author, version, about, long_about = None)]
@@ -69,6 +72,12 @@ pub struct CommonArgs {
     /// List of metadata keys that should be kept, regardless of if they appear in
     #[arg(long, value_delimiter = ',')]
     pub keep_keys: Option<Vec<ExtraKey>>,
+    /// List of file patterns to ignore
+    #[arg(long, value_delimiter = ',')]
+    pub exclude: Option<Vec<FilePattern>>,
+    /// List of additional file patterns to ignore
+    #[arg(long, value_delimiter = ',')]
+    pub extend_exclude: Option<Vec<FilePattern>>,
 }
 
 #[derive(Subcommand, Debug, Clone)]
@@ -226,6 +235,8 @@ pub struct ConfigOverrides {
     pub strip_init_cell: Option<bool>,
     pub drop_tagged_cells: Option<Vec<String>>,
     pub keep_keys: Option<Vec<ExtraKey>>,
+    pub exclude: Option<Vec<FilePattern>>,
+    pub extend_exclude: Option<Vec<FilePattern>>,
 }
 
 pub struct Args {
@@ -258,6 +269,8 @@ impl CommonArgs {
                 drop_tagged_cells: self.drop_tagged_cells,
                 strip_init_cell: resolve_bool_arg(self.strip_init_cell, self.keep_init_cell),
                 keep_keys: self.keep_keys,
+                extend_exclude: self.extend_exclude,
+                exclude: self.exclude,
             },
         )
     }
@@ -288,6 +301,12 @@ impl ConfigOverrides {
         }
         if let Some(keep_keys) = &self.keep_keys {
             config.keep_keys = Some(keep_keys.clone());
+        }
+        if let Some(exclude) = &self.exclude {
+            config.exclude = Some(exclude.clone());
+        }
+        if let Some(extend_exclude) = &self.extend_exclude {
+            config.extend_exclude.extend(extend_exclude.clone());
         }
         config
     }

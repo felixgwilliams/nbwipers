@@ -6,12 +6,13 @@ use std::{
 };
 
 use anyhow::{anyhow, Error};
-use ignore::WalkBuilder;
+use globset::Candidate;
+use ignore::{WalkBuilder, WalkState};
 use itertools::Itertools;
 use path_absolutize::Absolutize;
 use thiserror::Error;
 
-use crate::schema::RawNotebook;
+use crate::{schema::RawNotebook, settings::Settings};
 
 #[inline]
 #[cfg(not(test))]
@@ -28,9 +29,9 @@ pub fn get_cwd() -> PathBuf {
     current_dir().unwrap().absolutize().unwrap().into_owned()
 }
 
-// normalize_path and relative_path are from Ruff, used under the MIT license
+// normalize_path, normalize_path_to relative_path are from Ruff, used under the MIT license
 
-fn normalize_path<P: AsRef<Path>>(path: P) -> PathBuf {
+pub fn normalize_path<P: AsRef<Path>>(path: P) -> PathBuf {
     let path = path.as_ref();
     path.absolutize()
         .map_or_else(|_| path.to_path_buf(), |path| path.to_path_buf())
@@ -46,13 +47,21 @@ pub fn relativize_path<P: AsRef<Path>>(path: P) -> String {
     )
 }
 
+pub fn normalize_path_to<P: AsRef<Path>, R: AsRef<Path>>(path: P, root_path: R) -> PathBuf {
+    let path = path.as_ref();
+    if let Ok(path) = path.absolutize_from(root_path.as_ref()) {
+        return path.to_path_buf();
+    }
+    path.to_path_buf()
+}
+
 pub enum FoundNotebooks {
     Stdin,
     NoFiles,
     Files(Vec<PathBuf>),
 }
 
-pub fn find_notebooks(paths: &[PathBuf]) -> Result<FoundNotebooks, Error> {
+pub fn find_notebooks(paths: &[PathBuf], settings: &Settings) -> Result<FoundNotebooks, Error> {
     if paths == [Path::new("-")] {
         return Ok(FoundNotebooks::Stdin);
     }
@@ -72,13 +81,35 @@ pub fn find_notebooks(paths: &[PathBuf]) -> Result<FoundNotebooks, Error> {
     let files: std::sync::Mutex<Vec<PathBuf>> = std::sync::Mutex::new(vec![]);
     walker.run(|| {
         Box::new(|path| {
-            if let Ok(entry) = path {
+            if let Ok(entry) = &path {
+                if entry.depth() > 0 {
+                    let path = entry.path();
+                    if let Some(file_name) = path.file_name() {
+                        let fname_candidate = Candidate::new(file_name);
+                        let path_candidate = Candidate::new(path);
+                        if !settings.exclude_.is_empty()
+                            && (settings.exclude_.is_match_candidate(&fname_candidate)
+                                || settings.exclude_.is_match_candidate(&path_candidate))
+                        {
+                            return WalkState::Skip;
+                        }
+                        if !settings.extend_exclude_.is_empty()
+                            && (settings
+                                .extend_exclude_
+                                .is_match_candidate(&fname_candidate)
+                                || settings.extend_exclude_.is_match_candidate(&path_candidate))
+                        {
+                            return WalkState::Skip;
+                        }
+                    }
+                }
+
                 let resolved = if entry.file_type().map_or(true, |ft| ft.is_dir()) {
                     None
                 } else if entry.depth() == 0 {
-                    Some(entry.into_path())
+                    Some(entry.path())
                 } else {
-                    let cur_path = entry.into_path();
+                    let cur_path = entry.path();
                     if cur_path.extension() == Some(OsStr::new("ipynb")) {
                         Some(cur_path)
                     } else {
@@ -87,7 +118,7 @@ pub fn find_notebooks(paths: &[PathBuf]) -> Result<FoundNotebooks, Error> {
                 };
                 if let Some(resolved) = resolved {
                     #[allow(clippy::unwrap_used)]
-                    files.lock().unwrap().push(resolved);
+                    files.lock().unwrap().push(resolved.to_owned());
                 }
             }
 

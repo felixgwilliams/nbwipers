@@ -22,6 +22,7 @@ gix-attributes = "0.22.5"
 gix-config = { version = "0.40.0" }
 gix-discover = "0.35.0"
 gix-path = "0.10.5"
+globset = "0.4.14"
 ignore = "0.4.22"
 inquire = "0.7.0"
 itertools = "0.13.0"

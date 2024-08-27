@@ -51,7 +51,7 @@ fn check_all(
     let output_format = output_format.unwrap_or_default();
     let (args, overrides) = cli.partition();
     let settings = Settings::construct(args.config.as_deref(), &overrides)?;
-    let nbs = find_notebooks(files)?;
+    let nbs = find_notebooks(files, &settings)?;
     let check_results_by_file = match nbs {
         FoundNotebooks::Stdin => match read_nb_stdin() {
             Ok(nb) => vec![(Path::new("-"), check::check_nb(&nb, &settings))],
@@ -102,7 +102,8 @@ fn check_all(
 
 fn strip_all(files: &[PathBuf], dry_run: bool, yes: bool, cli: CommonArgs) -> Result<(), Error> {
     let (args, overrides) = cli.partition();
-    let FoundNotebooks::Files(nbs) = find_notebooks(files)? else {
+    let settings = Settings::construct(args.config.as_deref(), &overrides)?;
+    let FoundNotebooks::Files(nbs) = find_notebooks(files, &settings)? else {
         bail!("`strip-all` does not support stdin");
     };
     if !yes {
@@ -114,7 +115,6 @@ fn strip_all(files: &[PathBuf], dry_run: bool, yes: bool, cli: CommonArgs) -> Re
         }
     }
 
-    let settings = Settings::construct(args.config.as_deref(), &overrides)?;
     let strip_results: Vec<StripResult> = nbs
         .par_iter()
         .map(|nb_path| strip_single(nb_path, dry_run, &settings).into())
@@ -171,7 +171,8 @@ fn show_config(common: CommonArgs, show_all: bool) -> Result<(), Error> {
         let settings = Settings::construct(args.config.as_deref(), &overrides)?;
         toml::to_string(&settings)?
     } else {
-        let mut config = resolve(args.config.as_deref())?;
+        let (config_sec, config_path) = resolve(args.config.as_deref())?;
+        let mut config = config_sec.make_configuration(config_path.as_deref());
         config = overrides.override_config(config);
         toml::to_string(&config)?
     };
