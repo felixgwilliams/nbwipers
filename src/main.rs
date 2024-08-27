@@ -23,7 +23,7 @@ use cli::{
     CommonArgs, InstallCommand, OutputFormat, ShowConfigCommand, UninstallCommand,
 };
 use colored::Colorize;
-use config::resolve;
+use config::{resolve, Configuration};
 use files::{find_notebooks, read_nb, read_nb_stdin, relativize_path, FoundNotebooks};
 use hooks::hooks;
 use rayon::prelude::*;
@@ -50,7 +50,7 @@ fn check_all(
 ) -> Result<(), Error> {
     let output_format = output_format.unwrap_or_default();
     let (args, overrides) = cli.partition();
-    let settings = Settings::construct(args.config.as_deref(), &overrides)?;
+    let settings = Settings::construct(args.config.as_deref(), args.isolated, &overrides)?;
     let nbs = find_notebooks(files, &settings)?;
     let check_results_by_file = match nbs {
         FoundNotebooks::Stdin => match read_nb_stdin() {
@@ -102,7 +102,7 @@ fn check_all(
 
 fn strip_all(files: &[PathBuf], dry_run: bool, yes: bool, cli: CommonArgs) -> Result<(), Error> {
     let (args, overrides) = cli.partition();
-    let settings = Settings::construct(args.config.as_deref(), &overrides)?;
+    let settings = Settings::construct(args.config.as_deref(), args.isolated, &overrides)?;
     let FoundNotebooks::Files(nbs) = find_notebooks(files, &settings)? else {
         bail!("`strip-all` does not support stdin");
     };
@@ -136,7 +136,7 @@ fn strip_all(files: &[PathBuf], dry_run: bool, yes: bool, cli: CommonArgs) -> Re
 fn strip(file: &Path, textconv: bool, cli: CommonArgs) -> Result<(), Error> {
     let (args, overrides) = cli.partition();
 
-    let settings = Settings::construct(args.config.as_deref(), &overrides)?;
+    let settings = Settings::construct(args.config.as_deref(), args.isolated, &overrides)?;
     strip_single(file, textconv, &settings)?;
 
     Ok(())
@@ -168,11 +168,15 @@ fn check_install(cmd: &CheckInstallCommand) -> Result<(), Error> {
 fn show_config(common: CommonArgs, show_all: bool) -> Result<(), Error> {
     let (args, overrides) = common.partition();
     let settings_str = if show_all {
-        let settings = Settings::construct(args.config.as_deref(), &overrides)?;
+        let settings = Settings::construct(args.config.as_deref(), args.isolated, &overrides)?;
         toml::to_string(&settings)?
     } else {
-        let (config_sec, config_path) = resolve(args.config.as_deref())?;
-        let mut config = config_sec.make_configuration(config_path.as_deref());
+        let mut config = if args.isolated {
+            Configuration::default()
+        } else {
+            let (config_sec, config_path) = resolve(args.config.as_deref())?;
+            config_sec.make_configuration(config_path.as_deref())
+        };
         config = overrides.override_config(config);
         toml::to_string(&config)?
     };

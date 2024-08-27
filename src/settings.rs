@@ -1,5 +1,5 @@
 use crate::cli::ConfigOverrides;
-use crate::config::resolve;
+use crate::config::{resolve, Configuration};
 use crate::extra_keys::ExtraKey;
 use globset::GlobSet;
 use rustc_hash::FxHashSet;
@@ -27,10 +27,16 @@ pub struct Settings {
 impl Settings {
     pub fn construct(
         config_file: Option<&Path>,
+        isolated: bool,
         overrides: &ConfigOverrides,
     ) -> Result<Self, anyhow::Error> {
-        let (config_sec, config_path) = resolve(config_file)?;
-        let mut config = config_sec.make_configuration(config_path.as_deref());
+        let mut config = if isolated {
+            dbg!("isolated!");
+            Configuration::default()
+        } else {
+            let (config_sec, config_path) = resolve(config_file)?;
+            config_sec.make_configuration(config_path.as_deref())
+        };
         config = overrides.override_config(config);
 
         config.into_settings()

@@ -21,6 +21,9 @@ pub struct CommonArgs {
     /// path to pyproject.toml/.nbwipers.toml/nbwipers.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders.
     #[arg(long, short)]
     pub config: Option<PathBuf>,
+    /// Ignore all configuration files.
+    #[arg(long, conflicts_with = "config")]
+    pub isolated: bool,
 
     /// Do not return an error if no notebooks are found
     #[arg(long)]
@@ -120,6 +123,10 @@ pub struct CheckLargeFilesCommand {
     /// path to pyproject.toml/.nbwipers.toml/nbwipers.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders.
     #[arg(long, short)]
     pub config: Option<PathBuf>,
+
+    /// Ignore all configuration files.
+    #[arg(long, conflicts_with = "config")]
+    pub isolated: bool,
 }
 
 #[derive(Clone, Debug, Parser)]
@@ -245,6 +252,7 @@ pub struct ConfigOverrides {
 
 pub struct Args {
     pub config: Option<PathBuf>,
+    pub isolated: bool,
     pub allow_no_notebooks: bool,
 }
 
@@ -263,6 +271,7 @@ impl CommonArgs {
             Args {
                 config: self.config,
                 allow_no_notebooks: self.allow_no_notebooks,
+                isolated: self.isolated,
             },
             ConfigOverrides {
                 extra_keys: self.extra_keys,

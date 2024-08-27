@@ -91,6 +91,7 @@ impl SizeFinder {
             let mut s = self.settings.write().unwrap();
             *s = Some(Settings::construct(
                 config_file,
+                false,
                 &ConfigOverrides::default(),
             )?);
         }

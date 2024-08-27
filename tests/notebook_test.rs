@@ -46,7 +46,7 @@ fn test_config_match(config_file: &str, extra_args: &[&str]) {
         .output()
         .expect("command failed");
     let output_args = Command::new(&cur_exe)
-        .args(["show-config"])
+        .args(["show-config", "--isolated"])
         .args(extra_args)
         .output()
         .expect("command failed");
@@ -60,7 +60,7 @@ fn test_config_match(config_file: &str, extra_args: &[&str]) {
         .output()
         .expect("command failed");
     let output_args = Command::new(&cur_exe)
-        .args(["show-config", "--show-all"])
+        .args(["show-config", "--show-all", "--isolated"])
         .args(extra_args)
         .output()
         .expect("command failed");

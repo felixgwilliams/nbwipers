@@ -60,7 +60,7 @@ impl ConfigurationSection {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Default)]
 pub struct Configuration {
     pub extra_keys: Option<Vec<ExtraKey>>,
     pub drop_empty_cells: Option<bool>,

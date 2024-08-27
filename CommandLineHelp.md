@@ -70,6 +70,7 @@ clean all notebooks in a given path
 * `-d`, `--dry-run` — set to true to avoid writing to files
 * `-y`, `--yes` — skip confirmation and assume yes
 * `-c`, `--config <CONFIG>` — path to pyproject.toml/.nbwipers.toml/nbwipers.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders
+* `--isolated` — Ignore all configuration files
 * `--allow-no-notebooks` — Do not return an error if no notebooks are found
 * `--extra-keys <EXTRA_KEYS>` — extra keys to remove in the notebook or cell metadata, separated by commas. Must start with `metadata` or `cell.metadata`
 * `--drop-empty-cells` — drop empty cells. Disable with `--keep-empty-cells`
@@ -99,6 +100,7 @@ check notebooks in a given path for elements that would be removed by `clean`
   Possible values: `text`, `json`
 
 * `-c`, `--config <CONFIG>` — path to pyproject.toml/.nbwipers.toml/nbwipers.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders
+* `--isolated` — Ignore all configuration files
 * `--allow-no-notebooks` — Do not return an error if no notebooks are found
 * `--extra-keys <EXTRA_KEYS>` — extra keys to remove in the notebook or cell metadata, separated by commas. Must start with `metadata` or `cell.metadata`
 * `--drop-empty-cells` — drop empty cells. Disable with `--keep-empty-cells`
@@ -125,6 +127,7 @@ clean a single notebook
 
 * `-t`, `--textconv` — write cleaned file to stdout instead of to the file
 * `-c`, `--config <CONFIG>` — path to pyproject.toml/.nbwipers.toml/nbwipers.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders
+* `--isolated` — Ignore all configuration files
 * `--allow-no-notebooks` — Do not return an error if no notebooks are found
 * `--extra-keys <EXTRA_KEYS>` — extra keys to remove in the notebook or cell metadata, separated by commas. Must start with `metadata` or `cell.metadata`
 * `--drop-empty-cells` — drop empty cells. Disable with `--keep-empty-cells`
@@ -192,6 +195,7 @@ Show configuration
 
 * `--show-all` — Show all config including defaults Disable with `--no-show-defaults`
 * `-c`, `--config <CONFIG>` — path to pyproject.toml/.nbwipers.toml/nbwipers.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders
+* `--isolated` — Ignore all configuration files
 * `--allow-no-notebooks` — Do not return an error if no notebooks are found
 * `--extra-keys <EXTRA_KEYS>` — extra keys to remove in the notebook or cell metadata, separated by commas. Must start with `metadata` or `cell.metadata`
 * `--drop-empty-cells` — drop empty cells. Disable with `--keep-empty-cells`
@@ -229,6 +233,7 @@ Check for large files, but measure ipynb sizes after clearning
 * `--enforce-all` — Check all files not just staged files
 * `--maxkb <MAXKB>` — Max size in KB to consider a file large
 * `-c`, `--config <CONFIG>` — path to pyproject.toml/.nbwipers.toml/nbwipers.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders
+* `--isolated` — Ignore all configuration files
 
 <hr/>
 
