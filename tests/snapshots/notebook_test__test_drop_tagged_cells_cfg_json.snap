@@ -1,0 +1,36 @@
+---
+source: tests/notebook_test.rs
+expression: output.stdout.to_str().unwrap()
+---
+[
+  {
+    "path": "tests/e2e_notebooks/test_drop_tagged_cells.ipynb",
+    "type": "DropCells",
+    "cell_number": 3
+  },
+  {
+    "path": "tests/e2e_notebooks/test_drop_tagged_cells.ipynb",
+    "type": "DropCells",
+    "cell_number": 5
+  },
+  {
+    "path": "tests/e2e_notebooks/test_drop_tagged_cells.ipynb",
+    "type": "ClearOutput",
+    "cell_number": 0
+  },
+  {
+    "path": "tests/e2e_notebooks/test_drop_tagged_cells.ipynb",
+    "type": "ClearCount",
+    "cell_number": 0
+  },
+  {
+    "path": "tests/e2e_notebooks/test_drop_tagged_cells.ipynb",
+    "type": "ClearCount",
+    "cell_number": 2
+  },
+  {
+    "path": "tests/e2e_notebooks/test_drop_tagged_cells.ipynb",
+    "type": "ClearCount",
+    "cell_number": 3
+  }
+]

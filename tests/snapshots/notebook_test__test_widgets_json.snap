@@ -1,0 +1,38 @@
+---
+source: tests/notebook_test.rs
+expression: output.stdout.to_str().unwrap()
+---
+[
+  {
+    "path": "tests/e2e_notebooks/test_widgets.ipynb",
+    "type": "StripMeta",
+    "extra_key": "metadata.widgets"
+  },
+  {
+    "path": "tests/e2e_notebooks/test_widgets.ipynb",
+    "type": "ClearOutput",
+    "cell_number": 1
+  },
+  {
+    "path": "tests/e2e_notebooks/test_widgets.ipynb",
+    "type": "ClearCount",
+    "cell_number": 0
+  },
+  {
+    "path": "tests/e2e_notebooks/test_widgets.ipynb",
+    "type": "ClearCount",
+    "cell_number": 1
+  },
+  {
+    "path": "tests/e2e_notebooks/test_widgets.ipynb",
+    "type": "CellStripMeta",
+    "cell_number": 0,
+    "extra_key": "cell.metadata.collapsed"
+  },
+  {
+    "path": "tests/e2e_notebooks/test_widgets.ipynb",
+    "type": "CellStripMeta",
+    "cell_number": 1,
+    "extra_key": "cell.metadata.collapsed"
+  }
+]

@@ -39,7 +39,7 @@ fn check_large_files(cmd: &CheckLargeFilesCommand) -> Result<(), Error> {
         .map(|f| {
             match f.extension().and_then(OsStr::to_str) {
                 Some("ipynb") => lazy_settings
-                    .stripped_size(f, cmd.config.as_deref())
+                    .stripped_size(f, cmd.config.as_deref(), cmd.isolated)
                     .map_or_else(
                         |_| {
                             eprintln!(
@@ -86,20 +86,25 @@ impl SizeFinder {
         }
     }
     #[allow(clippy::unwrap_used)]
-    fn load_settings(&self, config_file: Option<&Path>) -> Result<(), Error> {
+    fn load_settings(&self, config_file: Option<&Path>, isolated: bool) -> Result<(), Error> {
         if self.settings.read().unwrap().is_none() {
             let mut s = self.settings.write().unwrap();
             *s = Some(Settings::construct(
                 config_file,
-                false,
+                isolated,
                 &ConfigOverrides::default(),
             )?);
         }
         Ok(())
     }
     #[allow(clippy::unwrap_used)]
-    fn stripped_size(&self, path: &Path, config_file: Option<&Path>) -> Result<u64, Error> {
-        self.load_settings(config_file)?;
+    fn stripped_size(
+        &self,
+        path: &Path,
+        config_file: Option<&Path>,
+        isolated: bool,
+    ) -> Result<u64, Error> {
+        self.load_settings(config_file, isolated)?;
         let binding = self.settings.read().unwrap();
 
         let x = binding.as_ref().expect("settings should be loaded");

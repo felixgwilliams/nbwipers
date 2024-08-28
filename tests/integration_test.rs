@@ -499,7 +499,14 @@ fn test_large_files() {
     {
         fs::write(
             temp_dir.path().join(".nbwipers.toml"),
-            "exclude = [\"large*\"]",
+            "exclude = [\"large*.ipynb\"]\n",
+        )
+        .unwrap();
+    }
+    {
+        fs::write(
+            temp_dir.path().join("invalid.ipynb"),
+            "a".repeat(1000 * 1024),
         )
         .unwrap();
     }
@@ -538,7 +545,7 @@ fn test_large_files() {
         .output()
         .expect("command failed");
 
-    assert!(!output.status.success());
+    assert!(output.status.success());
 
     // now we change maxkb to allow very large files and it passes again
     let output = Command::new(&cur_exe)
@@ -554,6 +561,25 @@ fn test_large_files() {
         .expect("command failed");
 
     assert!(output.status.success());
+
+    // now we try an invalid file, and it fails to strip anything
+    let output = Command::new(&cur_exe)
+        .current_dir(temp_dir.path())
+        .args([
+            "hook",
+            "check-large-files",
+            "--enforce-all",
+            "invalid.ipynb",
+        ])
+        .output()
+        .expect("command failed");
+    dbg!(output.stdout.as_bstr());
+    dbg!(output.stderr.as_bstr());
+    assert!(!output.status.success());
+    assert!(output
+        .stderr
+        .as_bstr()
+        .contains_str(b"Could not parse nb file"));
 
     let git_add_out = Command::new("git")
         .current_dir(&temp_dir)

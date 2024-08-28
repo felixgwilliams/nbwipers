@@ -1,0 +1,9 @@
+---
+source: tests/notebook_test.rs
+expression: output.stdout.to_str().unwrap()
+---
+tests/e2e_notebooks/test_metadata_period.ipynb:Found notebook metadata: metadata.application/vnd.databricks.v1+notebook
+tests/e2e_notebooks/test_metadata_period.ipynb:cell 1: Found cell with output
+tests/e2e_notebooks/test_metadata_period.ipynb:cell 1: Found cell with execution count
+tests/e2e_notebooks/test_metadata_period.ipynb:cell 0: Found cell metadata cell.metadata.application/vnd.databricks.v1+cell
+tests/e2e_notebooks/test_metadata_period.ipynb:cell 1: Found cell metadata cell.metadata.application/vnd.databricks.v1+cell

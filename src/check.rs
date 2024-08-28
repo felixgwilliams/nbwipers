@@ -1,10 +1,13 @@
 use std::{fmt::Display, path::Path};
 
 use crate::{
-    extra_keys::partition_extra_keys, files::NBReadError, schema::RawNotebook, settings::Settings,
+    extra_keys::partition_extra_keys,
+    files::{relativize_path, NBReadError},
+    schema::RawNotebook,
+    settings::Settings,
     utils::get_value_child,
 };
-use serde::Serialize;
+use serde::{Serialize, Serializer};
 use serde_json::Value;
 
 #[derive(Clone, Debug, Serialize, PartialEq, Eq)]
@@ -49,8 +52,16 @@ impl From<NBReadError> for CheckResult {
     }
 }
 
+fn relativize_ser<S>(p: &Path, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    serializer.serialize_str(&relativize_path(p))
+}
+
 #[derive(Clone, Debug, Serialize, PartialEq, Eq)]
 pub struct PathCheckResult<'a> {
+    #[serde(serialize_with = "relativize_ser")]
     pub path: &'a Path,
     #[serde(flatten)]
     pub result: &'a CheckResult,

@@ -1,0 +1,8 @@
+---
+source: tests/notebook_test.rs
+expression: output.stdout.to_str().unwrap()
+---
+tests/e2e_notebooks/test_drop_tagged_cells.ipynb:cell 0: Found cell with output
+tests/e2e_notebooks/test_drop_tagged_cells.ipynb:cell 0: Found cell with execution count
+tests/e2e_notebooks/test_drop_tagged_cells.ipynb:cell 2: Found cell with execution count
+tests/e2e_notebooks/test_drop_tagged_cells.ipynb:cell 3: Found cell with execution count

@@ -40,6 +40,7 @@ toml = "0.8.9"
 markdown-help = ["dep:clap-markdown"]
 
 [dev-dependencies]
+insta = { version = "1.39.0", features = ["yaml"] }
 lazy_static = "1.4.0"
 tempfile = "3.10.0"
 
