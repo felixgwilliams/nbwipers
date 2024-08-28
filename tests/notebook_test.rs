@@ -390,3 +390,35 @@ fn test_widgets() {
         "test_widgets",
     );
 }
+
+#[test]
+fn test_exclusions() {
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+    // the notebooks are full of issues
+    let output = Command::new(&cur_exe)
+        .args(["check", "tests/e2e_notebooks", "-o", "text"])
+        // .args([])
+        .output()
+        .expect("command failed");
+    assert!(!output.status.success());
+    // but if we exclude them, it should pass
+    let output = Command::new(&cur_exe)
+        .args(["check", "tests/e2e_notebooks", "-o", "text"])
+        .args(["--exclude", "tests/e2e_notebooks", "--allow-no-notebooks"])
+        .output()
+        .expect("command failed");
+    dbg!(output.stderr.as_bstr());
+    assert!(output.status.success());
+    // and let's exclude them another way
+    let output = Command::new(&cur_exe)
+        .args(["check", "tests/e2e_notebooks", "-o", "text"])
+        .args([
+            "--extend-exclude",
+            "tests/e2e_notebooks",
+            "--allow-no-notebooks",
+        ])
+        .output()
+        .expect("command failed");
+    dbg!(output.stderr.as_bstr());
+    assert!(output.status.success());
+}

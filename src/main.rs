@@ -178,9 +178,9 @@ fn show_config(common: CommonArgs, show_all: bool) -> Result<(), Error> {
 
 fn main() -> Result<(), Error> {
     let cli = cli::Cli::parse();
-
     #[cfg(feature = "markdown-help")]
     if cli.markdown_help {
+        #[cfg(not(tarpaulin_include))]
         clap_markdown::print_help_markdown::<cli::Cli>();
         return Ok(());
     }

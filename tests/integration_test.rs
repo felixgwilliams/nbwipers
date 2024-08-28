@@ -1,4 +1,4 @@
-use std::{env, fs, io::BufWriter, path::PathBuf, process::Command};
+use std::{env, fs, io::BufWriter, io::Write, path::PathBuf, process::Command, process::Stdio};
 
 use bstr::ByteSlice;
 use nbwipers::{
@@ -598,4 +598,25 @@ fn test_large_files() {
         .expect("command failed");
 
     assert!(!output.status.success());
+}
+
+#[test]
+fn test_invalid_stdin() {
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+
+    let mut check_output_cmd = Command::new(&cur_exe)
+        .args(["check", "-"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("command failed");
+    {
+        let mut check_in = check_output_cmd.stdin.take().expect("Failed to open stdin");
+        check_in
+            .write_all(b"Invalid input")
+            .expect("Failed to write to stdin");
+    }
+    let check_output = check_output_cmd.wait_with_output().expect("Command failed");
+    assert!(!check_output.status.success())
 }
