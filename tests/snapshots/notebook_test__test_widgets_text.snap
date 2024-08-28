@@ -1,0 +1,10 @@
+---
+source: tests/notebook_test.rs
+expression: output.stdout.to_str().unwrap()
+---
+tests/e2e_notebooks/test_widgets.ipynb:Found notebook metadata: metadata.widgets
+tests/e2e_notebooks/test_widgets.ipynb:cell 1: Found cell with output
+tests/e2e_notebooks/test_widgets.ipynb:cell 0: Found cell with execution count
+tests/e2e_notebooks/test_widgets.ipynb:cell 1: Found cell with execution count
+tests/e2e_notebooks/test_widgets.ipynb:cell 0: Found cell metadata cell.metadata.collapsed
+tests/e2e_notebooks/test_widgets.ipynb:cell 1: Found cell metadata cell.metadata.collapsed

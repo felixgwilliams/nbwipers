@@ -17,3 +17,6 @@ bindings = "bin"
 
 [tool.typos]
 files.extend-exclude = ["tests/e2e_notebooks/*"]
+
+[tool.nbwipers]
+extend-exclude = ["tests/e2e_notebooks/*"]

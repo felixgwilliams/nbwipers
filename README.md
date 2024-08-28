@@ -148,3 +148,10 @@ With nbwipers I hoped to recreate the idea of nbstripout-fast, but with the abil
 Ruff is quickly becoming *the* linter for python code, thanks to its performance, extensive set of rules and its ease of use.
 It was a definite source of knowledge for the organisation of the configuration and the file discovery.
 The schema for Jupyter Notebooks, and some of the file discovery code was adapted from Ruff.
+
+### [pre-commit](https://github.com/pre-commit/pre-commit)
+
+> A framework for managing and maintaining multi-language pre-commit hooks.
+
+This repo contains a version of the check-large-files hook, that will not flag notebook files whose clean size is less that the threshold, even if the size on-disk including outputs is greater than the threshold.
+The logic and interface of the hook was adapted from the [pre-commit-hooks](https://github.com/pre-commit/pre-commit-hooks) repository.

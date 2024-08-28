@@ -1,0 +1,13 @@
+---
+source: tests/notebook_test.rs
+expression: output.stdout.to_str().unwrap()
+---
+tests/e2e_notebooks/test_metadata.ipynb:Found notebook metadata: metadata.language_info
+tests/e2e_notebooks/test_metadata.ipynb:Found notebook metadata: metadata.kernelspec
+tests/e2e_notebooks/test_metadata.ipynb:cell 3: Found cell with output
+tests/e2e_notebooks/test_metadata.ipynb:cell 1: Found cell with execution count
+tests/e2e_notebooks/test_metadata.ipynb:cell 2: Found cell with execution count
+tests/e2e_notebooks/test_metadata.ipynb:cell 3: Found cell with execution count
+tests/e2e_notebooks/test_metadata.ipynb:cell 1: Found cell metadata cell.metadata.collapsed
+tests/e2e_notebooks/test_metadata.ipynb:cell 2: Found cell metadata cell.metadata.collapsed
+tests/e2e_notebooks/test_metadata.ipynb:cell 3: Found cell metadata cell.metadata.collapsed

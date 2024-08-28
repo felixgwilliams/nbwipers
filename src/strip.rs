@@ -102,7 +102,7 @@ pub fn strip_single(
         }
     }
 }
-fn write_nb<W, T>(mut writer: W, value: &T) -> Result<(), NBWriteError>
+pub fn write_nb<W, T>(mut writer: W, value: &T) -> Result<(), NBWriteError>
 where
     W: Write,
     T: ?Sized + Serialize,

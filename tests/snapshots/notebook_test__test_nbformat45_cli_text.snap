@@ -1,0 +1,11 @@
+---
+source: tests/notebook_test.rs
+expression: output.stdout.to_str().unwrap()
+---
+tests/e2e_notebooks/test_nbformat45.ipynb:cell 0: Found cell with output
+tests/e2e_notebooks/test_nbformat45.ipynb:cell 1: Found cell with output
+tests/e2e_notebooks/test_nbformat45.ipynb:cell 2: Found cell with output
+tests/e2e_notebooks/test_nbformat45.ipynb:cell 0: Found cell with execution count
+tests/e2e_notebooks/test_nbformat45.ipynb:cell 1: Found cell with execution count
+tests/e2e_notebooks/test_nbformat45.ipynb:cell 2: Found cell with execution count
+tests/e2e_notebooks/test_nbformat45.ipynb:cell 1: Found cell metadata cell.metadata.scrolled

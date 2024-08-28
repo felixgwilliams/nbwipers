@@ -1,0 +1,7 @@
+---
+source: tests/notebook_test.rs
+expression: output.stdout.to_str().unwrap()
+---
+tests/e2e_notebooks/test_execution_timing.ipynb:cell 0: Found cell with output
+tests/e2e_notebooks/test_execution_timing.ipynb:cell 0: Found cell with execution count
+tests/e2e_notebooks/test_execution_timing.ipynb:cell 0: Found cell metadata cell.metadata.execution

@@ -1,6 +1,11 @@
-use std::{env, fs, path::PathBuf, process::Command};
+use std::{env, fs, io::BufWriter, io::Write, path::PathBuf, process::Command, process::Stdio};
 
 use bstr::ByteSlice;
+use nbwipers::{
+    schema::{Cell, CodeCell, RawNotebook, SourceValue},
+    strip::write_nb,
+};
+use serde_json::{json, Value};
 
 #[test]
 fn test_no_notebooks() {
@@ -313,8 +318,9 @@ fn test_check_install() {
         .output()
         .expect("command failed");
     assert!(output.status.success());
-
-    env::set_var("NBWIPERS_CHECK_INSTALL_EXIT_ZERO", "1");
+    unsafe {
+        env::set_var("NBWIPERS_CHECK_INSTALL_EXIT_ZERO", "1");
+    }
     let output = Command::new(&cur_exe)
         .current_dir(&temp_dir)
         .args(["check-install"])
@@ -450,4 +456,167 @@ fn test_nothing() {
 
     // let stdout = output.stdout.to_str_lossy();
     assert!(!output.status.success());
+}
+
+#[test]
+fn test_large_files() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+
+    let git_init_out = Command::new("git")
+        .current_dir(&temp_dir)
+        .args(["init"])
+        .output()
+        .expect("git init failed");
+    assert!(git_init_out.status.success());
+
+    let mut nb = RawNotebook::default();
+
+    let big_cell = json!([
+     {
+      "name": "stdout",
+      "output_type": "stream",
+      "text": [
+       "a".repeat(1000*1024)
+      ]
+     }
+    ]);
+
+    nb.cells.push(Cell::Code(CodeCell {
+        source: SourceValue::StringArray(vec!["# This is a test".to_string()]),
+        metadata: Value::Null,
+        execution_count: Some(1),
+        outputs: vec![big_cell],
+        id: None,
+    }));
+    let large_file_path = temp_dir.path().join("large_nb.ipynb");
+
+    {
+        let f = fs::File::create(large_file_path).unwrap();
+        let writer = BufWriter::new(f);
+        write_nb(writer, &nb).unwrap();
+    }
+    {
+        fs::write(
+            temp_dir.path().join(".nbwipers.toml"),
+            "exclude = [\"large*.ipynb\"]\n",
+        )
+        .unwrap();
+    }
+    {
+        fs::write(
+            temp_dir.path().join("invalid.ipynb"),
+            "a".repeat(1000 * 1024),
+        )
+        .unwrap();
+    }
+    // our large file wasn't added so isn't looked at
+    let output = Command::new(&cur_exe)
+        .current_dir(temp_dir.path())
+        .args(["hook", "check-large-files", "large_nb.ipynb"])
+        .output()
+        .expect("command failed");
+
+    assert!(output.status.success());
+    // the nbwipers file tells us not to strip this file, so it trips the check
+    let output = Command::new(&cur_exe)
+        .current_dir(temp_dir.path())
+        .args([
+            "hook",
+            "check-large-files",
+            "--enforce-all",
+            "large_nb.ipynb",
+        ])
+        .output()
+        .expect("command failed");
+
+    assert!(!output.status.success());
+
+    // now we ignore the config file, and it gets stripped when checking the size
+    let output = Command::new(&cur_exe)
+        .current_dir(temp_dir.path())
+        .args([
+            "hook",
+            "check-large-files",
+            "--enforce-all",
+            "--isolated",
+            "large_nb.ipynb",
+        ])
+        .output()
+        .expect("command failed");
+
+    assert!(output.status.success());
+
+    // now we change maxkb to allow very large files and it passes again
+    let output = Command::new(&cur_exe)
+        .current_dir(temp_dir.path())
+        .args([
+            "hook",
+            "check-large-files",
+            "--enforce-all",
+            "--maxkb=2048",
+            "large_nb.ipynb",
+        ])
+        .output()
+        .expect("command failed");
+
+    assert!(output.status.success());
+
+    // now we try an invalid file, and it fails to strip anything
+    let output = Command::new(&cur_exe)
+        .current_dir(temp_dir.path())
+        .args([
+            "hook",
+            "check-large-files",
+            "--enforce-all",
+            "invalid.ipynb",
+        ])
+        .output()
+        .expect("command failed");
+    dbg!(output.stdout.as_bstr());
+    dbg!(output.stderr.as_bstr());
+    assert!(!output.status.success());
+    assert!(output
+        .stderr
+        .as_bstr()
+        .contains_str(b"Could not parse nb file"));
+
+    let git_add_out = Command::new("git")
+        .current_dir(&temp_dir)
+        .args(["add", "large_nb.ipynb"])
+        .output()
+        .expect("git init failed");
+    dbg!(git_add_out.stdout.as_bstr());
+    dbg!(git_add_out.stderr.as_bstr());
+    assert!(git_add_out.status.success());
+
+    // now check we fail after the file has been git added
+    let output = Command::new(&cur_exe)
+        .current_dir(temp_dir.path())
+        .args(["hook", "check-large-files", "large_nb.ipynb"])
+        .output()
+        .expect("command failed");
+
+    assert!(!output.status.success());
+}
+
+#[test]
+fn test_invalid_stdin() {
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+
+    let mut check_output_cmd = Command::new(&cur_exe)
+        .args(["check", "-"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("command failed");
+    {
+        let mut check_in = check_output_cmd.stdin.take().expect("Failed to open stdin");
+        check_in
+            .write_all(b"Invalid input")
+            .expect("Failed to write to stdin");
+    }
+    let check_output = check_output_cmd.wait_with_output().expect("Command failed");
+    assert!(!check_output.status.success())
 }
