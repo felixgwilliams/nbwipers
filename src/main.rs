@@ -17,11 +17,6 @@ use std::{
 use anyhow::{anyhow, bail, Error};
 use clap::Parser;
 use colored::Colorize;
-use nbwipers::cli::{
-    self as cli, resolve_bool_arg, CheckCommand, CheckInstallCommand, CleanAllCommand,
-    CleanCommand, Commands, CommonArgs, InstallCommand, OutputFormat, ShowConfigCommand,
-    UninstallCommand,
-};
 use nbwipers::config::{resolve, Configuration};
 use nbwipers::files::{
     find_notebooks_or_stdin, read_nb, read_nb_stdin, relativize_path, FoundNotebooks,
@@ -34,6 +29,14 @@ use nbwipers::strip::{strip_single, StripResult};
 use nbwipers::{
     check::{self as check, PathCheckResult},
     cli::RecordCommand,
+};
+use nbwipers::{
+    cli::{
+        self as cli, resolve_bool_arg, CheckCommand, CheckInstallCommand, CleanAllCommand,
+        CleanCommand, Commands, CommonArgs, InstallCommand, OutputFormat, ShowConfigCommand,
+        SmudgeCommand, UninstallCommand,
+    },
+    smudge::smudge,
 };
 use rayon::prelude::*;
 use std::io::Write;
@@ -220,6 +223,7 @@ fn main() -> Result<(), Error> {
         ),
         Commands::Hook(ref cmd) => hooks(cmd),
         Commands::Record(RecordCommand { ref path, common }) => record(path.as_ref(), common),
+        Commands::Smudge(SmudgeCommand { path }) => smudge(path),
     }
 }
 

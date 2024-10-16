@@ -101,6 +101,9 @@ pub enum Commands {
     ShowConfig(ShowConfigCommand),
     /// Record Kernelspec metadata for notebooks
     Record(RecordCommand),
+    /// Add back kernelspec metadata to the notebook as a smudge
+    #[clap(hide(true))]
+    Smudge(SmudgeCommand),
     /// Commands for pre-commit hooks
     #[command(subcommand)]
     Hook(HookCommands),
@@ -233,6 +236,11 @@ pub struct CheckInstallCommand {
     /// Git config type to check
     #[clap(value_enum)]
     pub config_type: Option<GitConfigType>,
+}
+
+#[derive(Clone, Debug, Parser)]
+pub struct SmudgeCommand {
+    pub path: String,
 }
 
 #[derive(Clone, Debug, ValueEnum, Copy)]

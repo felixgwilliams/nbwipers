@@ -9,6 +9,7 @@ pub mod install;
 pub mod record;
 pub mod schema;
 pub mod settings;
+pub mod smudge;
 pub mod strip;
 pub mod utils;
 #[allow(clippy::unwrap_used)]

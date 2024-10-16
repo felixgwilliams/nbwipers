@@ -19,7 +19,7 @@ use serde_json::Value;
 use thiserror::Error as ThisError;
 
 #[derive(ThisError, Debug)]
-enum RecordError {
+pub enum RecordError {
     #[error("No .git dir")]
     NoGitDir,
     #[error("Invalid git repo")]
@@ -36,7 +36,7 @@ enum RecordError {
     SerdeWriteError(serde_json::Error),
 }
 
-fn get_kernelspec_file<P: AsRef<Path>>(path: P) -> Result<PathBuf, RecordError> {
+pub fn get_kernelspec_file<P: AsRef<Path>>(path: P) -> Result<PathBuf, RecordError> {
     let git_dir = path.as_ref().join(gix_discover::DOT_GIT_DIR);
     if !git_dir.is_dir() {
         return Err(RecordError::NoGitDir);
@@ -49,7 +49,7 @@ fn get_kernelspec_file<P: AsRef<Path>>(path: P) -> Result<PathBuf, RecordError> 
     fs::create_dir_all(&nbwipers_dir).map_err(RecordError::FailedCreateNbwipersDir)?;
     Ok(nbwipers_dir.join("kernelspec_store.json"))
 }
-fn read_kernelspec_file<P: AsRef<Path>>(
+pub fn read_kernelspec_file<P: AsRef<Path>>(
     path: P,
 ) -> Result<Option<IndexMap<String, KernelSpecInfo>>, RecordError> {
     if path.as_ref().exists() {
