@@ -67,6 +67,12 @@ pub struct CommonArgs {
 
     #[arg(long, overrides_with("strip_init_cell"), hide = true)]
     pub keep_init_cell: bool,
+    /// Strip kernel info. Namely, metadata.kernelspec and metadata.language_info.python_version. Disable with `--keep-kernel-info`
+    #[arg(long, overrides_with("keep_kernel_info"))]
+    pub strip_kernel_info: bool,
+
+    #[arg(long, overrides_with("strip_kernel_info"), hide = true)]
+    pub keep_kernel_info: bool,
 
     /// comma-separated list of tags that will cause the cell to be dropped
     #[arg(long, value_delimiter = ',')]
@@ -255,6 +261,7 @@ pub enum GitConfigType {
 
 #[derive(Clone, Debug, Default)]
 pub struct ConfigOverrides {
+    pub strip_kernel_info: Option<bool>,
     pub extra_keys: Option<Vec<ExtraKey>>,
     pub drop_empty_cells: Option<bool>,
     pub drop_output: Option<bool>,
@@ -301,6 +308,7 @@ impl CommonArgs {
                 keep_keys: self.keep_keys,
                 extend_exclude: self.extend_exclude,
                 exclude: self.exclude,
+                strip_kernel_info: resolve_bool_arg(self.strip_kernel_info, self.keep_kernel_info),
             },
         )
     }

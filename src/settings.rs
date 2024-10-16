@@ -16,6 +16,7 @@ pub struct Settings {
     pub drop_count: bool,
     pub drop_id: bool,
     pub strip_init_cell: bool,
+    pub strip_kernel_info: bool,
     pub exclude: Vec<String>,
     #[serde(skip_serializing)]
     pub exclude_: GlobSet,
