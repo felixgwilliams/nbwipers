@@ -45,7 +45,7 @@ pub fn get_kernelspec_file<P: AsRef<Path>>(path: P) -> Result<PathBuf, RecordErr
     if !matches!(git_type, gix_discover::repository::Kind::WorkTree { .. }) {
         return Err(RecordError::NotAGitWorktree);
     }
-    let nbwipers_dir = git_dir.join("nbwipers");
+    let nbwipers_dir = git_dir.join("x-nbwipers");
     fs::create_dir_all(&nbwipers_dir).map_err(RecordError::FailedCreateNbwipersDir)?;
     Ok(nbwipers_dir.join("kernelspec_store.json"))
 }
