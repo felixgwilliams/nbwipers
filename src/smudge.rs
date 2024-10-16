@@ -46,7 +46,11 @@ fn maybe_replace_kernelspec(
             }
             Value::Object(ref mut meta) => {
                 if !meta.contains_key("kernelspec") {
-                    meta.insert("kernelspec".to_string(), json!(kernelspec_info.kernelspec));
+                    meta.shift_insert(
+                        0,
+                        "kernelspec".to_string(),
+                        json!(kernelspec_info.kernelspec),
+                    );
                 }
             }
             _ => bail!("Unexpected metadata type"),
