@@ -6,6 +6,7 @@ pub mod extra_keys;
 pub mod files;
 pub mod hooks;
 pub mod install;
+pub mod record;
 pub mod schema;
 pub mod settings;
 pub mod strip;

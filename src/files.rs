@@ -61,10 +61,19 @@ pub enum FoundNotebooks {
     Files(Vec<PathBuf>),
 }
 
-pub fn find_notebooks(paths: &[PathBuf], settings: &Settings) -> Result<FoundNotebooks, Error> {
+pub fn find_notebooks_or_stdin(
+    paths: &[PathBuf],
+    settings: &Settings,
+) -> Result<FoundNotebooks, Error> {
     if paths == [Path::new("-")] {
         return Ok(FoundNotebooks::Stdin);
     }
+    find_notebooks(paths, settings)
+}
+pub fn find_notebooks<P: AsRef<Path>>(
+    paths: &[P],
+    settings: &Settings,
+) -> Result<FoundNotebooks, Error> {
     let paths: Vec<PathBuf> = paths.iter().map(normalize_path).unique().collect();
     let (first_path, rest_paths) = paths
         .split_first()
@@ -133,7 +142,7 @@ pub fn find_notebooks(paths: &[PathBuf], settings: &Settings) -> Result<FoundNot
     }
 }
 
-pub fn read_nb(path: &Path) -> Result<RawNotebook, NBReadError> {
+pub fn read_nb<P: AsRef<Path>>(path: P) -> Result<RawNotebook, NBReadError> {
     let f = File::open(path)?;
     let rdr = BufReader::new(f);
 

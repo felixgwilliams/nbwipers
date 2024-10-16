@@ -99,6 +99,8 @@ pub enum Commands {
     CheckInstall(CheckInstallCommand),
     /// Show configuration
     ShowConfig(ShowConfigCommand),
+    /// Record Kernelspec metadata for notebooks
+    Record(RecordCommand),
     /// Commands for pre-commit hooks
     #[command(subcommand)]
     Hook(HookCommands),
@@ -216,6 +218,13 @@ pub struct UninstallCommand {
     pub attribute_file: Option<PathBuf>,
 }
 
+#[derive(Clone, Debug, Parser)]
+pub struct RecordCommand {
+    pub path: Option<PathBuf>,
+
+    #[clap(flatten)]
+    pub common: CommonArgs,
+}
 #[derive(Clone, Debug, Parser)]
 pub struct CheckInstallCommand {
     /// Exit zero regardless of install status

@@ -17,18 +17,24 @@ use std::{
 use anyhow::{anyhow, bail, Error};
 use clap::Parser;
 use colored::Colorize;
-use nbwipers::check::{self as check, PathCheckResult};
 use nbwipers::cli::{
     self as cli, resolve_bool_arg, CheckCommand, CheckInstallCommand, CleanAllCommand,
     CleanCommand, Commands, CommonArgs, InstallCommand, OutputFormat, ShowConfigCommand,
     UninstallCommand,
 };
 use nbwipers::config::{resolve, Configuration};
-use nbwipers::files::{find_notebooks, read_nb, read_nb_stdin, relativize_path, FoundNotebooks};
+use nbwipers::files::{
+    find_notebooks_or_stdin, read_nb, read_nb_stdin, relativize_path, FoundNotebooks,
+};
 use nbwipers::hooks::hooks;
 use nbwipers::install;
+use nbwipers::record::record;
 use nbwipers::settings::Settings;
 use nbwipers::strip::{strip_single, StripResult};
+use nbwipers::{
+    check::{self as check, PathCheckResult},
+    cli::RecordCommand,
+};
 use rayon::prelude::*;
 use std::io::Write;
 
@@ -40,7 +46,7 @@ fn check_all(
     let output_format = output_format.unwrap_or_default();
     let (args, overrides) = cli.partition();
     let settings = Settings::construct(args.config.as_deref(), args.isolated, &overrides)?;
-    let nbs = find_notebooks(files, &settings)?;
+    let nbs = find_notebooks_or_stdin(files, &settings)?;
     let check_results_by_file = match nbs {
         FoundNotebooks::Stdin => match read_nb_stdin() {
             Ok(nb) => vec![(Path::new("-"), nbwipers::check::check_nb(&nb, &settings))],
@@ -92,7 +98,7 @@ fn check_all(
 fn strip_all(files: &[PathBuf], dry_run: bool, yes: bool, cli: CommonArgs) -> Result<(), Error> {
     let (args, overrides) = cli.partition();
     let settings = Settings::construct(args.config.as_deref(), args.isolated, &overrides)?;
-    let FoundNotebooks::Files(nbs) = find_notebooks(files, &settings)? else {
+    let FoundNotebooks::Files(nbs) = find_notebooks_or_stdin(files, &settings)? else {
         bail!("`strip-all` does not support stdin");
     };
     if !yes {
@@ -213,6 +219,7 @@ fn main() -> Result<(), Error> {
             resolve_bool_arg(show_all, no_show_defaults).unwrap_or(false),
         ),
         Commands::Hook(ref cmd) => hooks(cmd),
+        Commands::Record(RecordCommand { ref path, common }) => record(path.as_ref(), common),
     }
 }
 

@@ -31,7 +31,6 @@ impl Settings {
         overrides: &ConfigOverrides,
     ) -> Result<Self, anyhow::Error> {
         let mut config = if isolated {
-            dbg!("isolated!");
             Configuration::default()
         } else {
             let (config_sec, config_path) = resolve(config_file)?;
