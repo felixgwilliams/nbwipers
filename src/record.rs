@@ -6,7 +6,7 @@ use std::{
 };
 
 use crate::{
-    cli::CommonArgs,
+    cli::RecordCommand,
     files::{find_notebooks, get_cwd, read_nb, relativize_path, FoundNotebooks},
     schema::RawNotebook,
     settings::Settings,
@@ -68,20 +68,26 @@ pub struct KernelSpecInfo {
     pub python_version: Option<String>,
 }
 
-pub fn record(path: Option<&PathBuf>, cli: CommonArgs) -> Result<(), Error> {
-    let path = path.cloned().unwrap_or_else(get_cwd);
+pub fn record(cmd: RecordCommand) -> Result<(), Error> {
+    let path = cmd.path.unwrap_or_else(get_cwd);
+    let cli = cmd.common;
     let (args, overrides) = cli.partition();
     let settings = Settings::construct(args.config.as_deref(), args.isolated, &overrides)?;
 
     let kernelspec_file = get_kernelspec_file(&path)?;
-    let mut kernelspec_records = read_kernelspec_file(&kernelspec_file)?.unwrap_or_default();
-
-    let FoundNotebooks::Files(files) = find_notebooks(&[&path], &settings)? else {
-        return Ok(());
+    let mut kernelspec_records = if cmd.sync || cmd.clear {
+        IndexMap::new()
+    } else {
+        read_kernelspec_file(&kernelspec_file)?.unwrap_or_default()
     };
-    let kernelspecs = get_kernelspecs(&files);
-    for (nb, kernel) in kernelspecs {
-        kernelspec_records.insert(nb, kernel);
+    if !cmd.clear {
+        let FoundNotebooks::Files(files) = find_notebooks(&[&path], &settings)? else {
+            return Ok(());
+        };
+        let kernelspecs = get_kernelspecs(&files);
+        for (nb, kernel) in kernelspecs {
+            kernelspec_records.insert(nb, kernel);
+        }
     }
     let out_file = File::create(kernelspec_file)?;
     let mut buf = BufWriter::new(out_file);

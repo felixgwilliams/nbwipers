@@ -231,6 +231,14 @@ pub struct UninstallCommand {
 pub struct RecordCommand {
     pub path: Option<PathBuf>,
 
+    #[arg(long)]
+    pub remove: Vec<PathBuf>,
+
+    #[arg(long)]
+    pub clear: bool,
+    #[arg(long)]
+    pub sync: bool,
+
     #[clap(flatten)]
     pub common: CommonArgs,
 }
