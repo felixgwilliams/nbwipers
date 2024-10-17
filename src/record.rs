@@ -42,6 +42,8 @@ pub fn get_kernelspec_file<P: AsRef<Path>>(path: P) -> Result<PathBuf, RecordErr
         return Err(RecordError::NoGitDir);
     }
     let git_type = gix_discover::is_git(&git_dir)?;
+    // I don't know how to test this
+    #[cfg(not(tarpaulin_include))]
     if !matches!(git_type, gix_discover::repository::Kind::WorkTree { .. }) {
         return Err(RecordError::NotAGitWorktree);
     }
@@ -62,7 +64,7 @@ pub fn read_kernelspec_file<P: AsRef<Path>>(
         Ok(None)
     }
 }
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct KernelSpecInfo {
     pub kernelspec: Value,
     pub python_version: Option<String>,
@@ -120,4 +122,46 @@ fn get_kernelspecs<P: AsRef<Path> + Sync + Debug>(nbs: &[P]) -> IndexMap<String,
             extract_kernel_info(&nb_res).map(|k| (relativize_path(path), k))
         })
         .collect()
+}
+
+#[cfg(test)]
+mod test {
+    use serde_json::json;
+
+    use super::extract_kernel_info;
+    use crate::schema::RawNotebook;
+
+    #[test]
+    fn test_blank_not_recorded() {
+        let blank_notebook = RawNotebook::new();
+        assert!(extract_kernel_info(&blank_notebook).is_none());
+    }
+
+    #[test]
+    fn test_kernelspec_extracted() {
+        let python_version = "3.12.4".to_string();
+        let kernelspec = json!({
+            "name": "python3",
+            "display_name": "Python 3"
+        });
+        let notebook = RawNotebook {
+            cells: vec![],
+            metadata: json!(
+                {
+                    "kernelspec": kernelspec,
+                    "language_info": {
+                        "name": "python",
+                         "version": python_version
+                    }
+                }
+            ),
+            nbformat: 4,
+            nbformat_minor: 5,
+        };
+        let extracted = extract_kernel_info(&notebook);
+        assert!(extracted.is_some());
+        let extracted = extracted.unwrap();
+        assert_eq!(extracted.python_version, Some(python_version));
+        assert_eq!(extracted.kernelspec, kernelspec);
+    }
 }

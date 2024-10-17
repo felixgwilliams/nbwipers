@@ -64,7 +64,7 @@ fn maybe_replace_kernelspec(
                 )
             }
             Value::Object(ref mut meta) => match meta.get_mut("language_info") {
-                Some(Value::Null) => {
+                Some(Value::Null) | None => {
                     meta.insert("language_info".to_string(), json!({"version":version}));
                 }
                 Some(Value::Object(lang_info)) => {
@@ -79,4 +79,136 @@ fn maybe_replace_kernelspec(
     };
 
     Ok(nb)
+}
+
+#[cfg(test)]
+mod test {
+    use serde_json::{json, Value};
+
+    use super::maybe_replace_kernelspec;
+    use crate::{record::KernelSpecInfo, schema::RawNotebook, strip::write_nb};
+
+    fn make_sample_kernelinfo() -> KernelSpecInfo {
+        KernelSpecInfo {
+            kernelspec: json!({
+                "name": "python3",
+                "display_name": "Python 3"
+            }),
+            python_version: Some("3.12.4".to_string()),
+        }
+    }
+    fn notebook_with_metadata_bytes(meta: serde_json::Value) -> Vec<u8> {
+        let nb = RawNotebook {
+            metadata: meta,
+            ..Default::default()
+        };
+        let mut nb_bytes = Vec::new();
+        write_nb(&mut nb_bytes, &nb).unwrap();
+        nb_bytes
+    }
+
+    #[test]
+    fn test_add_to_blank() {
+        let kernelspec_info = make_sample_kernelinfo();
+        let nb_bytes = notebook_with_metadata_bytes(Value::Null);
+
+        let out_nb = maybe_replace_kernelspec(&nb_bytes, &kernelspec_info).unwrap();
+
+        assert_eq!(
+            out_nb.metadata.get("kernelspec"),
+            Some(&kernelspec_info.kernelspec)
+        );
+        assert_eq!(
+            out_nb
+                .metadata
+                .get("language_info")
+                .unwrap()
+                .get("version")
+                .unwrap()
+                .as_str()
+                .unwrap(),
+            kernelspec_info.python_version.unwrap()
+        );
+    }
+
+    #[test]
+    fn test_add_to_stripped() {
+        let kernelspec_info = make_sample_kernelinfo();
+        let nb_bytes = notebook_with_metadata_bytes(json!({
+                "language_info": {
+                        "name": "python",
+                    }
+
+        }));
+
+        let out_nb = maybe_replace_kernelspec(&nb_bytes, &kernelspec_info).unwrap();
+
+        assert_eq!(
+            out_nb.metadata.get("kernelspec"),
+            Some(&kernelspec_info.kernelspec)
+        );
+        assert_eq!(
+            out_nb
+                .metadata
+                .get("language_info")
+                .unwrap()
+                .get("version")
+                .unwrap()
+                .as_str()
+                .unwrap(),
+            kernelspec_info.python_version.unwrap()
+        );
+    }
+
+    #[test]
+    fn test_dont_add() {
+        let kernelspec_info = make_sample_kernelinfo();
+        let original_kernelspec = json!({
+            "name": "python3-conda",
+            "display_name": "Python 3"
+        });
+        let original_version = "3.8.4".to_string();
+        let nb_bytes = notebook_with_metadata_bytes(json!({
+            "kernelspec":original_kernelspec,
+                "language_info": {
+                        "name": "python",
+                        "version": original_version.clone()
+                    }
+
+        }));
+
+        let out_nb = maybe_replace_kernelspec(&nb_bytes, &kernelspec_info).unwrap();
+
+        assert_eq!(
+            out_nb.metadata.get("kernelspec"),
+            Some(&original_kernelspec)
+        );
+        assert_eq!(
+            out_nb
+                .metadata
+                .get("language_info")
+                .unwrap()
+                .get("version")
+                .unwrap()
+                .as_str()
+                .unwrap(),
+            original_version
+        );
+    }
+    #[test]
+    fn test_malformed_metadata() {
+        let kernelspec_info = make_sample_kernelinfo();
+        let nb_bytes_malformed_meta = notebook_with_metadata_bytes(Value::Number(10.into()));
+        assert!(maybe_replace_kernelspec(&nb_bytes_malformed_meta, &kernelspec_info).is_err());
+        let mut kernelspec_info_no_kernel = kernelspec_info.clone();
+        kernelspec_info_no_kernel.kernelspec = Value::Null;
+        assert!(
+            maybe_replace_kernelspec(&nb_bytes_malformed_meta, &kernelspec_info_no_kernel).is_err()
+        );
+        let nb_bytes_malformed_language_info =
+            notebook_with_metadata_bytes(json!({ "kernelspec": {}, "language_info": 10 }));
+        assert!(
+            maybe_replace_kernelspec(&nb_bytes_malformed_language_info, &kernelspec_info).is_err()
+        );
+    }
 }
