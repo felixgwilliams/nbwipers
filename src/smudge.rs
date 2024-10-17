@@ -130,6 +130,28 @@ mod test {
             kernelspec_info.python_version.unwrap()
         );
     }
+    #[test]
+    fn test_add_to_blank_only_version() {
+        let kernelspec_info = KernelSpecInfo {
+            kernelspec: Value::Null,
+            python_version: Some("3.12.4".to_string()),
+        };
+        let nb_bytes = notebook_with_metadata_bytes(Value::Null);
+
+        let out_nb = maybe_replace_kernelspec(&nb_bytes, &kernelspec_info).unwrap();
+
+        assert_eq!(
+            out_nb
+                .metadata
+                .get("language_info")
+                .unwrap()
+                .get("version")
+                .unwrap()
+                .as_str()
+                .unwrap(),
+            kernelspec_info.python_version.unwrap()
+        );
+    }
 
     #[test]
     fn test_add_to_stripped() {

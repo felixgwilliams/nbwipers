@@ -177,3 +177,93 @@ fn test_smudge_nothing() {
     let smudge_out = check_smudge_output.wait_with_output().unwrap();
     assert_eq!(smudge_out.stdout, verbatim_bytes);
 }
+
+#[test]
+fn record_clear_sync() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+    let git_init_out = Command::new("git")
+        .current_dir(&temp_dir)
+        .args(["init"])
+        .output()
+        .expect("git init failed");
+    assert!(git_init_out.status.success());
+    let python_version = "3.12.4".to_string();
+    let kernelspec = json!({
+        "name": "python3",
+        "display_name": "Python 3"
+    });
+    let dirty_nb = RawNotebook {
+        metadata: json!({
+            "kernelspec": kernelspec,
+            "language_info": {
+                "name": "python",
+                 "version": python_version
+            }
+        }),
+        ..Default::default()
+    };
+    let nb1_rel = "nb1.ipynb";
+    let nb2_rel = "nb2.ipynb";
+
+    write_nb(
+        File::create(temp_dir.path().join(nb1_rel)).unwrap(),
+        &dirty_nb,
+    )
+    .unwrap();
+    write_nb(
+        File::create(temp_dir.path().join(nb2_rel)).unwrap(),
+        &dirty_nb,
+    )
+    .unwrap();
+    Command::new(&cur_exe)
+        .current_dir(&temp_dir)
+        .args(["record"])
+        .output()
+        .expect("record failed");
+    let first_kernel_info = read_kernelspec_file(get_kernelspec_file(temp_dir.path()).unwrap())
+        .unwrap()
+        .unwrap();
+    assert!(first_kernel_info.contains_key(nb1_rel));
+    assert!(first_kernel_info.contains_key(nb2_rel));
+    fs::remove_file(temp_dir.path().join(nb2_rel)).unwrap();
+
+    Command::new(&cur_exe)
+        .current_dir(&temp_dir)
+        .args(["record", "--sync"])
+        .output()
+        .expect("record failed");
+    let second_kernel_info = read_kernelspec_file(get_kernelspec_file(temp_dir.path()).unwrap())
+        .unwrap()
+        .unwrap();
+    assert!(second_kernel_info.contains_key(nb1_rel));
+    assert!(!second_kernel_info.contains_key(nb2_rel));
+
+    Command::new(&cur_exe)
+        .current_dir(&temp_dir)
+        .args(["record", "--clear"])
+        .output()
+        .expect("record failed");
+    let third_kernel_info = read_kernelspec_file(get_kernelspec_file(temp_dir.path()).unwrap())
+        .unwrap()
+        .unwrap();
+    assert!(!third_kernel_info.contains_key(nb1_rel));
+    assert!(!third_kernel_info.contains_key(nb2_rel));
+}
+#[test]
+fn test_record_nothing() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+    let git_init_out = Command::new("git")
+        .current_dir(&temp_dir)
+        .args(["init"])
+        .output()
+        .expect("git init failed");
+    assert!(git_init_out.status.success());
+    let out = Command::new(&cur_exe)
+        .current_dir(&temp_dir)
+        .args(["record"])
+        .output()
+        .expect("record failed");
+    assert!(!out.status.success());
+}

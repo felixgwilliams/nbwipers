@@ -34,6 +34,8 @@ pub enum RecordError {
     InvalidKernelspecFile(serde_json::Error),
     #[error("Serde Write Error")]
     SerdeWriteError(serde_json::Error),
+    #[error("No Notebooks to record")]
+    NoNotebooks,
 }
 
 pub fn get_kernelspec_file<P: AsRef<Path>>(path: P) -> Result<PathBuf, RecordError> {
@@ -41,12 +43,13 @@ pub fn get_kernelspec_file<P: AsRef<Path>>(path: P) -> Result<PathBuf, RecordErr
     if !git_dir.is_dir() {
         return Err(RecordError::NoGitDir);
     }
-    let git_type = gix_discover::is_git(&git_dir)?;
+    // check for a valid git directory
+    gix_discover::is_git(&git_dir)?;
     // I don't know how to test this
-    #[cfg(not(tarpaulin_include))]
-    if !matches!(git_type, gix_discover::repository::Kind::WorkTree { .. }) {
-        return Err(RecordError::NotAGitWorktree);
-    }
+
+    // if !matches!(git_type, gix_discover::repository::Kind::WorkTree { .. }) {
+    //     return Err(RecordError::NotAGitWorktree);
+    // }
     let nbwipers_dir = git_dir.join("x-nbwipers");
     fs::create_dir_all(&nbwipers_dir).map_err(RecordError::FailedCreateNbwipersDir)?;
     Ok(nbwipers_dir.join("kernelspec_store.json"))
@@ -57,9 +60,9 @@ pub fn read_kernelspec_file<P: AsRef<Path>>(
     if path.as_ref().exists() {
         let file = File::open(path).map_err(RecordError::FailedReadKernelspecFile)?;
         let buf = BufReader::new(file);
-        Ok(Some(
-            serde_json::from_reader(buf).map_err(RecordError::InvalidKernelspecFile)?,
-        ))
+        let kernelspec_info =
+            serde_json::from_reader(buf).map_err(RecordError::InvalidKernelspecFile)?;
+        Ok(Some(kernelspec_info))
     } else {
         Ok(None)
     }
@@ -84,7 +87,7 @@ pub fn record(cmd: RecordCommand) -> Result<(), Error> {
     };
     if !cmd.clear {
         let FoundNotebooks::Files(files) = find_notebooks(&[&path], &settings)? else {
-            return Ok(());
+            return Err(RecordError::NoNotebooks.into());
         };
         let kernelspecs = get_kernelspecs(&files);
         for (nb, kernel) in kernelspecs {
