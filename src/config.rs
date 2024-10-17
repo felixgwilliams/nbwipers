@@ -22,6 +22,7 @@ pub struct ConfigurationSection {
     pub keep_keys: Option<Vec<ExtraKey>>,
     pub exclude: Option<Vec<String>>,
     pub extend_exclude: Option<Vec<String>>,
+    pub strip_kernel_info: Option<bool>,
 }
 
 impl ConfigurationSection {
@@ -56,6 +57,7 @@ impl ConfigurationSection {
             keep_keys: self.keep_keys,
             exclude,
             extend_exclude,
+            strip_kernel_info: self.strip_kernel_info,
         }
     }
 }
@@ -72,6 +74,7 @@ pub struct Configuration {
     pub keep_keys: Option<Vec<ExtraKey>>,
     pub exclude: Option<Vec<FilePattern>>,
     pub extend_exclude: Vec<FilePattern>,
+    pub strip_kernel_info: Option<bool>,
 }
 
 pub const EXTRA_KEYS: &[&str] = &[
@@ -154,6 +157,11 @@ fn make_globset<I: IntoIterator<Item = FilePattern>>(patterns: I) -> anyhow::Res
 impl Configuration {
     pub fn into_settings(self) -> Result<Settings, anyhow::Error> {
         let mut extra_keys = default_extra_keys();
+        let strip_kernel_info = self.strip_kernel_info.unwrap_or(false);
+        if strip_kernel_info {
+            extra_keys.insert(ExtraKey::from_str("metadata.kernelspec").unwrap());
+            extra_keys.insert(ExtraKey::from_str("metadata.language_info.version").unwrap());
+        }
         extra_keys.extend(self.extra_keys.unwrap_or_default());
         for key in &self.keep_keys.unwrap_or_default() {
             extra_keys.remove(key);
@@ -189,6 +197,7 @@ impl Configuration {
             exclude_,
             extend_exclude,
             extend_exclude_,
+            strip_kernel_info,
         })
     }
 }

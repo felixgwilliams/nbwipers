@@ -43,7 +43,10 @@ pub fn install_config(config_file: Option<&Path>, config_type: GitConfigType) ->
     );
 
     #[allow(clippy::unwrap_used)]
-    nbwipers_section.set(ValueName::try_from("smudge").unwrap(), BStr::new("cat"));
+    nbwipers_section.set(
+        ValueName::try_from("smudge").unwrap(),
+        BStr::new(format!("\"{}\" smudge %f", cur_exe_str.as_str()).as_str()),
+    );
 
     // fails for invalid section names. This one is ok
     #[allow(clippy::unwrap_used)]

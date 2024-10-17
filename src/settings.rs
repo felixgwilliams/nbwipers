@@ -16,6 +16,7 @@ pub struct Settings {
     pub drop_count: bool,
     pub drop_id: bool,
     pub strip_init_cell: bool,
+    pub strip_kernel_info: bool,
     pub exclude: Vec<String>,
     #[serde(skip_serializing)]
     pub exclude_: GlobSet,
@@ -31,7 +32,6 @@ impl Settings {
         overrides: &ConfigOverrides,
     ) -> Result<Self, anyhow::Error> {
         let mut config = if isolated {
-            dbg!("isolated!");
             Configuration::default()
         } else {
             let (config_sec, config_path) = resolve(config_file)?;

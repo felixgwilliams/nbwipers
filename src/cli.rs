@@ -67,6 +67,12 @@ pub struct CommonArgs {
 
     #[arg(long, overrides_with("strip_init_cell"), hide = true)]
     pub keep_init_cell: bool,
+    /// Strip kernel info. Namely, metadata.kernelspec and metadata.language_info.python_version. Disable with `--keep-kernel-info`
+    #[arg(long, overrides_with("keep_kernel_info"))]
+    pub strip_kernel_info: bool,
+
+    #[arg(long, overrides_with("strip_kernel_info"), hide = true)]
+    pub keep_kernel_info: bool,
 
     /// comma-separated list of tags that will cause the cell to be dropped
     #[arg(long, value_delimiter = ',')]
@@ -99,6 +105,11 @@ pub enum Commands {
     CheckInstall(CheckInstallCommand),
     /// Show configuration
     ShowConfig(ShowConfigCommand),
+    /// Record Kernelspec metadata for notebooks
+    Record(RecordCommand),
+    /// Add back kernelspec metadata to the notebook as a smudge
+    #[clap(hide(true))]
+    Smudge(SmudgeCommand),
     /// Commands for pre-commit hooks
     #[command(subcommand)]
     Hook(HookCommands),
@@ -217,6 +228,21 @@ pub struct UninstallCommand {
 }
 
 #[derive(Clone, Debug, Parser)]
+pub struct RecordCommand {
+    pub path: Option<PathBuf>,
+
+    #[arg(long)]
+    pub remove: Vec<PathBuf>,
+
+    #[arg(long)]
+    pub clear: bool,
+    #[arg(long)]
+    pub sync: bool,
+
+    #[clap(flatten)]
+    pub common: CommonArgs,
+}
+#[derive(Clone, Debug, Parser)]
 pub struct CheckInstallCommand {
     /// Exit zero regardless of install status
     #[arg(long)]
@@ -224,6 +250,11 @@ pub struct CheckInstallCommand {
     /// Git config type to check
     #[clap(value_enum)]
     pub config_type: Option<GitConfigType>,
+}
+
+#[derive(Clone, Debug, Parser)]
+pub struct SmudgeCommand {
+    pub path: String,
 }
 
 #[derive(Clone, Debug, ValueEnum, Copy)]
@@ -238,6 +269,7 @@ pub enum GitConfigType {
 
 #[derive(Clone, Debug, Default)]
 pub struct ConfigOverrides {
+    pub strip_kernel_info: Option<bool>,
     pub extra_keys: Option<Vec<ExtraKey>>,
     pub drop_empty_cells: Option<bool>,
     pub drop_output: Option<bool>,
@@ -284,6 +316,7 @@ impl CommonArgs {
                 keep_keys: self.keep_keys,
                 extend_exclude: self.extend_exclude,
                 exclude: self.exclude,
+                strip_kernel_info: resolve_bool_arg(self.strip_kernel_info, self.keep_kernel_info),
             },
         )
     }
@@ -320,6 +353,9 @@ impl ConfigOverrides {
         }
         if let Some(extend_exclude) = &self.extend_exclude {
             config.extend_exclude.extend(extend_exclude.clone());
+        }
+        if let Some(strip_kernel_info) = &self.strip_kernel_info {
+            config.strip_kernel_info = Some(*strip_kernel_info);
         }
         config
     }
