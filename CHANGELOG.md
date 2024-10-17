@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
 
+## [0.5.0] - 2024-10-17
+
+### Added
+
+- Add convenience option `--strip-kernel-info` to remove metadata related to python kernels
+- Add `record` command to record kernel info to non-version-controlled local file
+- Add hidden `smudge` command to be used as a git filter, that restores the stored kernel info to checked-out notebooks
+
 ## [0.4.0] - 2024-08-27
 
 ### Added
