@@ -16,6 +16,7 @@ fn test_expected(path: &str, expected: &str, extra_args: &[&str], snapshot_name:
         .expect("command failed");
 
     let expected_content = fs::read_to_string(expected).expect("could not read expected");
+
     assert_eq!(output.stdout.to_str().unwrap(), expected_content);
     // check no errors after cleaning
     let mut check_output_cmd = Command::new(&cur_exe)
@@ -196,6 +197,28 @@ fn test_metadata_extra_keys() {
     test_config_match(
         "tests/e2e_notebooks/test_metadata_extra_keys.toml",
         &["--extra-keys", "metadata.kernelspec,metadata.language_info"],
+    );
+}
+
+#[test]
+fn test_strip_kernel_info() {
+    test_expected(
+        "tests/e2e_notebooks/test_metadata.ipynb",
+        "tests/e2e_notebooks/test_metadata_strip_kernelinfo.ipynb.expected",
+        &[
+            "--extra-keys",
+            "metadata.kernelspec,metadata.language_info.version",
+        ],
+        "test_metadata_strip_kernelinfo_cli",
+    );
+    test_expected(
+        "tests/e2e_notebooks/test_metadata.ipynb",
+        "tests/e2e_notebooks/test_metadata_strip_kernelinfo.ipynb.expected",
+        &[
+            "-c",
+            "tests/e2e_notebooks/test_metadata_strip_kernelinfo.toml",
+        ],
+        "test_metadata_strip_kernelinfo_cfg",
     );
 }
 
