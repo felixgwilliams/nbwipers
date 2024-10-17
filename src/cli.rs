@@ -354,6 +354,9 @@ impl ConfigOverrides {
         if let Some(extend_exclude) = &self.extend_exclude {
             config.extend_exclude.extend(extend_exclude.clone());
         }
+        if let Some(strip_kernel_info) = &self.strip_kernel_info {
+            config.strip_kernel_info = Some(*strip_kernel_info);
+        }
         config
     }
 }
