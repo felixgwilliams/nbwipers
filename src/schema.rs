@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use serde_with::skip_serializing_none;
 
-/// The schema declarations in this file are taken from Ruff, used under the MIT license
+// The schema declarations in this file are taken from Ruff, used under the MIT license
 
 /// The root of the JSON of a Jupyter Notebook
 ///
