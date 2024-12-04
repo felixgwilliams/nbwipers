@@ -21,7 +21,7 @@ colored = "2.1.0"
 gix-attributes = "0.22.5"
 gix-config = { version = "0.40.0" }
 gix-discover = "0.35.0"
-gix-path = "0.10.5"
+gix-path = "0.10.11"
 globset = "0.4.14"
 ignore = "0.4.22"
 indexmap = { version = "2.6.0", features = ["rayon", "serde"] }
