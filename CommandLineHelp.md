@@ -78,7 +78,10 @@ clean all notebooks in a given path
 * `--drop-empty-cells` — drop empty cells. Disable with `--keep-empty-cells`
 * `--keep-output` — keep cell output. Disable with `--drop-output`
 * `--keep-count` — keep cell execution count. Disable with `--drop count`
-* `--drop-id` — replace cell ids with sequential ids. Disable with `--keep-id`
+* `--drop-id` — remove cell ids and downgrade to nbformat 4.4. Conflicts with `--keep-id` and `--sequential-id`. Equivalent to `--id-action=drop`
+* `--keep-id` — keep cell ids (default). Conflicts with `--sequential-id` and `--drop-id`. Equivalent to `--id-action=keep`
+* `--sequential-id` — replace cell ids with sequential ids. Conflicts with `--keep-id` and `--drop-id`. Equivalent to `--id-action=sequential`
+* `--id-action <ID_ACTION>` — Specify what action to take on cell ids. `drop` to remove, `sequential` to replace with sequential ids and `keep` to do nothing. Equivalent to `--drop-id`, `--sequential-id` and `--keep-id` respectively
 * `--strip-init-cell` — Strip init cell. Disable with `--keep-init-cell`
 * `--strip-kernel-info` — Strip kernel info. Namely, metadata.kernelspec and metadata.language_info.python_version. Disable with `--keep-kernel-info`
 * `--drop-tagged-cells <DROP_TAGGED_CELLS>` — comma-separated list of tags that will cause the cell to be dropped
@@ -109,7 +112,10 @@ check notebooks in a given path for elements that would be removed by `clean`
 * `--drop-empty-cells` — drop empty cells. Disable with `--keep-empty-cells`
 * `--keep-output` — keep cell output. Disable with `--drop-output`
 * `--keep-count` — keep cell execution count. Disable with `--drop count`
-* `--drop-id` — replace cell ids with sequential ids. Disable with `--keep-id`
+* `--drop-id` — remove cell ids and downgrade to nbformat 4.4. Conflicts with `--keep-id` and `--sequential-id`. Equivalent to `--id-action=drop`
+* `--keep-id` — keep cell ids (default). Conflicts with `--sequential-id` and `--drop-id`. Equivalent to `--id-action=keep`
+* `--sequential-id` — replace cell ids with sequential ids. Conflicts with `--keep-id` and `--drop-id`. Equivalent to `--id-action=sequential`
+* `--id-action <ID_ACTION>` — Specify what action to take on cell ids. `drop` to remove, `sequential` to replace with sequential ids and `keep` to do nothing. Equivalent to `--drop-id`, `--sequential-id` and `--keep-id` respectively
 * `--strip-init-cell` — Strip init cell. Disable with `--keep-init-cell`
 * `--strip-kernel-info` — Strip kernel info. Namely, metadata.kernelspec and metadata.language_info.python_version. Disable with `--keep-kernel-info`
 * `--drop-tagged-cells <DROP_TAGGED_CELLS>` — comma-separated list of tags that will cause the cell to be dropped
@@ -137,7 +143,10 @@ clean a single notebook
 * `--drop-empty-cells` — drop empty cells. Disable with `--keep-empty-cells`
 * `--keep-output` — keep cell output. Disable with `--drop-output`
 * `--keep-count` — keep cell execution count. Disable with `--drop count`
-* `--drop-id` — replace cell ids with sequential ids. Disable with `--keep-id`
+* `--drop-id` — remove cell ids and downgrade to nbformat 4.4. Conflicts with `--keep-id` and `--sequential-id`. Equivalent to `--id-action=drop`
+* `--keep-id` — keep cell ids (default). Conflicts with `--sequential-id` and `--drop-id`. Equivalent to `--id-action=keep`
+* `--sequential-id` — replace cell ids with sequential ids. Conflicts with `--keep-id` and `--drop-id`. Equivalent to `--id-action=sequential`
+* `--id-action <ID_ACTION>` — Specify what action to take on cell ids. `drop` to remove, `sequential` to replace with sequential ids and `keep` to do nothing. Equivalent to `--drop-id`, `--sequential-id` and `--keep-id` respectively
 * `--strip-init-cell` — Strip init cell. Disable with `--keep-init-cell`
 * `--strip-kernel-info` — Strip kernel info. Namely, metadata.kernelspec and metadata.language_info.python_version. Disable with `--keep-kernel-info`
 * `--drop-tagged-cells <DROP_TAGGED_CELLS>` — comma-separated list of tags that will cause the cell to be dropped
@@ -206,7 +215,10 @@ Show configuration
 * `--drop-empty-cells` — drop empty cells. Disable with `--keep-empty-cells`
 * `--keep-output` — keep cell output. Disable with `--drop-output`
 * `--keep-count` — keep cell execution count. Disable with `--drop count`
-* `--drop-id` — replace cell ids with sequential ids. Disable with `--keep-id`
+* `--drop-id` — remove cell ids and downgrade to nbformat 4.4. Conflicts with `--keep-id` and `--sequential-id`. Equivalent to `--id-action=drop`
+* `--keep-id` — keep cell ids (default). Conflicts with `--sequential-id` and `--drop-id`. Equivalent to `--id-action=keep`
+* `--sequential-id` — replace cell ids with sequential ids. Conflicts with `--keep-id` and `--drop-id`. Equivalent to `--id-action=sequential`
+* `--id-action <ID_ACTION>` — Specify what action to take on cell ids. `drop` to remove, `sequential` to replace with sequential ids and `keep` to do nothing. Equivalent to `--drop-id`, `--sequential-id` and `--keep-id` respectively
 * `--strip-init-cell` — Strip init cell. Disable with `--keep-init-cell`
 * `--strip-kernel-info` — Strip kernel info. Namely, metadata.kernelspec and metadata.language_info.python_version. Disable with `--keep-kernel-info`
 * `--drop-tagged-cells <DROP_TAGGED_CELLS>` — comma-separated list of tags that will cause the cell to be dropped
@@ -236,7 +248,10 @@ Record Kernelspec metadata for notebooks
 * `--drop-empty-cells` — drop empty cells. Disable with `--keep-empty-cells`
 * `--keep-output` — keep cell output. Disable with `--drop-output`
 * `--keep-count` — keep cell execution count. Disable with `--drop count`
-* `--drop-id` — replace cell ids with sequential ids. Disable with `--keep-id`
+* `--drop-id` — remove cell ids and downgrade to nbformat 4.4. Conflicts with `--keep-id` and `--sequential-id`. Equivalent to `--id-action=drop`
+* `--keep-id` — keep cell ids (default). Conflicts with `--sequential-id` and `--drop-id`. Equivalent to `--id-action=keep`
+* `--sequential-id` — replace cell ids with sequential ids. Conflicts with `--keep-id` and `--drop-id`. Equivalent to `--id-action=sequential`
+* `--id-action <ID_ACTION>` — Specify what action to take on cell ids. `drop` to remove, `sequential` to replace with sequential ids and `keep` to do nothing. Equivalent to `--drop-id`, `--sequential-id` and `--keep-id` respectively
 * `--strip-init-cell` — Strip init cell. Disable with `--keep-init-cell`
 * `--strip-kernel-info` — Strip kernel info. Namely, metadata.kernelspec and metadata.language_info.python_version. Disable with `--keep-kernel-info`
 * `--drop-tagged-cells <DROP_TAGGED_CELLS>` — comma-separated list of tags that will cause the cell to be dropped
@@ -252,11 +267,11 @@ Commands for pre-commit hooks
 
 ###### **Subcommands:**
 
-* `check-large-files` — Check for large files, but measure ipynb sizes after clearning
+* `check-large-files` — Check for large files, but measure ipynb sizes after cleaning
 
 ## `nbwipers hook check-large-files`
 
-Check for large files, but measure ipynb sizes after clearning
+Check for large files, but measure ipynb sizes after cleaning
 
 **Usage:** `nbwipers hook check-large-files [OPTIONS] [FILENAMES]...`
 

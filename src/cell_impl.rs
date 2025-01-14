@@ -144,7 +144,7 @@ impl Cell {
             .and_then(|x| x.get("tags"))
             .and_then(|x| x.as_array());
 
-        tags.map_or(false, |tags| {
+        tags.is_some_and(|tags| {
             tags.iter()
                 .filter_map(|v| v.as_str())
                 .any(|s| drop_tagged_cells.contains(s))

@@ -1,14 +1,22 @@
 use std::path::PathBuf;
 
-use clap::{command, Parser, Subcommand, ValueEnum};
-
-use crate::{
-    config::{Configuration, FilePattern},
-    extra_keys::ExtraKey,
+use clap::{
+    builder::{styling::AnsiColor, Styles},
+    command, Parser, Subcommand, ValueEnum,
 };
 
+use crate::{
+    config::{Configuration, FilePattern, IdAction},
+    extra_keys::ExtraKey,
+};
+const STYLES: Styles = Styles::styled()
+    .header(AnsiColor::Yellow.on_default())
+    .usage(AnsiColor::Green.on_default())
+    .literal(AnsiColor::Green.on_default())
+    .placeholder(AnsiColor::Green.on_default());
+
 #[derive(Parser, Debug, Clone)]
-#[command(author, version, about, long_about = None)]
+#[command(author, version, about, long_about = None, styles=STYLES)]
 pub struct Cli {
     #[arg(long, hide = true)]
     pub markdown_help: bool,
@@ -54,12 +62,41 @@ pub struct CommonArgs {
     #[arg(long, overrides_with("keep_count"), hide = true)]
     pub drop_count: bool,
 
-    /// replace cell ids with sequential ids. Disable with `--keep-id`
-    #[arg(long, overrides_with("keep_id"))]
+    /// remove cell ids and downgrade to nbformat 4.4. Conflicts with `--keep-id` and `--sequential-id`. Equivalent to `--id-action=drop`
+    #[arg(
+        long,
+        overrides_with("keep_id"),
+        overrides_with("sequential_id"),
+        overrides_with("id_action")
+    )]
     pub drop_id: bool,
 
-    #[arg(long, overrides_with("drop_id"), hide = true)]
+    /// keep cell ids (default). Conflicts with `--sequential-id` and `--drop-id`. Equivalent to `--id-action=keep`
+    #[arg(
+        long,
+        overrides_with("drop_id"),
+        overrides_with("sequential_id"),
+        overrides_with("id_action")
+    )]
     pub keep_id: bool,
+
+    /// replace cell ids with sequential ids. Conflicts with `--keep-id` and `--drop-id`. Equivalent to `--id-action=sequential`
+    #[arg(
+        long,
+        overrides_with("drop_id"),
+        overrides_with("keep_id"),
+        overrides_with("id_action")
+    )]
+    pub sequential_id: bool,
+
+    /// Specify what action to take on cell ids. `drop` to remove, `sequential` to replace with sequential ids and `keep` to do nothing. Equivalent to `--drop-id`, `--sequential-id` and `--keep-id` respectively.
+    #[arg(
+        long,
+        overrides_with("drop_id"),
+        overrides_with("keep_id"),
+        overrides_with("sequential_id")
+    )]
+    pub id_action: Option<IdAction>,
 
     /// Strip init cell. Disable with `--keep-init-cell`
     #[arg(long, overrides_with("keep_init_cell"))]
@@ -117,7 +154,7 @@ pub enum Commands {
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum HookCommands {
-    /// Check for large files, but measure ipynb sizes after clearning
+    /// Check for large files, but measure ipynb sizes after cleaning
     CheckLargeFiles(CheckLargeFilesCommand),
 }
 
@@ -274,7 +311,7 @@ pub struct ConfigOverrides {
     pub drop_empty_cells: Option<bool>,
     pub drop_output: Option<bool>,
     pub drop_count: Option<bool>,
-    pub drop_id: Option<bool>,
+    pub id_action: Option<IdAction>,
     pub strip_init_cell: Option<bool>,
     pub drop_tagged_cells: Option<Vec<String>>,
     pub keep_keys: Option<Vec<ExtraKey>>,
@@ -296,7 +333,21 @@ pub fn resolve_bool_arg(yes: bool, no: bool) -> Option<bool> {
         (..) => unreachable!("Clap should make this impossible"),
     }
 }
-
+fn resolve_id_action(
+    id_action: Option<IdAction>,
+    keep: bool,
+    sequential: bool,
+    drop: bool,
+) -> Option<IdAction> {
+    match (id_action, keep, sequential, drop) {
+        (Some(id_action), false, false, false) => Some(id_action),
+        (None, true, false, false) => Some(IdAction::Keep),
+        (None, false, true, false) => Some(IdAction::Sequential),
+        (None, false, false, true) => Some(IdAction::Drop),
+        (None, false, false, false) => None,
+        (..) => unreachable!("Clap should make this impossible"),
+    }
+}
 impl CommonArgs {
     pub fn partition(self) -> (Args, ConfigOverrides) {
         (
@@ -310,7 +361,12 @@ impl CommonArgs {
                 drop_empty_cells: resolve_bool_arg(self.drop_empty_cells, self.keep_empty_cells),
                 drop_output: resolve_bool_arg(self.drop_output, self.keep_output),
                 drop_count: resolve_bool_arg(self.drop_count, self.keep_count),
-                drop_id: resolve_bool_arg(self.drop_id, self.keep_id),
+                id_action: resolve_id_action(
+                    self.id_action,
+                    self.keep_id,
+                    self.sequential_id,
+                    self.drop_id,
+                ),
                 drop_tagged_cells: self.drop_tagged_cells,
                 strip_init_cell: resolve_bool_arg(self.strip_init_cell, self.keep_init_cell),
                 keep_keys: self.keep_keys,
@@ -333,8 +389,8 @@ impl ConfigOverrides {
         if let Some(drop_empty_cells) = &self.drop_empty_cells {
             config.drop_empty_cells = Some(*drop_empty_cells);
         }
-        if let Some(drop_id) = &self.drop_id {
-            config.drop_id = Some(*drop_id);
+        if let Some(id_action) = &self.id_action {
+            config.id_action = Some(*id_action);
         }
         if let Some(drop_output) = &self.drop_output {
             config.drop_output = Some(*drop_output);

@@ -1,5 +1,5 @@
 use crate::cli::ConfigOverrides;
-use crate::config::{resolve, Configuration};
+use crate::config::{resolve, Configuration, IdAction};
 use crate::extra_keys::ExtraKey;
 use globset::GlobSet;
 use rustc_hash::FxHashSet;
@@ -14,7 +14,7 @@ pub struct Settings {
     pub drop_empty_cells: bool,
     pub drop_output: bool,
     pub drop_count: bool,
-    pub drop_id: bool,
+    pub id_action: IdAction,
     pub strip_init_cell: bool,
     pub strip_kernel_info: bool,
     pub exclude: Vec<String>,

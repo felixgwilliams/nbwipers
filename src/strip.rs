@@ -8,10 +8,12 @@ use std::{
 use serde::Serialize;
 use thiserror::Error;
 
+/// Maximum nbformat_minor version for which cell ids are optional.
 use crate::{
+    config::IdAction,
     extra_keys::partition_extra_keys,
     files::{read_nb, read_nb_stdin, NBReadError, NBWriteError},
-    schema::RawNotebook,
+    schema::{RawNotebook, ID_OPTIONAL_MAX_VERSION},
     settings::Settings,
     utils::{get_value_child, pop_cell_key, pop_meta_key},
 };
@@ -44,6 +46,7 @@ pub fn strip_nb(mut nb: RawNotebook, settings: &Settings) -> (RawNotebook, bool)
         }
         nb.cells = retained_cells;
     }
+    let mut downgrade_nbversion_minor = false;
 
     for (i, cell) in nb.cells.iter_mut().enumerate() {
         if let Some(codecell) = cell.as_codecell_mut() {
@@ -60,13 +63,30 @@ pub fn strip_nb(mut nb: RawNotebook, settings: &Settings) -> (RawNotebook, bool)
                 codecell.clear_counts();
             }
         }
-        if settings.drop_id && !cell.is_clear_id(i) {
-            stripped = true;
-            cell.set_id(Some(format!("{i}")));
+        match settings.id_action {
+            IdAction::Sequential => {
+                if !cell.is_clear_id(i) {
+                    stripped = true;
+                    cell.set_id(Some(format!("{i}")));
+                }
+            }
+            IdAction::Drop => {
+                if cell.get_id().is_some() {
+                    stripped = true;
+                    downgrade_nbversion_minor = true;
+                    cell.set_id(None);
+                }
+            }
+            IdAction::Keep => {}
         }
+
         for cell_key in &cell_keys {
             stripped |= pop_cell_key(cell, cell_key).is_some();
         }
+    }
+    if downgrade_nbversion_minor && nb.nbformat_minor > ID_OPTIONAL_MAX_VERSION {
+        nb.nbformat_minor = ID_OPTIONAL_MAX_VERSION;
+        stripped = true;
     }
     (nb, stripped)
 }

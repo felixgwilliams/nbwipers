@@ -1,9 +1,10 @@
 use std::{fmt::Display, path::Path};
 
 use crate::{
+    config::IdAction,
     extra_keys::partition_extra_keys,
     files::{relativize_path, NBReadError},
-    schema::RawNotebook,
+    schema::{RawNotebook, ID_OPTIONAL_MAX_VERSION},
     settings::Settings,
     utils::get_value_child,
 };
@@ -37,6 +38,9 @@ pub enum CheckResult {
     CellStripMeta {
         cell_number: usize,
         extra_key: String,
+    },
+    DowngradeNBFormat {
+        nbformat_minor: i64,
     },
 }
 impl From<NBReadError> for CheckResult {
@@ -92,6 +96,12 @@ impl Display for CheckResult {
             Self::ClearOutput { cell_number } => {
                 write!(f, "cell {cell_number}: Found cell with output")
             }
+            Self::DowngradeNBFormat { nbformat_minor } => {
+                write!(
+                    f,
+                    "nbformat_minor version {nbformat_minor} to be downgraded."
+                )
+            }
         }
     }
 }
@@ -103,6 +113,7 @@ pub fn check_nb(nb: &RawNotebook, settings: &Settings) -> Vec<CheckResult> {
         .and_then(Value::as_bool)
         .unwrap_or(false);
     let drop_output = settings.drop_output && !nb_keep_output;
+    let mut downgrade_nbformat = false;
 
     meta_keys
         .iter()
@@ -138,12 +149,27 @@ pub fn check_nb(nb: &RawNotebook, settings: &Settings) -> Vec<CheckResult> {
             .filter(|(_i, c)| !c.is_clear_exec_count())
             .for_each(|(cell_number, _)| out.push(CheckResult::ClearCount { cell_number }));
     }
-    if settings.drop_id {
-        nb.cells
-            .iter()
-            .enumerate()
-            .filter(|(i, c)| !c.is_clear_id(*i))
-            .for_each(|(cell_number, _)| out.push(CheckResult::ClearId { cell_number }));
+    match settings.id_action {
+        IdAction::Sequential => {
+            nb.cells
+                .iter()
+                .enumerate()
+                .filter(|(i, c)| !c.is_clear_id(*i))
+                .for_each(|(cell_number, _)| out.push(CheckResult::ClearId { cell_number }));
+        }
+        IdAction::Drop => {
+            for (cell_number, _) in nb
+                .cells
+                .iter()
+                .enumerate()
+                .filter(|(_, c)| c.get_id().is_some())
+            {
+                downgrade_nbformat = true;
+                out.push(CheckResult::ClearId { cell_number });
+            }
+            // .for_each(|(cell_number, _)| out.push(CheckResult::ClearId { cell_number }));
+        }
+        IdAction::Keep => {}
     }
     for (cell_number, cell) in nb.cells.iter().enumerate() {
         cell_keys
@@ -155,6 +181,11 @@ pub fn check_nb(nb: &RawNotebook, settings: &Settings) -> Vec<CheckResult> {
                     extra_key: k.to_string(),
                 });
             });
+    }
+    if downgrade_nbformat && nb.nbformat_minor > ID_OPTIONAL_MAX_VERSION {
+        out.push(CheckResult::DowngradeNBFormat {
+            nbformat_minor: nb.nbformat_minor,
+        })
     }
 
     out
