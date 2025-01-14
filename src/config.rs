@@ -3,11 +3,24 @@ use crate::{extra_keys::ExtraKey, settings::Settings};
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
+use strum::EnumString;
 // use std::fmt::{Display, Formatter};
 use std::io;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use thiserror::Error;
+
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default, EnumString)]
+#[serde(rename_all = "kebab-case")]
+pub enum IdAction {
+    #[default]
+    #[strum(ascii_case_insensitive)]
+    Keep,
+    #[strum(ascii_case_insensitive)]
+    Sequential,
+    #[strum(ascii_case_insensitive)]
+    Drop,
+}
 
 #[derive(Debug, Clone, Default, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
@@ -16,7 +29,7 @@ pub struct ConfigurationSection {
     pub drop_empty_cells: Option<bool>,
     pub drop_output: Option<bool>,
     pub drop_count: Option<bool>,
-    pub drop_id: Option<bool>,
+    pub id_action: Option<IdAction>,
     pub drop_tagged_cells: Option<Vec<String>>,
     pub strip_init_cell: Option<bool>,
     pub keep_keys: Option<Vec<ExtraKey>>,
@@ -51,7 +64,7 @@ impl ConfigurationSection {
             drop_empty_cells: self.drop_empty_cells,
             drop_output: self.drop_output,
             drop_count: self.drop_count,
-            drop_id: self.drop_id,
+            id_action: self.id_action,
             drop_tagged_cells: self.drop_tagged_cells,
             strip_init_cell: self.strip_init_cell,
             keep_keys: self.keep_keys,
@@ -68,7 +81,7 @@ pub struct Configuration {
     pub drop_empty_cells: Option<bool>,
     pub drop_output: Option<bool>,
     pub drop_count: Option<bool>,
-    pub drop_id: Option<bool>,
+    pub id_action: Option<IdAction>,
     pub drop_tagged_cells: Option<Vec<String>>,
     pub strip_init_cell: Option<bool>,
     pub keep_keys: Option<Vec<ExtraKey>>,
@@ -187,7 +200,7 @@ impl Configuration {
             drop_empty_cells: self.drop_empty_cells.unwrap_or(false),
             drop_output: self.drop_output.unwrap_or(true),
             drop_count: self.drop_count.unwrap_or(true),
-            drop_id: self.drop_id.unwrap_or(false),
+            id_action: self.id_action.unwrap_or_default(),
             drop_tagged_cells: self
                 .drop_tagged_cells
                 .map(FxHashSet::from_iter)

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
 
+## [0.6.0] - 2025-01-14
+
+Users should be aware that the behaviour of `--drop-id` has changed.
+Use `--sequential-id` to retain the previous behaviour.
+
+### Changed
+
+- Terminal help output now has colors
+- Rename `--drop-id` to `--sequential-id`: which replaces cell ids with sequential ids
+- `--drop-id` now removes cell ids instead of replacing with sequential ids.
+- Add `--id-action` command to cover `--drop-id`, `--sequential-id` and `--keep-id`
+
 ## [0.5.1] - 2024-12-04
 
 ### Security

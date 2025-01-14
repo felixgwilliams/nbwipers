@@ -23,6 +23,7 @@ pub struct RawNotebook {
     /// notebook format.
     pub nbformat_minor: i64,
 }
+pub const ID_OPTIONAL_MAX_VERSION: i64 = 4;
 
 impl RawNotebook {
     pub fn new() -> Self {

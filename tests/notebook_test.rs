@@ -92,6 +92,40 @@ fn test_config_match(config_file: &str, extra_args: &[&str]) {
     );
 }
 
+fn test_config_args_match(extra_args_left: &[&str], extra_args_right: &[&str]) {
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+
+    let output_left = Command::new(&cur_exe)
+        .args(["show-config", "--isolated"])
+        .args(extra_args_left)
+        .output()
+        .expect("command failed");
+    let output_right = Command::new(&cur_exe)
+        .args(["show-config", "--isolated"])
+        .args(extra_args_right)
+        .output()
+        .expect("command failed");
+    assert_eq!(
+        output_left.stdout.to_str().unwrap(),
+        output_right.stdout.to_str().unwrap()
+    );
+
+    let output_left = Command::new(&cur_exe)
+        .args(["show-config", "--show-all", "--isolated"])
+        .args(extra_args_left)
+        .output()
+        .expect("command failed");
+    let output_right = Command::new(&cur_exe)
+        .args(["show-config", "--show-all", "--isolated"])
+        .args(extra_args_right)
+        .output()
+        .expect("command failed");
+    assert_eq!(
+        output_left.stdout.to_str().unwrap(),
+        output_right.stdout.to_str().unwrap()
+    );
+}
+
 #[test]
 fn test_drop_empty_cells_dontdrop() {
     test_expected(
@@ -381,7 +415,7 @@ fn test_nbformat45_expected_sequential_id() {
     test_expected(
         "tests/e2e_notebooks/test_nbformat45.ipynb",
         "tests/e2e_notebooks/test_nbformat45.sequential_id.ipynb.expected",
-        &["--drop-id"],
+        &["--sequential-id"],
         "test_nbformat45_expected_sequential_id_cli",
     );
     test_expected(
@@ -392,6 +426,25 @@ fn test_nbformat45_expected_sequential_id() {
     );
     test_config_match(
         "tests/e2e_notebooks/test_nbformat45_sequential.toml",
+        &["--sequential-id"],
+    );
+}
+#[test]
+fn test_nbformat45_expected_drop_id() {
+    test_expected(
+        "tests/e2e_notebooks/test_nbformat45.ipynb",
+        "tests/e2e_notebooks/test_nbformat45.drop_id.ipynb.expected",
+        &["--drop-id"],
+        "test_nbformat45_expected_drop_id_cli",
+    );
+    test_expected(
+        "tests/e2e_notebooks/test_nbformat45.ipynb",
+        "tests/e2e_notebooks/test_nbformat45.drop_id.ipynb.expected",
+        &["-c", "tests/e2e_notebooks/test_nbformat45_drop.toml"],
+        "test_nbformat45_expected_drop_id_cfg",
+    );
+    test_config_match(
+        "tests/e2e_notebooks/test_nbformat45_drop.toml",
         &["--drop-id"],
     );
 }
@@ -411,6 +464,18 @@ fn test_widgets() {
         "tests/e2e_notebooks/test_widgets.ipynb.expected",
         &[],
         "test_widgets",
+    );
+}
+
+#[test]
+fn test_id_action_config() {
+    test_config_args_match(&["--keep-id"], &["--id-action=keep"]);
+    test_config_args_match(&["--drop-id"], &["--id-action=drop"]);
+    test_config_args_match(&["--sequential-id"], &["--id-action=sequential"]);
+    // only look at the last value
+    test_config_args_match(
+        &["--id-action=keep", "--sequential-id"],
+        &["--id-action=sequential"],
     );
 }
 
