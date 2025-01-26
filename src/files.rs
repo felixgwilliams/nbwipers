@@ -70,6 +70,28 @@ pub fn find_notebooks_or_stdin(
     }
     find_notebooks(paths, settings)
 }
+pub fn check_exclusions(path: &Path, settings: &Settings) -> bool {
+    if let Some(file_name) = path.file_name() {
+        let fname_candidate = Candidate::new(file_name);
+        let path_candidate = Candidate::new(path);
+        if !settings.exclude_.is_empty()
+            && (settings.exclude_.is_match_candidate(&fname_candidate)
+                || settings.exclude_.is_match_candidate(&path_candidate))
+        {
+            return true;
+        }
+        if !settings.extend_exclude_.is_empty()
+            && (settings
+                .extend_exclude_
+                .is_match_candidate(&fname_candidate)
+                || settings.extend_exclude_.is_match_candidate(&path_candidate))
+        {
+            return true;
+        }
+    }
+    false
+}
+
 pub fn find_notebooks<P: AsRef<Path>>(
     paths: &[P],
     settings: &Settings,
@@ -93,23 +115,8 @@ pub fn find_notebooks<P: AsRef<Path>>(
             if let Ok(entry) = &path {
                 if entry.depth() > 0 {
                     let path = entry.path();
-                    if let Some(file_name) = path.file_name() {
-                        let fname_candidate = Candidate::new(file_name);
-                        let path_candidate = Candidate::new(path);
-                        if !settings.exclude_.is_empty()
-                            && (settings.exclude_.is_match_candidate(&fname_candidate)
-                                || settings.exclude_.is_match_candidate(&path_candidate))
-                        {
-                            return WalkState::Skip;
-                        }
-                        if !settings.extend_exclude_.is_empty()
-                            && (settings
-                                .extend_exclude_
-                                .is_match_candidate(&fname_candidate)
-                                || settings.extend_exclude_.is_match_candidate(&path_candidate))
-                        {
-                            return WalkState::Skip;
-                        }
+                    if check_exclusions(path, settings) {
+                        return WalkState::Skip;
                     }
                 }
 

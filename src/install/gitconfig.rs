@@ -39,7 +39,13 @@ pub fn install_config(config_file: Option<&Path>, config_type: GitConfigType) ->
     #[allow(clippy::unwrap_used)]
     nbwipers_section.set(
         ValueName::try_from("clean").unwrap(),
-        BStr::new(format!("\"{}\" clean -", cur_exe_str.as_str()).as_str()),
+        BStr::new(
+            format!(
+                "\"{}\" clean - --stdin-file-name %f --respect-exclusions",
+                cur_exe_str.as_str()
+            )
+            .as_str(),
+        ),
     );
 
     #[allow(clippy::unwrap_used)]
@@ -58,7 +64,7 @@ pub fn install_config(config_file: Option<&Path>, config_type: GitConfigType) ->
     #[allow(clippy::unwrap_used)]
     diff_section.set(
         ValueName::try_from("textconv").unwrap(),
-        BStr::new(format!("\"{}\" clean -t", cur_exe_str.as_str()).as_str()),
+        BStr::new(format!("\"{}\" clean --respect-exclusions -t", cur_exe_str.as_str()).as_str()),
     );
     println!("Writing to {}", file_path.display());
     {
