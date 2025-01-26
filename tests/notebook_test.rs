@@ -18,10 +18,12 @@ fn test_expected(path: &str, expected: &str, extra_args: &[&str], snapshot_name:
     let expected_content = fs::read_to_string(expected).expect("could not read expected");
 
     assert_eq!(output.stdout.to_str().unwrap(), expected_content);
+    let mut extra_args_check = extra_args.to_owned();
+    extra_args_check.retain(|v| *v != "--respect-exclusions");
     // check no errors after cleaning
     let mut check_output_cmd = Command::new(&cur_exe)
         .args(["check", "-"])
-        .args(extra_args)
+        .args(&extra_args_check)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -36,14 +38,15 @@ fn test_expected(path: &str, expected: &str, extra_args: &[&str], snapshot_name:
     }
     let check_output = check_output_cmd.wait_with_output().expect("Command failed");
 
-    println!("{}", check_output.stdout.to_str().unwrap());
+    dbg!("{}", check_output.stdout.to_str().unwrap());
+    dbg!("{}", check_output.stderr.to_str().unwrap());
 
     assert!(check_output.status.success());
 
     // snapshot test for check output
     let output = Command::new(&cur_exe)
         .args(["check", path, "-o", "json"])
-        .args(extra_args)
+        .args(&extra_args_check)
         .output()
         .expect("command failed");
     insta::assert_snapshot!(
@@ -52,7 +55,7 @@ fn test_expected(path: &str, expected: &str, extra_args: &[&str], snapshot_name:
     );
     let output = Command::new(&cur_exe)
         .args(["check", path, "-o", "text"])
-        .args(extra_args)
+        .args(&extra_args_check)
         .output()
         .expect("command failed");
     insta::assert_snapshot!(
@@ -411,6 +414,30 @@ fn test_nbformat45() {
     test_config_match("tests/e2e_notebooks/test_nbformat45.toml", &["--keep-id"]);
 }
 #[test]
+fn test_strip_exclude() {
+    // if we clean a single file, our exclusion gets ignored
+    test_expected(
+        "tests/e2e_notebooks/test_nbformat45.ipynb",
+        "tests/e2e_notebooks/test_nbformat45.ipynb.expected",
+        &["--keep-id", "--exclude", "test_nbformat45.ipynb"],
+        "test_strip_exclude_cli",
+    );
+    // if we add respect exclusions, the file does not get touched
+    test_expected(
+        "tests/e2e_notebooks/test_nbformat45.ipynb",
+        "tests/e2e_notebooks/test_nbformat45.ipynb",
+        &[
+            "--keep-id",
+            "--exclude",
+            "test_nbformat45.ipynb",
+            "--respect-exclusions",
+            "--stdin-file-name",
+            "tests/e2e_notebooks/test_nbformat45.ipynb",
+        ],
+        "test_strip_exclude_respect_cli",
+    );
+}
+#[test]
 fn test_nbformat45_expected_sequential_id() {
     test_expected(
         "tests/e2e_notebooks/test_nbformat45.ipynb",
@@ -509,4 +536,121 @@ fn test_exclusions() {
         .expect("command failed");
     dbg!(output.stderr.as_bstr());
     assert!(output.status.success());
+}
+
+#[test]
+fn test_strip_stdin() {
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+    let original = fs::read_to_string("tests/e2e_notebooks/test_nbformat45.ipynb")
+        .expect("could not read expected");
+    let cleaned = fs::read_to_string("tests/e2e_notebooks/test_nbformat45.ipynb.expected")
+        .expect("could not read expected");
+
+    // if we do not exclude anything then the file will be stripped
+    let mut output = Command::new(&cur_exe)
+        .args([
+            "clean",
+            "-t",
+            "-",
+            "--stdin-file-name",
+            "tests/e2e_notebooks/test_nbformat45.ipynb",
+            "--respect-exclusions",
+        ])
+        // .args(extra_args)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("command failed");
+    {
+        let mut clean_in = output.stdin.take().expect("Failed to open stdin");
+        clean_in
+            .write_all(original.as_bytes())
+            .expect("Failed to write to stdin");
+    }
+    let clean_output = output.wait_with_output().expect("Command failed");
+    assert_eq!(&cleaned, clean_output.stdout.to_str().unwrap());
+
+    // if we exclude but don't give the name, it won't be stripped
+    let mut output_noname = Command::new(&cur_exe)
+        .args([
+            "clean",
+            "-t",
+            "-",
+            "--respect-exclusions",
+            "--exclude",
+            "test_nbformat45.ipynb",
+        ])
+        // .args(extra_args)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("command failed");
+    {
+        let mut clean_in = output_noname.stdin.take().expect("Failed to open stdin");
+        clean_in
+            .write_all(original.as_bytes())
+            .expect("Failed to write to stdin");
+    }
+    let clean_output_noname = output_noname.wait_with_output().expect("Command failed");
+    assert_eq!(&cleaned, clean_output_noname.stdout.to_str().unwrap());
+
+    // if we do not respect exclusions, it will be stripped
+    let mut output_no_respect = Command::new(&cur_exe)
+        .args([
+            "clean",
+            "-t",
+            "-",
+            "--exclude",
+            "test_nbformat45.ipynb",
+            "--stdin-file-name",
+            "tests/e2e_notebooks/test_nbformat45.ipynb",
+        ])
+        // .args(extra_args)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("command failed");
+    {
+        let mut clean_in = output_no_respect
+            .stdin
+            .take()
+            .expect("Failed to open stdin");
+        clean_in
+            .write_all(original.as_bytes())
+            .expect("Failed to write to stdin");
+    }
+    let clean_output_no_respect = output_no_respect
+        .wait_with_output()
+        .expect("Command failed");
+    assert_eq!(&cleaned, clean_output_no_respect.stdout.to_str().unwrap());
+
+    // if we exclude and give the file name it will not be stripped
+    let mut output_exclude = Command::new(&cur_exe)
+        .args([
+            "clean",
+            "-t",
+            "-",
+            "--exclude",
+            "test_nbformat45.ipynb",
+            "--stdin-file-name",
+            "tests/e2e_notebooks/test_nbformat45.ipynb",
+            "--respect-exclusions",
+        ])
+        // .args(extra_args)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("command failed");
+    {
+        let mut clean_in = output_exclude.stdin.take().expect("Failed to open stdin");
+        clean_in
+            .write_all(original.as_bytes())
+            .expect("Failed to write to stdin");
+    }
+    let clean_output_exclude = output_exclude.wait_with_output().expect("Command failed");
+    assert_eq!(&original, clean_output_exclude.stdout.to_str().unwrap());
 }

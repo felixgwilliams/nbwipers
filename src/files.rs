@@ -113,7 +113,8 @@ pub fn find_notebooks<P: AsRef<Path>>(
     walker.run(|| {
         Box::new(|path| {
             if let Ok(entry) = &path {
-                if entry.depth() > 0 {
+                dbg!(&entry);
+                if entry.depth() >= 1 {
                     let path = entry.path();
                     if check_exclusions(path, settings) {
                         return WalkState::Skip;

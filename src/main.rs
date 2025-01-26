@@ -17,7 +17,6 @@ use std::{
 use anyhow::{anyhow, bail, Error};
 use clap::Parser;
 use colored::Colorize;
-use nbwipers::check::{self as check, PathCheckResult};
 use nbwipers::config::{resolve, Configuration};
 use nbwipers::files::{
     find_notebooks_or_stdin, read_nb, read_nb_stdin, relativize_path, FoundNotebooks,
@@ -27,6 +26,10 @@ use nbwipers::install;
 use nbwipers::record::record;
 use nbwipers::settings::Settings;
 use nbwipers::strip::{strip_single, StripResult};
+use nbwipers::{
+    check::{self as check, PathCheckResult},
+    files::check_exclusions,
+};
 use nbwipers::{
     cli::{
         self as cli, resolve_bool_arg, CheckCommand, CheckInstallCommand, CleanAllCommand,
@@ -41,6 +44,7 @@ use std::io::Write;
 fn check_all(
     files: &[PathBuf],
     output_format: Option<OutputFormat>,
+    stdin_file_name: Option<&Path>,
     cli: CommonArgs,
 ) -> Result<(), Error> {
     let output_format = output_format.unwrap_or_default();
@@ -49,7 +53,13 @@ fn check_all(
     let nbs = find_notebooks_or_stdin(files, &settings)?;
     let check_results_by_file = match nbs {
         FoundNotebooks::Stdin => match read_nb_stdin() {
-            Ok(nb) => vec![(Path::new("-"), nbwipers::check::check_nb(&nb, &settings))],
+            Ok(nb) => vec![(
+                Path::new("-"),
+                match stdin_file_name.map(|sfn| check_exclusions(sfn, &settings)) {
+                    Some(true) => vec![],
+                    _ => nbwipers::check::check_nb(&nb, &settings),
+                },
+            )],
             Err(e) => vec![(Path::new("-"), vec![e.into()])],
         },
         FoundNotebooks::NoFiles => {
@@ -225,8 +235,9 @@ fn main() -> Result<(), Error> {
         Commands::Check(CheckCommand {
             ref files,
             output_format,
+            stdin_file_name,
             common,
-        }) => check_all(files, output_format, common),
+        }) => check_all(files, output_format, stdin_file_name.as_deref(), common),
         Commands::Install(ref cmd) => install(cmd),
         Commands::Uninstall(ref cmd) => uninstall(cmd),
         Commands::CheckInstall(ref cmd) => check_install(cmd),
