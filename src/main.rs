@@ -112,7 +112,7 @@ fn strip_all(files: &[PathBuf], dry_run: bool, yes: bool, cli: CommonArgs) -> Re
 
     let strip_results: Vec<StripResult> = nbs
         .par_iter()
-        .map(|nb_path| strip_single(nb_path, dry_run, &settings).into())
+        .map(|nb_path| strip_single(nb_path, dry_run, None, false, &settings).into())
         .collect();
 
     let any_errors = strip_results.iter().any(StripResult::is_err);
@@ -128,11 +128,23 @@ fn strip_all(files: &[PathBuf], dry_run: bool, yes: bool, cli: CommonArgs) -> Re
     Ok(())
 }
 
-fn strip(file: &Path, textconv: bool, cli: CommonArgs) -> Result<(), Error> {
+fn strip(
+    file: &Path,
+    textconv: bool,
+    stdin_file_name: Option<&Path>,
+    respect_exclusions: bool,
+    cli: CommonArgs,
+) -> Result<(), Error> {
     let (args, overrides) = cli.partition();
 
     let settings = Settings::construct(args.config.as_deref(), args.isolated, &overrides)?;
-    strip_single(file, textconv, &settings)?;
+    strip_single(
+        file,
+        textconv,
+        stdin_file_name,
+        respect_exclusions,
+        &settings,
+    )?;
 
     Ok(())
 }
@@ -194,8 +206,16 @@ fn main() -> Result<(), Error> {
         Commands::Clean(CleanCommand {
             ref file,
             textconv,
+            ref stdin_file_name,
+            respect_exclusions,
             common,
-        }) => strip(file, textconv, common),
+        }) => strip(
+            file,
+            textconv,
+            stdin_file_name.as_deref(),
+            respect_exclusions,
+            common,
+        ),
         Commands::CleanAll(CleanAllCommand {
             ref files,
             dry_run,

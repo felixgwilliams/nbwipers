@@ -12,7 +12,7 @@ use thiserror::Error;
 use crate::{
     config::IdAction,
     extra_keys::partition_extra_keys,
-    files::{read_nb, read_nb_stdin, NBReadError, NBWriteError},
+    files::{check_exclusions, read_nb, read_nb_stdin, NBReadError, NBWriteError},
     schema::{RawNotebook, ID_OPTIONAL_MAX_VERSION},
     settings::Settings,
     utils::{get_value_child, pop_cell_key, pop_meta_key},
@@ -93,14 +93,26 @@ pub fn strip_nb(mut nb: RawNotebook, settings: &Settings) -> (RawNotebook, bool)
 pub fn strip_single(
     nb_path: &Path,
     textconv: bool,
+    stdin_file_name: Option<&Path>,
+    respect_exclusions: bool,
     settings: &Settings,
 ) -> Result<StripSuccess, StripError> {
-    let (nb, to_stdout) = match nb_path.to_str() {
-        Some("-") => (read_nb_stdin()?, true),
-        _ => (read_nb(nb_path)?, textconv),
+    let (nb, to_stdout, resolved_file_name) = match nb_path.to_str() {
+        Some("-") => (read_nb_stdin()?, true, stdin_file_name),
+        _ => (read_nb(nb_path)?, textconv, Some(nb_path)),
     };
-
-    let (strip_nb, stripped) = strip_nb(nb, settings);
+    let (strip_nb, stripped) = match (resolved_file_name, respect_exclusions) {
+        (None, _) => strip_nb(nb, settings),
+        (Some(_), false) => strip_nb(nb, settings),
+        (Some(stdin_name), true) => {
+            if check_exclusions(stdin_name, settings) {
+                (nb, false)
+            } else {
+                strip_nb(nb, settings)
+            }
+        }
+    };
+    // let (strip_nb, stripped) = strip_nb(nb, settings);
     match (to_stdout, stripped) {
         (true, _) => {
             let stdout = std::io::stdout();

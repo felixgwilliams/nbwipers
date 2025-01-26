@@ -209,6 +209,13 @@ pub struct CleanCommand {
     #[arg(long, short)]
     pub textconv: bool,
 
+    /// Name of file if stdin is used
+    #[arg(long)]
+    pub stdin_file_name: Option<PathBuf>,
+
+    #[arg(long)]
+    pub respect_exclusions: bool,
+
     #[clap(flatten)]
     pub common: CommonArgs,
 }
