@@ -197,6 +197,10 @@ pub struct CheckCommand {
     #[arg(long, short)]
     pub output_format: Option<OutputFormat>,
 
+    /// Name of file if stdin is used
+    #[arg(long)]
+    pub stdin_file_name: Option<PathBuf>,
+
     #[clap(flatten)]
     pub common: CommonArgs,
 }
@@ -213,6 +217,7 @@ pub struct CleanCommand {
     #[arg(long)]
     pub stdin_file_name: Option<PathBuf>,
 
+    /// If true, and the file is excluded, do not execute clean
     #[arg(long)]
     pub respect_exclusions: bool,
 

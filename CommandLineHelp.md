@@ -105,6 +105,7 @@ check notebooks in a given path for elements that would be removed by `clean`
 
   Possible values: `text`, `json`
 
+* `--stdin-file-name <STDIN_FILE_NAME>` — Name of file if stdin is used
 * `-c`, `--config <CONFIG>` — path to pyproject.toml/.nbwipers.toml/nbwipers.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders
 * `--isolated` — Ignore all configuration files
 * `--allow-no-notebooks` — Do not return an error if no notebooks are found
@@ -136,6 +137,8 @@ clean a single notebook
 ###### **Options:**
 
 * `-t`, `--textconv` — write cleaned file to stdout instead of to the file
+* `--stdin-file-name <STDIN_FILE_NAME>` — Name of file if stdin is used
+* `--respect-exclusions`
 * `-c`, `--config <CONFIG>` — path to pyproject.toml/.nbwipers.toml/nbwipers.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders
 * `--isolated` — Ignore all configuration files
 * `--allow-no-notebooks` — Do not return an error if no notebooks are found

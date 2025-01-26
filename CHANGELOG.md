@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
 
+## [0.6.1] - 2025-01-26
+
+### Changed
+
+- Git filters now should respect the `exclude` and `extend-exclude` options
+- `--stdin-file-name` allows specifying the file name in `check` and `clean` if the content is piped into stdin
+- `--respect-exclusions` an argument for `clean` that disables cleaning if the file is excluded
+
 ## [0.6.0] - 2025-01-14
 
 Users should be aware that the behaviour of `--drop-id` has changed.
