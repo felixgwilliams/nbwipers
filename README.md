@@ -60,8 +60,6 @@ Alternatively, you can use the URL for this repo in your config, but this will c
 
 If you are using your pre-commit configuration as part of CI, you should set the environment variable `NBWIPERS_CHECK_INSTALL_EXIT_ZERO` which forces this check to pass, since you do not need `nbwipers` configured in your CI environment.
 
-
-
 ## Configuration
 
 Configuration is currently done via the `tool.nbwipers` section of the `pyproject.toml` file.
