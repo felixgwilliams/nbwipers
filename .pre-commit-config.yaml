@@ -17,3 +17,8 @@ repos:
       - id: fmt
       - id: cargo-check
       - id: clippy
+  - repo: https://github.com/EmbarkStudios/cargo-deny
+    rev: 0.19.6 # choose your preferred tag
+    hooks:
+      - id: cargo-deny
+        args: ["--all-features", "check"] # optionally modify the arguments for cargo-deny (default arguments shown here)

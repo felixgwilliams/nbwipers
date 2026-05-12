@@ -6,12 +6,12 @@ expression: output.stdout.to_str().unwrap()
   {
     "path": "tests/e2e_notebooks/test_metadata.ipynb",
     "type": "StripMeta",
-    "extra_key": "metadata.language_info"
+    "extra_key": "metadata.kernelspec"
   },
   {
     "path": "tests/e2e_notebooks/test_metadata.ipynb",
     "type": "StripMeta",
-    "extra_key": "metadata.kernelspec"
+    "extra_key": "metadata.language_info"
   },
   {
     "path": "tests/e2e_notebooks/test_metadata.ipynb",
