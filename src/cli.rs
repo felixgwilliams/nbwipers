@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use clap::{
     builder::{styling::AnsiColor, Styles},
-    command, Parser, Subcommand, ValueEnum,
+    Parser, Subcommand, ValueEnum,
 };
 
 use crate::{
