@@ -15,7 +15,6 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: true
 
-
 permissions:
   contents: write
 
@@ -32,21 +31,19 @@ jobs:
         with:
           target: ${{ matrix.target }}
           args: --release --out dist
-          sccache: 'true'
+          sccache: "true"
           manylinux: auto
       - name: Build archives
         run: |
-          for dir in target/*/
-          do
-            TARGET_TRIPLE=$(basename $dir)
-            if [ "$TARGET_TRIPLE" == 'release' ]; then
-              continue
-            fi
-            ARCHIVE_FILE=nbwipers-${TARGET_TRIPLE}.tar.gz
-            echo $ARCHIVE_FILE
-            tar czvf $ARCHIVE_FILE -C ${dir}release nbwipers
-            shasum -a 256 $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
-          done
+          if [ ${{ matrix.target }} == 'armv7' ]; then
+            TARGET_TRIPLE=${{ matrix.target }}-unknown-linux-gnueabihf
+          else
+            TARGET_TRIPLE=${{ matrix.target }}-unknown-linux-gnu
+          fi
+          ARCHIVE_FILE=nbwipers-${TARGET_TRIPLE}.tar.gz
+          echo $ARCHIVE_FILE
+          tar czvf $ARCHIVE_FILE -C target/release nbwipers
+          shasum -a 256 $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
@@ -71,21 +68,13 @@ jobs:
         with:
           target: ${{ matrix.target }}
           args: --release --out dist
-          sccache: 'true'
+          sccache: "true"
       - name: Build archives
         shell: bash
         run: |
-          for dir in target/*/
-          do
-            TARGET_TRIPLE=$(basename $dir)
-            if [ "$TARGET_TRIPLE" == 'release' ]; then
-              continue
-            fi
-            ARCHIVE_FILE=nbwipers-${TARGET_TRIPLE}.zip
-            echo $ARCHIVE_FILE
-            7z a $ARCHIVE_FILE ./${dir}release/nbwipers.exe
-            sha256sum $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
-          done
+          TARGET_TRIPLE=${{ matrix.target }}-pc-windows-msvc
+          ARCHIVE_FILE=nbwipers-${TARGET_TRIPLE}.zip
+          7z a $ARCHIVE_FILE ./target/release/nbwipers.exe
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
@@ -111,20 +100,14 @@ jobs:
         with:
           target: ${{ matrix.target }}
           args: --release --out dist
-          sccache: 'true'
+          sccache: "true"
       - name: Build archives
         run: |
-          for dir in target/*/
-          do
-            TARGET_TRIPLE=$(basename $dir)
-            if [ "$TARGET_TRIPLE" == 'release' ]; then
-              continue
-            fi
-            ARCHIVE_FILE=nbwipers-${TARGET_TRIPLE}.tar.gz
-            echo $ARCHIVE_FILE
-            tar czvf $ARCHIVE_FILE -C ${dir}/release nbwipers
-            shasum -a 256 $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
-          done
+          TARGET_TRIPLE=${{ matrix.target }}-apple-darwin
+          ARCHIVE_FILE=nbwipers-${TARGET_TRIPLE}.tar.gz
+          echo $ARCHIVE_FILE
+          tar czvf $ARCHIVE_FILE -C target/release nbwipers
+          shasum -a 256 $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
@@ -137,7 +120,6 @@ jobs:
           path: |
             *.tar.gz
             *.sha256
-
 
   sdist:
     runs-on: ubuntu-latest
