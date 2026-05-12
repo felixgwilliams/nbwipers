@@ -2,20 +2,20 @@
 name = "nbwipers"
 version = "0.6.1"
 edition = "2021"
-license = "MIT"
 description = "Wipe clean your Jupyter Notebooks!"
-repository = "https://github.com/felixgwilliams/nbwipers"
-homepage = "https://github.com/felixgwilliams/nbwipers"
 readme = "README.md"
+homepage = "https://github.com/felixgwilliams/nbwipers"
+repository = "https://github.com/felixgwilliams/nbwipers"
+license = "MIT"
+keywords = ["ci", "jupyter", "notebook", "pre-commit", "python"]
 categories = ["command-line-utilities", "development-tools"]
-keywords = ["python", "notebook", "jupyter", "ci", "pre-commit"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 anyhow = "^1.0.79"
 bstr = "^1.9.0"
-clap = { version = "^4.4.18", features = ["derive", "color"] }
+clap = { version = "^4.4.18", features = ["color", "derive"] }
 clap-markdown = { version = "^0.1.3", optional = true }
 colored = "3.0.0"
 gix-attributes = "^0.22.5"
@@ -37,14 +37,13 @@ strum = { version = "0.26.3", features = ["derive"] }
 thiserror = "^2.0.4"
 toml = "0.8.9"
 
-
-[features]
-markdown-help = ["dep:clap-markdown"]
-
 [dev-dependencies]
 insta = { version = "1.39.0", features = ["yaml"] }
 lazy_static = "1.4.0"
 tempfile = "3.10.0"
+
+[features]
+markdown-help = ["dep:clap-markdown"]
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ["cfg(tarpaulin_include)"] }
