@@ -3,7 +3,7 @@ default:
 
 # Run tests without coverage
 test:
-    cargo nextest
+    cargo nextest run
 
 # Run tests with coverage via llvm-cov
 test-cov:
@@ -17,4 +17,4 @@ cli-docs:
 
 # run the tests fr fr on god (run tests but allow dbg! and println! to display output)
 test-nocap:
-    cargo nextest --no-capture
+    cargo nextest run --no-capture
