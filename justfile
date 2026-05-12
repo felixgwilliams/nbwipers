@@ -3,11 +3,12 @@ default:
 
 # Run tests without coverage
 test:
-    cargo test
+    cargo nextest
 
-# Run tests with coverage via tarpaulin
+# Run tests with coverage via llvm-cov
 test-cov:
-    cargo tarpaulin --verbose --all-features --workspace -o stdout -o html -o lcov --engine llvm --rustflags="-C opt-level=0"
+    cargo llvm-cov nextest --all-features --workspace --lcov --output-path lcov.info
+    cargo llvm-cov report
 
 # Regenerate the documentation file for the CLI
 cli-docs:
@@ -16,4 +17,4 @@ cli-docs:
 
 # run the tests fr fr on god (run tests but allow dbg! and println! to display output)
 test-nocap:
-    cargo test -- --nocapture
+    cargo nextest --no-capture
