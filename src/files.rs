@@ -120,7 +120,7 @@ pub fn find_notebooks<P: AsRef<Path>>(
                     }
                 }
 
-                let resolved = if entry.file_type().map_or(true, |ft| ft.is_dir()) {
+                let resolved = if entry.file_type().is_none_or(|ft| ft.is_dir()) {
                     None
                 } else if entry.depth() == 0 {
                     Some(entry.path())
