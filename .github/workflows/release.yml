@@ -35,6 +35,7 @@ jobs:
           manylinux: auto
       - name: Build archives
         run: |
+          find . -type f -name nbwipers
           if [ ${{ matrix.target }} == 'armv7' ]; then
             TARGET_TRIPLE=${{ matrix.target }}-unknown-linux-gnueabihf
           else
@@ -42,7 +43,7 @@ jobs:
           fi
           ARCHIVE_FILE=nbwipers-${TARGET_TRIPLE}.tar.gz
           echo $ARCHIVE_FILE
-          tar czvf $ARCHIVE_FILE -C target/release nbwipers
+          tar czvf $ARCHIVE_FILE -C target/maturin nbwipers
           shasum -a 256 $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
       - name: Upload wheels
         uses: actions/upload-artifact@v7
@@ -72,9 +73,11 @@ jobs:
       - name: Build archives
         shell: bash
         run: |
+          find . -type f -name nbwipers.exe
           TARGET_TRIPLE=${{ matrix.target }}-pc-windows-msvc
           ARCHIVE_FILE=nbwipers-${TARGET_TRIPLE}.zip
-          7z a $ARCHIVE_FILE ./target/release/nbwipers.exe
+          7z a $ARCHIVE_FILE ./target/maturin/nbwipers.exe
+          sha256sum $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
@@ -103,10 +106,11 @@ jobs:
           sccache: "true"
       - name: Build archives
         run: |
+          find . -type f -name nbwipers
           TARGET_TRIPLE=${{ matrix.target }}-apple-darwin
           ARCHIVE_FILE=nbwipers-${TARGET_TRIPLE}.tar.gz
           echo $ARCHIVE_FILE
-          tar czvf $ARCHIVE_FILE -C target/release nbwipers
+          tar czvf $ARCHIVE_FILE -C target/maturin nbwipers
           shasum -a 256 $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
       - name: Upload wheels
         uses: actions/upload-artifact@v7
