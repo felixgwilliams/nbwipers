@@ -15,6 +15,7 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: true
 
+
 permissions:
   contents: write
 
@@ -31,20 +32,24 @@ jobs:
         with:
           target: ${{ matrix.target }}
           args: --release --out dist
-          sccache: "true"
+          sccache: 'true'
           manylinux: auto
       - name: Build archives
         run: |
-          find . -type f -name nbwipers
-          if [ ${{ matrix.target }} == 'armv7' ]; then
-            TARGET_TRIPLE=${{ matrix.target }}-unknown-linux-gnueabihf
-          else
-            TARGET_TRIPLE=${{ matrix.target }}-unknown-linux-gnu
-          fi
-          ARCHIVE_FILE=nbwipers-${TARGET_TRIPLE}.tar.gz
-          echo $ARCHIVE_FILE
-          tar czvf $ARCHIVE_FILE -C target/maturin nbwipers
-          shasum -a 256 $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
+          for dir in target/*/
+          do
+            TARGET_TRIPLE=$(basename $dir)
+            if [ "$TARGET_TRIPLE" == 'release' ]; then
+              continue
+            fi
+            if [ "$TARGET_TRIPLE" == 'maturin' ]; then
+              continue
+            fi
+            ARCHIVE_FILE=nbwipers-${TARGET_TRIPLE}.tar.gz
+            echo $ARCHIVE_FILE
+            tar czvf $ARCHIVE_FILE -C ${dir}release nbwipers
+            shasum -a 256 $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
+          done
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
@@ -69,15 +74,24 @@ jobs:
         with:
           target: ${{ matrix.target }}
           args: --release --out dist
-          sccache: "true"
+          sccache: 'true'
       - name: Build archives
         shell: bash
         run: |
-          find . -type f -name nbwipers.exe
-          TARGET_TRIPLE=${{ matrix.target }}-pc-windows-msvc
-          ARCHIVE_FILE=nbwipers-${TARGET_TRIPLE}.zip
-          7z a $ARCHIVE_FILE ./target/maturin/nbwipers.exe
-          sha256sum $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
+          for dir in target/*/
+          do
+            TARGET_TRIPLE=$(basename $dir)
+            if [ "$TARGET_TRIPLE" == 'release' ]; then
+              continue
+            fi
+            if [ "$TARGET_TRIPLE" == 'maturin' ]; then
+              continue
+            fi
+            ARCHIVE_FILE=nbwipers-${TARGET_TRIPLE}.zip
+            echo $ARCHIVE_FILE
+            7z a $ARCHIVE_FILE ./${dir}release/nbwipers.exe
+            sha256sum $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
+          done
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
@@ -103,15 +117,23 @@ jobs:
         with:
           target: ${{ matrix.target }}
           args: --release --out dist
-          sccache: "true"
+          sccache: 'true'
       - name: Build archives
         run: |
-          find . -type f -name nbwipers
-          TARGET_TRIPLE=${{ matrix.target }}-apple-darwin
-          ARCHIVE_FILE=nbwipers-${TARGET_TRIPLE}.tar.gz
-          echo $ARCHIVE_FILE
-          tar czvf $ARCHIVE_FILE -C target/maturin nbwipers
-          shasum -a 256 $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
+          for dir in target/*/
+          do
+            TARGET_TRIPLE=$(basename $dir)
+            if [ "$TARGET_TRIPLE" == 'release' ]; then
+              continue
+            fi
+            if [ "$TARGET_TRIPLE" == 'maturin' ]; then
+              continue
+            fi
+            ARCHIVE_FILE=nbwipers-${TARGET_TRIPLE}.tar.gz
+            echo $ARCHIVE_FILE
+            tar czvf $ARCHIVE_FILE -C ${dir}/release nbwipers
+            shasum -a 256 $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
+          done
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
@@ -124,6 +146,7 @@ jobs:
           path: |
             *.tar.gz
             *.sha256
+
 
   sdist:
     runs-on: ubuntu-latest
