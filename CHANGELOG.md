@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-05-12
+
+### Changed
+
+- switch to llvm-cov from tarpaulin
+
+### Security
+
+- setup cargo deny
+- update dependencies for security
+
 ## [0.6.1] - 2025-01-26
 
 ### Changed
