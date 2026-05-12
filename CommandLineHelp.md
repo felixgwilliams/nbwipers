@@ -22,7 +22,7 @@ Wipe clean your Jupyter Notebooks!
 
 **Usage:** `nbwipers <COMMAND>`
 
-###### **Subcommands:**
+### **Subcommands:**
 
 * `install` — Register nbwipers as a git filter for `ipynb` files
 * `clean-all` — clean all notebooks in a given path
@@ -40,7 +40,7 @@ Register nbwipers as a git filter for `ipynb` files
 
 **Usage:** `nbwipers install [OPTIONS] <CONFIG_TYPE>`
 
-###### **Arguments:**
+### **Arguments:**
 
 * `<CONFIG_TYPE>` — Git config type that determines which file to modify
 
@@ -52,7 +52,7 @@ Register nbwipers as a git filter for `ipynb` files
   * `local`:
     Repository level git config, corresponding to .git/config
 
-###### **Options:**
+#### **Options:**
 
 * `-g`, `--git-config-file <GIT_CONFIG_FILE>` — Optional path to git config file
 * `-a`, `--attribute-file <ATTRIBUTE_FILE>` — optional attribute file. If not specified, will write to .git/info/attributes
@@ -63,11 +63,11 @@ clean all notebooks in a given path
 
 **Usage:** `nbwipers clean-all [OPTIONS] [FILES]...`
 
-###### **Arguments:**
+### **Arguments:**
 
 * `<FILES>` — paths containing ipynb files to clean. Stdin is not supported
 
-###### **Options:**
+#### **Options:**
 
 * `-d`, `--dry-run` — set to true to avoid writing to files
 * `-y`, `--yes` — skip confirmation and assume yes
@@ -95,16 +95,15 @@ check notebooks in a given path for elements that would be removed by `clean`
 
 **Usage:** `nbwipers check [OPTIONS] [FILES]...`
 
-###### **Arguments:**
+### **Arguments:**
 
 * `<FILES>` — paths containing ipynb files to check. Use `-` to read from stdin
 
-###### **Options:**
+#### **Options:**
 
 * `-o`, `--output-format <OUTPUT_FORMAT>` — desired output format for diagnostics
 
   Possible values: `text`, `json`
-
 * `--stdin-file-name <STDIN_FILE_NAME>` — Name of file if stdin is used
 * `-c`, `--config <CONFIG>` — path to pyproject.toml/.nbwipers.toml/nbwipers.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders
 * `--isolated` — Ignore all configuration files
@@ -130,15 +129,15 @@ clean a single notebook
 
 **Usage:** `nbwipers clean [OPTIONS] <FILE>`
 
-###### **Arguments:**
+### **Arguments:**
 
 * `<FILE>` — path to ipynb file to clean. Use `-` to read from stdin and write to stdout
 
-###### **Options:**
+#### **Options:**
 
 * `-t`, `--textconv` — write cleaned file to stdout instead of to the file
 * `--stdin-file-name <STDIN_FILE_NAME>` — Name of file if stdin is used
-* `--respect-exclusions`
+* `--respect-exclusions` — If true, and the file is excluded, do not execute clean
 * `-c`, `--config <CONFIG>` — path to pyproject.toml/.nbwipers.toml/nbwipers.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders
 * `--isolated` — Ignore all configuration files
 * `--allow-no-notebooks` — Do not return an error if no notebooks are found
@@ -163,7 +162,7 @@ uninstall nbwipers as a git filter
 
 **Usage:** `nbwipers uninstall [OPTIONS] <CONFIG_TYPE>`
 
-###### **Arguments:**
+### **Arguments:**
 
 * `<CONFIG_TYPE>` — Git config type that determines which file to modify
 
@@ -175,7 +174,7 @@ uninstall nbwipers as a git filter
   * `local`:
     Repository level git config, corresponding to .git/config
 
-###### **Options:**
+#### **Options:**
 
 * `-g`, `--git-config-file <GIT_CONFIG_FILE>` — Optional path to git config file
 * `-a`, `--attribute-file <ATTRIBUTE_FILE>` — optional attribute file. If not specified, will write to .git/info/attributes
@@ -186,7 +185,7 @@ check whether nbwipers is setup as a git filter
 
 **Usage:** `nbwipers check-install [OPTIONS] [CONFIG_TYPE]`
 
-###### **Arguments:**
+### **Arguments:**
 
 * `<CONFIG_TYPE>` — Git config type to check
 
@@ -198,7 +197,7 @@ check whether nbwipers is setup as a git filter
   * `local`:
     Repository level git config, corresponding to .git/config
 
-###### **Options:**
+#### **Options:**
 
 * `--exit-zero` — Exit zero regardless of install status
 
@@ -208,7 +207,7 @@ Show configuration
 
 **Usage:** `nbwipers show-config [OPTIONS]`
 
-###### **Options:**
+### **Options:**
 
 * `--show-all` — Show all config including defaults Disable with `--no-show-defaults`
 * `-c`, `--config <CONFIG>` — path to pyproject.toml/.nbwipers.toml/nbwipers.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders
@@ -235,11 +234,11 @@ Record Kernelspec metadata for notebooks
 
 **Usage:** `nbwipers record [OPTIONS] [PATH]`
 
-###### **Arguments:**
+### **Arguments:**
 
 * `<PATH>`
 
-###### **Options:**
+#### **Options:**
 
 * `--remove <REMOVE>`
 * `--clear`
@@ -268,7 +267,7 @@ Commands for pre-commit hooks
 
 **Usage:** `nbwipers hook <COMMAND>`
 
-###### **Subcommands:**
+### **Subcommands:**
 
 * `check-large-files` — Check for large files, but measure ipynb sizes after cleaning
 
@@ -278,11 +277,11 @@ Check for large files, but measure ipynb sizes after cleaning
 
 **Usage:** `nbwipers hook check-large-files [OPTIONS] [FILENAMES]...`
 
-###### **Arguments:**
+### **Arguments:**
 
 * `<FILENAMES>` — Files to check for large files
 
-###### **Options:**
+#### **Options:**
 
 * `--enforce-all` — Check all files not just staged files
 * `--maxkb <MAXKB>` — Max size in KB to consider a file large
