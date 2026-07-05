@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-07-05
+
+### Changed
+
+- Move to Rust edition 2024. The minimum supported Rust version for building from source is now 1.88, declared via `rust-version` in `Cargo.toml`
+- Expand and correct the CLI help text: `record` and its flags are now documented, `show-config` and the id/exclude options have clearer descriptions
+- Document the `show-config`, `record` and `hook` subcommands and the record/smudge kernel-info workflow in the README
+- Run tests on Windows and macOS in CI
+
+### Fixed
+
+- `uninstall` no longer errors if the `.gitattributes` file contains comment lines. Comments are now preserved
+- `record --remove` previously had no effect. It now removes the recorded kernel metadata for the given notebook paths
+- Add missing project metadata to the PyPI package
+- Fix a macOS-only test failure caused by symlinked temporary directories
+
 ## [0.6.2] - 2026-05-12
 
 ### Changed
