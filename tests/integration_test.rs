@@ -982,6 +982,9 @@ fn test_clean_file_not_found() {
 }
 
 #[test]
+// on Windows the confirmation prompt reads from the console device rather
+// than stdin, so it hangs waiting for input even with stdin closed
+#[cfg(not(windows))]
 fn test_clean_all_non_interactive_confirmation() {
     // without --yes, clean-all asks for confirmation; when stdin is not a
     // terminal the prompt fails, and no notebook may be modified

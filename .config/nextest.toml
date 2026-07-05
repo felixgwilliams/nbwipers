@@ -1,0 +1,4 @@
+[profile.default]
+# flag a test as slow after 60s; kill it after 2 periods (120s) so a hung
+# test fails fast instead of blocking CI indefinitely
+slow-timeout = { period = "60s", terminate-after = 2 }
