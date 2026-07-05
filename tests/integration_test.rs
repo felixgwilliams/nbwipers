@@ -264,6 +264,88 @@ fn test_handle_multiple_assignments() {
 }
 
 #[test]
+fn test_uninstall_preserves_comments() {
+    // regression test: uninstall used to bail with "No pattern found in line"
+    // on comment lines, leaving the nbwipers entries in place
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+    let config_file = temp_dir.path().join("gitconfig");
+    let attr_file = temp_dir.path().join("attributes");
+
+    fs::write(
+        &config_file,
+        "[filter \"nbwipers\"]\n\tclean = nbwipers clean -\n\tsmudge = cat\n",
+    )
+    .unwrap();
+    fs::write(
+        &attr_file,
+        r"# strip notebook outputs
+*.ipynb filter=nbwipers
+*.ipynb diff=nbwipers
+[attr]myattr text
+*.py text
+",
+    )
+    .unwrap();
+
+    let output = Command::new(cur_exe)
+        .args([
+            "uninstall",
+            "local",
+            "-g",
+            config_file.to_str().unwrap(),
+            "-a",
+            attr_file.to_str().unwrap(),
+        ])
+        .output()
+        .expect("command failed");
+    dbg!(output.stderr.as_bstr());
+    assert!(output.status.success());
+
+    let attr_file_contents = fs::read_to_string(&attr_file).unwrap();
+    assert!(attr_file_contents.contains("# strip notebook outputs"));
+    assert!(attr_file_contents.contains("[attr]myattr text"));
+    assert!(attr_file_contents.contains("*.py text"));
+    assert!(!attr_file_contents.contains("nbwipers"));
+}
+
+#[test]
+fn test_uninstall_invalid_attribute_line() {
+    // git itself rejects negative patterns in .gitattributes, so uninstall
+    // should surface the parse error rather than silently rewriting the file
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+    let config_file = temp_dir.path().join("gitconfig");
+    let attr_file = temp_dir.path().join("attributes");
+
+    fs::write(&config_file, "[filter \"nbwipers\"]\n\tclean = x\n").unwrap();
+    let attr_contents = "!*.ipynb filter=nbwipers\n*.ipynb filter=nbwipers\n";
+    fs::write(&attr_file, attr_contents).unwrap();
+
+    let output = Command::new(cur_exe)
+        .args([
+            "uninstall",
+            "local",
+            "-g",
+            config_file.to_str().unwrap(),
+            "-a",
+            attr_file.to_str().unwrap(),
+        ])
+        .output()
+        .expect("command failed");
+    assert!(!output.status.success());
+    assert!(
+        output
+            .stderr
+            .to_str()
+            .unwrap()
+            .contains("has a negative pattern")
+    );
+    // the attribute file must be left untouched on error
+    assert_eq!(fs::read_to_string(&attr_file).unwrap(), attr_contents);
+}
+
+#[test]
 fn test_check_install() {
     let temp_dir = tempfile::tempdir().unwrap();
     let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
@@ -742,6 +824,111 @@ fn test_large_files_lfs_skip() {
 }
 
 #[test]
+fn test_large_files_non_ipynb() {
+    // non-notebook files are measured by their on-disk size directly
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+
+    let git_init_out = Command::new("git")
+        .current_dir(&temp_dir)
+        .args(["init"])
+        .output()
+        .expect("git init failed");
+    assert!(git_init_out.status.success());
+
+    fs::write(temp_dir.path().join("big.py"), "a".repeat(1000 * 1024)).unwrap();
+
+    let output = Command::new(&cur_exe)
+        .current_dir(temp_dir.path())
+        .args(["hook", "check-large-files", "--enforce-all", "big.py"])
+        .output()
+        .expect("command failed");
+    assert!(!output.status.success());
+    assert!(output.stdout.to_str().unwrap().contains("exceeds"));
+
+    // a higher limit lets the same file pass
+    let output = Command::new(&cur_exe)
+        .current_dir(temp_dir.path())
+        .args([
+            "hook",
+            "check-large-files",
+            "--enforce-all",
+            "--maxkb",
+            "2000",
+            "big.py",
+        ])
+        .output()
+        .expect("command failed");
+    assert!(output.status.success());
+}
+
+#[test]
+fn test_large_files_outside_git_repo() {
+    // the hook shells out to `git check-attr`, which fails outside a repo
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+
+    fs::write(temp_dir.path().join("big.py"), "a".repeat(1000 * 1024)).unwrap();
+
+    let output = Command::new(&cur_exe)
+        .current_dir(temp_dir.path())
+        .args(["hook", "check-large-files", "--enforce-all", "big.py"])
+        .output()
+        .expect("command failed");
+    assert!(!output.status.success());
+    assert!(
+        output
+            .stderr
+            .to_str()
+            .unwrap()
+            .contains("Git check-attr failed")
+    );
+}
+
+#[test]
+fn test_large_files_invalid_config() {
+    // if the nbwipers settings can't be constructed, the hook warns and
+    // falls back to the on-disk size instead of the stripped size
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+
+    let git_init_out = Command::new("git")
+        .current_dir(&temp_dir)
+        .args(["init"])
+        .output()
+        .expect("git init failed");
+    assert!(git_init_out.status.success());
+
+    let nb = RawNotebook::default();
+    {
+        let f = fs::File::create(temp_dir.path().join("nb.ipynb")).unwrap();
+        write_nb(BufWriter::new(f), &nb).unwrap();
+    }
+    fs::write(temp_dir.path().join("bad.toml"), "not = [valid toml").unwrap();
+
+    let output = Command::new(&cur_exe)
+        .current_dir(temp_dir.path())
+        .args([
+            "hook",
+            "check-large-files",
+            "--enforce-all",
+            "-c",
+            "bad.toml",
+            "nb.ipynb",
+        ])
+        .output()
+        .expect("command failed");
+    assert!(output.status.success());
+    assert!(
+        output
+            .stderr
+            .to_str()
+            .unwrap()
+            .contains("Could not parse nb file")
+    );
+}
+
+#[test]
 fn test_invalid_stdin() {
     let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
 
@@ -760,4 +947,70 @@ fn test_invalid_stdin() {
     }
     let check_output = check_output_cmd.wait_with_output().expect("Command failed");
     assert!(!check_output.status.success())
+}
+
+#[test]
+fn test_show_config_exclude_patterns() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+
+    fs::write(
+        temp_dir.path().join(".nbwipers.toml"),
+        "exclude = [\"vendored*.ipynb\"]\nextend-exclude = [\"scratch/\"]\n",
+    )
+    .unwrap();
+
+    let output = Command::new(&cur_exe)
+        .current_dir(&temp_dir)
+        .args(["show-config"])
+        .output()
+        .expect("command failed");
+    assert!(output.status.success());
+    let stdout = output.stdout.to_str().unwrap();
+    assert!(stdout.contains("vendored*.ipynb"));
+    assert!(stdout.contains("scratch/"));
+}
+
+#[test]
+fn test_clean_file_not_found() {
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+    let output = Command::new(cur_exe)
+        .args(["clean", "no_such_notebook.ipynb"])
+        .output()
+        .expect("command failed");
+    assert!(!output.status.success());
+}
+
+#[test]
+fn test_clean_all_non_interactive_confirmation() {
+    // without --yes, clean-all asks for confirmation; when stdin is not a
+    // terminal the prompt fails, and no notebook may be modified
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+
+    let nb = RawNotebook {
+        cells: vec![Cell::Code(CodeCell {
+            source: SourceValue::StringArray(vec!["1 + 1".to_string()]),
+            metadata: Value::Null,
+            execution_count: Some(1),
+            outputs: vec![],
+            id: None,
+        })],
+        ..Default::default()
+    };
+    let nb_path = temp_dir.path().join("nb.ipynb");
+    {
+        let f = fs::File::create(&nb_path).unwrap();
+        write_nb(BufWriter::new(f), &nb).unwrap();
+    }
+    let before = fs::read_to_string(&nb_path).unwrap();
+
+    let output = Command::new(&cur_exe)
+        .current_dir(&temp_dir)
+        .args(["clean-all", "."])
+        .stdin(Stdio::null())
+        .output()
+        .expect("command failed");
+    assert!(!output.status.success());
+    assert_eq!(fs::read_to_string(&nb_path).unwrap(), before);
 }

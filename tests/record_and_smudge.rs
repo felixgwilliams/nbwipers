@@ -315,6 +315,47 @@ fn record_remove() {
 }
 
 #[test]
+fn record_skips_unparsable_notebooks() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+    let git_init_out = Command::new("git")
+        .current_dir(&temp_dir)
+        .args(["init"])
+        .output()
+        .expect("git init failed");
+    assert!(git_init_out.status.success());
+
+    let valid_nb = RawNotebook {
+        metadata: json!({
+            "kernelspec": {
+                "name": "python3",
+                "display_name": "Python 3"
+            }
+        }),
+        ..Default::default()
+    };
+    write_nb(
+        File::create(temp_dir.path().join("valid.ipynb")).unwrap(),
+        &valid_nb,
+    )
+    .unwrap();
+    fs::write(temp_dir.path().join("garbage.ipynb"), "not json at all").unwrap();
+
+    let out = Command::new(&cur_exe)
+        .current_dir(&temp_dir)
+        .args(["record"])
+        .output()
+        .expect("record failed");
+    assert!(out.status.success());
+
+    let kernelspec_info = read_kernelspec_file(get_kernelspec_file(temp_dir.path()).unwrap())
+        .unwrap()
+        .unwrap();
+    assert!(kernelspec_info.contains_key("valid.ipynb"));
+    assert!(!kernelspec_info.contains_key("garbage.ipynb"));
+}
+
+#[test]
 fn test_record_nothing() {
     let temp_dir = tempfile::tempdir().unwrap();
     let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
