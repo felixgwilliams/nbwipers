@@ -7,7 +7,7 @@ use std::{
 
 use crate::{
     cli::RecordCommand,
-    files::{find_notebooks, get_cwd, read_nb, relativize_path, FoundNotebooks},
+    files::{find_notebooks, get_cwd, normalize_path, read_nb, relativize_path, FoundNotebooks},
     schema::RawNotebook,
     settings::Settings,
 };
@@ -93,6 +93,9 @@ pub fn record(cmd: RecordCommand) -> Result<(), Error> {
         for (nb, kernel) in kernelspecs {
             kernelspec_records.insert(nb, kernel);
         }
+    }
+    for remove_path in &cmd.remove {
+        kernelspec_records.shift_remove(&relativize_path(normalize_path(remove_path)));
     }
     let out_file = File::create(kernelspec_file)?;
     let mut buf = BufWriter::new(out_file);

@@ -25,11 +25,11 @@ Wipe clean your Jupyter Notebooks!
 ### **Subcommands:**
 
 * `install` — Register nbwipers as a git filter for `ipynb` files
-* `clean-all` — clean all notebooks in a given path
-* `check` — check notebooks in a given path for elements that would be removed by `clean`
-* `clean` — clean a single notebook
-* `uninstall` — uninstall nbwipers as a git filter
-* `check-install` — check whether nbwipers is setup as a git filter
+* `clean-all` — Clean all notebooks in a given path
+* `check` — Check notebooks in a given path for elements that would be removed by `clean`
+* `clean` — Clean a single notebook
+* `uninstall` — Uninstall nbwipers as a git filter
+* `check-install` — Check whether nbwipers is setup as a git filter
 * `show-config` — Show configuration
 * `record` — Record Kernelspec metadata for notebooks
 * `hook` — Commands for pre-commit hooks
@@ -59,7 +59,7 @@ Register nbwipers as a git filter for `ipynb` files
 
 ## `nbwipers clean-all`
 
-clean all notebooks in a given path
+Clean all notebooks in a given path
 
 **Usage:** `nbwipers clean-all [OPTIONS] [FILES]...`
 
@@ -77,7 +77,7 @@ clean all notebooks in a given path
 * `--extra-keys <EXTRA_KEYS>` — extra keys to remove in the notebook or cell metadata, separated by commas. Must start with `metadata` or `cell.metadata`
 * `--drop-empty-cells` — drop empty cells. Disable with `--keep-empty-cells`
 * `--keep-output` — keep cell output. Disable with `--drop-output`
-* `--keep-count` — keep cell execution count. Disable with `--drop count`
+* `--keep-count` — keep cell execution count. Disable with `--drop-count`
 * `--drop-id` — remove cell ids and downgrade to nbformat 4.4. Conflicts with `--keep-id` and `--sequential-id`. Equivalent to `--id-action=drop`
 * `--keep-id` — keep cell ids (default). Conflicts with `--sequential-id` and `--drop-id`. Equivalent to `--id-action=keep`
 * `--sequential-id` — replace cell ids with sequential ids. Conflicts with `--keep-id` and `--drop-id`. Equivalent to `--id-action=sequential`
@@ -85,13 +85,13 @@ clean all notebooks in a given path
 * `--strip-init-cell` — Strip init cell. Disable with `--keep-init-cell`
 * `--strip-kernel-info` — Strip kernel info. Namely, metadata.kernelspec and metadata.language_info.python_version. Disable with `--keep-kernel-info`
 * `--drop-tagged-cells <DROP_TAGGED_CELLS>` — comma-separated list of tags that will cause the cell to be dropped
-* `--keep-keys <KEEP_KEYS>` — List of metadata keys that should be kept, regardless of if they appear in
-* `--exclude <EXCLUDE>` — List of file patterns to ignore
-* `--extend-exclude <EXTEND_EXCLUDE>` — List of additional file patterns to ignore
+* `--keep-keys <KEEP_KEYS>` — List of metadata keys that should be kept, even if they would otherwise be removed by `--extra-keys` or the default set of stripped keys
+* `--exclude <EXCLUDE>` — List of file patterns to ignore. Replaces any `exclude` patterns set in the configuration file
+* `--extend-exclude <EXTEND_EXCLUDE>` — List of additional file patterns to ignore, on top of `exclude` and any `extend-exclude` patterns set in the configuration file
 
 ## `nbwipers check`
 
-check notebooks in a given path for elements that would be removed by `clean`
+Check notebooks in a given path for elements that would be removed by `clean`
 
 **Usage:** `nbwipers check [OPTIONS] [FILES]...`
 
@@ -103,7 +103,11 @@ check notebooks in a given path for elements that would be removed by `clean`
 
 * `-o`, `--output-format <OUTPUT_FORMAT>` — desired output format for diagnostics
 
-  Possible values: `text`, `json`
+  Possible values:
+  * `text`:
+    human-readable plain text diagnostics
+  * `json`:
+    machine-readable JSON diagnostics
 * `--stdin-file-name <STDIN_FILE_NAME>` — Name of file if stdin is used
 * `-c`, `--config <CONFIG>` — path to pyproject.toml/.nbwipers.toml/nbwipers.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders
 * `--isolated` — Ignore all configuration files
@@ -111,7 +115,7 @@ check notebooks in a given path for elements that would be removed by `clean`
 * `--extra-keys <EXTRA_KEYS>` — extra keys to remove in the notebook or cell metadata, separated by commas. Must start with `metadata` or `cell.metadata`
 * `--drop-empty-cells` — drop empty cells. Disable with `--keep-empty-cells`
 * `--keep-output` — keep cell output. Disable with `--drop-output`
-* `--keep-count` — keep cell execution count. Disable with `--drop count`
+* `--keep-count` — keep cell execution count. Disable with `--drop-count`
 * `--drop-id` — remove cell ids and downgrade to nbformat 4.4. Conflicts with `--keep-id` and `--sequential-id`. Equivalent to `--id-action=drop`
 * `--keep-id` — keep cell ids (default). Conflicts with `--sequential-id` and `--drop-id`. Equivalent to `--id-action=keep`
 * `--sequential-id` — replace cell ids with sequential ids. Conflicts with `--keep-id` and `--drop-id`. Equivalent to `--id-action=sequential`
@@ -119,13 +123,13 @@ check notebooks in a given path for elements that would be removed by `clean`
 * `--strip-init-cell` — Strip init cell. Disable with `--keep-init-cell`
 * `--strip-kernel-info` — Strip kernel info. Namely, metadata.kernelspec and metadata.language_info.python_version. Disable with `--keep-kernel-info`
 * `--drop-tagged-cells <DROP_TAGGED_CELLS>` — comma-separated list of tags that will cause the cell to be dropped
-* `--keep-keys <KEEP_KEYS>` — List of metadata keys that should be kept, regardless of if they appear in
-* `--exclude <EXCLUDE>` — List of file patterns to ignore
-* `--extend-exclude <EXTEND_EXCLUDE>` — List of additional file patterns to ignore
+* `--keep-keys <KEEP_KEYS>` — List of metadata keys that should be kept, even if they would otherwise be removed by `--extra-keys` or the default set of stripped keys
+* `--exclude <EXCLUDE>` — List of file patterns to ignore. Replaces any `exclude` patterns set in the configuration file
+* `--extend-exclude <EXTEND_EXCLUDE>` — List of additional file patterns to ignore, on top of `exclude` and any `extend-exclude` patterns set in the configuration file
 
 ## `nbwipers clean`
 
-clean a single notebook
+Clean a single notebook
 
 **Usage:** `nbwipers clean [OPTIONS] <FILE>`
 
@@ -144,7 +148,7 @@ clean a single notebook
 * `--extra-keys <EXTRA_KEYS>` — extra keys to remove in the notebook or cell metadata, separated by commas. Must start with `metadata` or `cell.metadata`
 * `--drop-empty-cells` — drop empty cells. Disable with `--keep-empty-cells`
 * `--keep-output` — keep cell output. Disable with `--drop-output`
-* `--keep-count` — keep cell execution count. Disable with `--drop count`
+* `--keep-count` — keep cell execution count. Disable with `--drop-count`
 * `--drop-id` — remove cell ids and downgrade to nbformat 4.4. Conflicts with `--keep-id` and `--sequential-id`. Equivalent to `--id-action=drop`
 * `--keep-id` — keep cell ids (default). Conflicts with `--sequential-id` and `--drop-id`. Equivalent to `--id-action=keep`
 * `--sequential-id` — replace cell ids with sequential ids. Conflicts with `--keep-id` and `--drop-id`. Equivalent to `--id-action=sequential`
@@ -152,13 +156,13 @@ clean a single notebook
 * `--strip-init-cell` — Strip init cell. Disable with `--keep-init-cell`
 * `--strip-kernel-info` — Strip kernel info. Namely, metadata.kernelspec and metadata.language_info.python_version. Disable with `--keep-kernel-info`
 * `--drop-tagged-cells <DROP_TAGGED_CELLS>` — comma-separated list of tags that will cause the cell to be dropped
-* `--keep-keys <KEEP_KEYS>` — List of metadata keys that should be kept, regardless of if they appear in
-* `--exclude <EXCLUDE>` — List of file patterns to ignore
-* `--extend-exclude <EXTEND_EXCLUDE>` — List of additional file patterns to ignore
+* `--keep-keys <KEEP_KEYS>` — List of metadata keys that should be kept, even if they would otherwise be removed by `--extra-keys` or the default set of stripped keys
+* `--exclude <EXCLUDE>` — List of file patterns to ignore. Replaces any `exclude` patterns set in the configuration file
+* `--extend-exclude <EXTEND_EXCLUDE>` — List of additional file patterns to ignore, on top of `exclude` and any `extend-exclude` patterns set in the configuration file
 
 ## `nbwipers uninstall`
 
-uninstall nbwipers as a git filter
+Uninstall nbwipers as a git filter
 
 **Usage:** `nbwipers uninstall [OPTIONS] <CONFIG_TYPE>`
 
@@ -181,7 +185,7 @@ uninstall nbwipers as a git filter
 
 ## `nbwipers check-install`
 
-check whether nbwipers is setup as a git filter
+Check whether nbwipers is setup as a git filter
 
 **Usage:** `nbwipers check-install [OPTIONS] [CONFIG_TYPE]`
 
@@ -209,14 +213,14 @@ Show configuration
 
 ### **Options:**
 
-* `--show-all` — Show all config including defaults Disable with `--no-show-defaults`
+* `--show-all` — Show all config including defaults. Disable with `--no-show-defaults`
 * `-c`, `--config <CONFIG>` — path to pyproject.toml/.nbwipers.toml/nbwipers.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders
 * `--isolated` — Ignore all configuration files
 * `--allow-no-notebooks` — Do not return an error if no notebooks are found
 * `--extra-keys <EXTRA_KEYS>` — extra keys to remove in the notebook or cell metadata, separated by commas. Must start with `metadata` or `cell.metadata`
 * `--drop-empty-cells` — drop empty cells. Disable with `--keep-empty-cells`
 * `--keep-output` — keep cell output. Disable with `--drop-output`
-* `--keep-count` — keep cell execution count. Disable with `--drop count`
+* `--keep-count` — keep cell execution count. Disable with `--drop-count`
 * `--drop-id` — remove cell ids and downgrade to nbformat 4.4. Conflicts with `--keep-id` and `--sequential-id`. Equivalent to `--id-action=drop`
 * `--keep-id` — keep cell ids (default). Conflicts with `--sequential-id` and `--drop-id`. Equivalent to `--id-action=keep`
 * `--sequential-id` — replace cell ids with sequential ids. Conflicts with `--keep-id` and `--drop-id`. Equivalent to `--id-action=sequential`
@@ -224,9 +228,9 @@ Show configuration
 * `--strip-init-cell` — Strip init cell. Disable with `--keep-init-cell`
 * `--strip-kernel-info` — Strip kernel info. Namely, metadata.kernelspec and metadata.language_info.python_version. Disable with `--keep-kernel-info`
 * `--drop-tagged-cells <DROP_TAGGED_CELLS>` — comma-separated list of tags that will cause the cell to be dropped
-* `--keep-keys <KEEP_KEYS>` — List of metadata keys that should be kept, regardless of if they appear in
-* `--exclude <EXCLUDE>` — List of file patterns to ignore
-* `--extend-exclude <EXTEND_EXCLUDE>` — List of additional file patterns to ignore
+* `--keep-keys <KEEP_KEYS>` — List of metadata keys that should be kept, even if they would otherwise be removed by `--extra-keys` or the default set of stripped keys
+* `--exclude <EXCLUDE>` — List of file patterns to ignore. Replaces any `exclude` patterns set in the configuration file
+* `--extend-exclude <EXTEND_EXCLUDE>` — List of additional file patterns to ignore, on top of `exclude` and any `extend-exclude` patterns set in the configuration file
 
 ## `nbwipers record`
 
@@ -236,20 +240,20 @@ Record Kernelspec metadata for notebooks
 
 ### **Arguments:**
 
-* `<PATH>`
+* `<PATH>` — path to search for notebooks whose kernel metadata should be recorded. Defaults to the current directory
 
 #### **Options:**
 
-* `--remove <REMOVE>`
-* `--clear`
-* `--sync`
+* `--remove <REMOVE>` — remove recorded kernel metadata for these notebook paths, leaving other recorded entries untouched
+* `--clear` — remove all recorded kernel metadata without recording anything new
+* `--sync` — discard all recorded kernel metadata and rebuild it from the notebooks currently found under `path`, dropping entries for notebooks that are no longer found
 * `-c`, `--config <CONFIG>` — path to pyproject.toml/.nbwipers.toml/nbwipers.toml file containing nbwipers settings. If not given use the file in the current working directory or the first such file in its containing folders
 * `--isolated` — Ignore all configuration files
 * `--allow-no-notebooks` — Do not return an error if no notebooks are found
 * `--extra-keys <EXTRA_KEYS>` — extra keys to remove in the notebook or cell metadata, separated by commas. Must start with `metadata` or `cell.metadata`
 * `--drop-empty-cells` — drop empty cells. Disable with `--keep-empty-cells`
 * `--keep-output` — keep cell output. Disable with `--drop-output`
-* `--keep-count` — keep cell execution count. Disable with `--drop count`
+* `--keep-count` — keep cell execution count. Disable with `--drop-count`
 * `--drop-id` — remove cell ids and downgrade to nbformat 4.4. Conflicts with `--keep-id` and `--sequential-id`. Equivalent to `--id-action=drop`
 * `--keep-id` — keep cell ids (default). Conflicts with `--sequential-id` and `--drop-id`. Equivalent to `--id-action=keep`
 * `--sequential-id` — replace cell ids with sequential ids. Conflicts with `--keep-id` and `--drop-id`. Equivalent to `--id-action=sequential`
@@ -257,9 +261,9 @@ Record Kernelspec metadata for notebooks
 * `--strip-init-cell` — Strip init cell. Disable with `--keep-init-cell`
 * `--strip-kernel-info` — Strip kernel info. Namely, metadata.kernelspec and metadata.language_info.python_version. Disable with `--keep-kernel-info`
 * `--drop-tagged-cells <DROP_TAGGED_CELLS>` — comma-separated list of tags that will cause the cell to be dropped
-* `--keep-keys <KEEP_KEYS>` — List of metadata keys that should be kept, regardless of if they appear in
-* `--exclude <EXCLUDE>` — List of file patterns to ignore
-* `--extend-exclude <EXTEND_EXCLUDE>` — List of additional file patterns to ignore
+* `--keep-keys <KEEP_KEYS>` — List of metadata keys that should be kept, even if they would otherwise be removed by `--extra-keys` or the default set of stripped keys
+* `--exclude <EXCLUDE>` — List of file patterns to ignore. Replaces any `exclude` patterns set in the configuration file
+* `--extend-exclude <EXTEND_EXCLUDE>` — List of additional file patterns to ignore, on top of `exclude` and any `extend-exclude` patterns set in the configuration file
 
 ## `nbwipers hook`
 
