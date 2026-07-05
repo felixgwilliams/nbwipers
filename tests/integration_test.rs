@@ -5,7 +5,7 @@ use nbwipers::{
     schema::{Cell, CodeCell, RawNotebook, SourceValue},
     strip::write_nb,
 };
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 #[test]
 fn test_no_notebooks() {
@@ -21,11 +21,13 @@ fn test_no_notebooks() {
             .output()
             .expect("command failed");
         assert!(!output.status.success());
-        assert!(output
-            .stderr
-            .to_str()
-            .unwrap()
-            .contains("Error: Could not find any notebooks in path(s)"));
+        assert!(
+            output
+                .stderr
+                .to_str()
+                .unwrap()
+                .contains("Error: Could not find any notebooks in path(s)")
+        );
         let output = Command::new(&cur_exe)
             .current_dir(&temp_dir)
             .args(["check", ".", "--allow-no-notebooks"])
@@ -359,6 +361,83 @@ fn test_check_install() {
 }
 
 #[test]
+fn test_check_install_fresh_repo() {
+    // a git repo where nothing has ever been installed: the default
+    // `.gitattributes` and git config don't exist yet, so nbwipers should
+    // report cleanly that it isn't installed rather than erroring.
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+
+    let git_init_out = Command::new("git")
+        .current_dir(&temp_dir)
+        .args(["init"])
+        .output()
+        .expect("git init failed");
+    assert!(git_init_out.status.success());
+
+    let output = Command::new(&cur_exe)
+        .current_dir(&temp_dir)
+        .args(["check-install"])
+        .output()
+        .expect("command failed");
+    assert!(!output.status.success());
+
+    let output = Command::new(&cur_exe)
+        .current_dir(&temp_dir)
+        .args(["check-install", "local"])
+        .output()
+        .expect("command failed");
+    assert!(!output.status.success());
+}
+
+#[test]
+fn test_check_install_bare_repo() {
+    // a bare repo has no work tree, so there's nowhere for a default
+    // `.gitattributes` to live; nbwipers should treat that as "not installed"
+    // rather than erroring.
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+
+    let git_init_out = Command::new("git")
+        .current_dir(&temp_dir)
+        .args(["init", "--bare"])
+        .output()
+        .expect("git init failed");
+    assert!(git_init_out.status.success());
+
+    let output = Command::new(&cur_exe)
+        .current_dir(&temp_dir)
+        .args(["check-install", "local"])
+        .output()
+        .expect("command failed");
+    assert!(!output.status.success());
+}
+
+#[test]
+fn test_uninstall_fresh_repo_defaults() {
+    // uninstall using the default (non-explicit) git config file and
+    // `.gitattributes` resolution, in a repo where nothing was ever
+    // installed. Both files need their parent directories/resolution paths
+    // handled even though neither file exists yet.
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+
+    let git_init_out = Command::new("git")
+        .current_dir(&temp_dir)
+        .args(["init"])
+        .output()
+        .expect("git init failed");
+    assert!(git_init_out.status.success());
+
+    let output = Command::new(&cur_exe)
+        .current_dir(&temp_dir)
+        .args(["uninstall", "local"])
+        .output()
+        .expect("command failed");
+    assert!(output.status.success());
+}
+
+#[test]
 fn test_invalid_format() {
     let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
 
@@ -426,6 +505,23 @@ fn test_strip_all_error() {
     dbg!(&stdout);
     assert!(!output.status.success());
     assert!(stdout.contains("Read error"));
+}
+
+#[test]
+fn test_clean_all_stdin_not_supported() {
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+    let output = Command::new(cur_exe)
+        .args(["clean-all", "-"])
+        .output()
+        .expect("command failed");
+    assert!(!output.status.success());
+    assert!(
+        output
+            .stderr
+            .to_str()
+            .unwrap()
+            .contains("`strip-all` does not support stdin")
+    );
 }
 
 #[test]
@@ -576,10 +672,12 @@ fn test_large_files() {
     dbg!(output.stdout.as_bstr());
     dbg!(output.stderr.as_bstr());
     assert!(!output.status.success());
-    assert!(output
-        .stderr
-        .as_bstr()
-        .contains_str(b"Could not parse nb file"));
+    assert!(
+        output
+            .stderr
+            .as_bstr()
+            .contains_str(b"Could not parse nb file")
+    );
 
     let git_add_out = Command::new("git")
         .current_dir(&temp_dir)
@@ -598,6 +696,49 @@ fn test_large_files() {
         .expect("command failed");
 
     assert!(!output.status.success());
+}
+
+#[test]
+fn test_large_files_lfs_skip() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+
+    let git_init_out = Command::new("git")
+        .current_dir(&temp_dir)
+        .args(["init"])
+        .output()
+        .expect("git init failed");
+    assert!(git_init_out.status.success());
+
+    // a large, non-notebook-JSON file so its raw on-disk size is used directly
+    fs::write(
+        temp_dir.path().join("lfs_nb.ipynb"),
+        "a".repeat(1000 * 1024),
+    )
+    .unwrap();
+
+    // without any lfs attribute, the large file trips the check
+    let output = Command::new(&cur_exe)
+        .current_dir(temp_dir.path())
+        .args(["hook", "check-large-files", "--enforce-all", "lfs_nb.ipynb"])
+        .output()
+        .expect("command failed");
+    assert!(!output.status.success());
+
+    // mark it as lfs-tracked; the hook measures on-disk size, not the (small)
+    // lfs pointer file git would actually store, so it should skip it entirely
+    fs::write(
+        temp_dir.path().join(".gitattributes"),
+        "lfs_nb.ipynb filter=lfs\n",
+    )
+    .unwrap();
+
+    let output = Command::new(&cur_exe)
+        .current_dir(temp_dir.path())
+        .args(["hook", "check-large-files", "--enforce-all", "lfs_nb.ipynb"])
+        .output()
+        .expect("command failed");
+    assert!(output.status.success());
 }
 
 #[test]

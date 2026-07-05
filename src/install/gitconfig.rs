@@ -1,10 +1,10 @@
-use anyhow::{anyhow, Error};
+use anyhow::{Error, anyhow};
 
 use std::{fs, io::BufWriter, path::Path, path::PathBuf};
 
-use gix_config::{parse::section::ValueName, Source};
+use gix_config::{Source, parse::section::ValueName};
 
-use super::{get_git_repo_and_work_tree, InstallStatus, InstallToolStatus};
+use super::{InstallStatus, InstallToolStatus, get_git_repo_and_work_tree};
 use bstr::BStr;
 
 use crate::cli::GitConfigType;

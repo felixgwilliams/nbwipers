@@ -1,6 +1,6 @@
 mod attributes;
 mod gitconfig;
-use anyhow::{bail, Error};
+use anyhow::{Error, bail};
 
 use std::{
     env,

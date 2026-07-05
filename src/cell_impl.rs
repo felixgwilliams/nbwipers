@@ -6,8 +6,8 @@ use crate::schema::{Cell, CodeCell, SourceValue};
 impl SourceValue {
     fn is_empty(&self) -> bool {
         match self {
-            Self::String(ref s) => s.trim().is_empty(),
-            Self::StringArray(ref s_vec) => s_vec.iter().all(|s| s.trim().is_empty()),
+            Self::String(s) => s.trim().is_empty(),
+            Self::StringArray(s_vec) => s_vec.iter().all(|s| s.trim().is_empty()),
         }
     }
 }
@@ -86,31 +86,31 @@ impl Cell {
 
     pub const fn get_source(&self) -> &SourceValue {
         match self {
-            Self::Code(ref c) => &c.source,
-            Self::Markdown(ref c) => &c.source,
-            Self::Raw(ref c) => &c.source,
+            Self::Code(c) => &c.source,
+            Self::Markdown(c) => &c.source,
+            Self::Raw(c) => &c.source,
         }
     }
 
     pub const fn get_metadata(&self) -> &Value {
         match self {
-            Self::Code(ref c) => &c.metadata,
-            Self::Markdown(ref c) => &c.metadata,
-            Self::Raw(ref c) => &c.metadata,
+            Self::Code(c) => &c.metadata,
+            Self::Markdown(c) => &c.metadata,
+            Self::Raw(c) => &c.metadata,
         }
     }
     pub fn get_metadata_mut(&mut self) -> &mut Value {
         match self {
-            Self::Code(ref mut c) => &mut c.metadata,
-            Self::Markdown(ref mut c) => &mut c.metadata,
-            Self::Raw(ref mut c) => &mut c.metadata,
+            Self::Code(c) => &mut c.metadata,
+            Self::Markdown(c) => &mut c.metadata,
+            Self::Raw(c) => &mut c.metadata,
         }
     }
     pub const fn get_id(&self) -> &Option<String> {
         match self {
-            Self::Code(ref c) => &c.id,
-            Self::Markdown(ref c) => &c.id,
-            Self::Raw(ref c) => &c.id,
+            Self::Code(c) => &c.id,
+            Self::Markdown(c) => &c.id,
+            Self::Raw(c) => &c.id,
         }
     }
     pub fn set_id(&mut self, new_id: Option<String>) -> Option<String> {
@@ -120,9 +120,9 @@ impl Cell {
             Self::Raw(c) => c.id.clone(),
         };
         match self {
-            Self::Code(ref mut c) => c.id = new_id,
-            Self::Markdown(ref mut c) => c.id = new_id,
-            Self::Raw(ref mut c) => c.id = new_id,
+            Self::Code(c) => c.id = new_id,
+            Self::Markdown(c) => c.id = new_id,
+            Self::Raw(c) => c.id = new_id,
         };
         prev_id
     }

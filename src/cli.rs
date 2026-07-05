@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
 use clap::{
-    builder::{styling::AnsiColor, Styles},
     Parser, Subcommand, ValueEnum,
+    builder::{Styles, styling::AnsiColor},
 };
 
 use crate::{

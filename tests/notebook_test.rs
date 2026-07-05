@@ -361,7 +361,10 @@ fn test_metadata_period() {
     test_expected(
         "tests/e2e_notebooks/test_metadata_period.ipynb",
         "tests/e2e_notebooks/test_metadata_period.ipynb.expected",
-        &["--extra-keys", "cell.metadata.application/vnd.databricks.v1+cell,metadata.application/vnd.databricks.v1+notebook"],
+        &[
+            "--extra-keys",
+            "cell.metadata.application/vnd.databricks.v1+cell,metadata.application/vnd.databricks.v1+notebook",
+        ],
         "test_metadata_period_cli",
     );
     test_expected(
@@ -373,7 +376,10 @@ fn test_metadata_period() {
 
     test_config_match(
         "tests/e2e_notebooks/test_metadata_period.toml",
-        &["--extra-keys", "cell.metadata.application/vnd.databricks.v1+cell,metadata.application/vnd.databricks.v1+notebook"],
+        &[
+            "--extra-keys",
+            "cell.metadata.application/vnd.databricks.v1+cell,metadata.application/vnd.databricks.v1+notebook",
+        ],
     );
 }
 #[test]

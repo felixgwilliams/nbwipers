@@ -1,5 +1,5 @@
-use anyhow::{bail, Error};
-use gix_attributes::{parse::Kind, AssignmentRef, StateRef};
+use anyhow::{Error, bail};
+use gix_attributes::{AssignmentRef, StateRef, parse::Kind};
 
 use std::{
     fmt::Write as _,
@@ -11,7 +11,7 @@ use std::{
 
 use std::{collections::BTreeMap, io::Write};
 
-use super::{get_git_repo_and_work_tree, InstallStatus};
+use super::{InstallStatus, get_git_repo_and_work_tree};
 use crate::cli::GitConfigType;
 use itertools::Itertools;
 
@@ -140,32 +140,31 @@ pub fn uninstall_attributes(
                 Some(Ok(res)) => res,
                 Some(res) => res?,
             };
-            if let Kind::Pattern(patt) = kind {
-                if patt.to_string() == "*.ipynb" {
-                    let to_delete = x
-                        .into_iter()
-                        .map(|x| {
-                            let x = x?;
-                            if let StateRef::Value(s) = x.state {
-                                Ok((x, s.as_bstr() == "nbwipers"))
-                            } else {
-                                Ok((x, false))
-                            }
-                        })
-                        .collect::<Result<Vec<(AssignmentRef, bool)>, gix_attributes::name::Error>>(
-                        )?;
-                    if to_delete.iter().any(|(_, y)| *y) {
-                        to_write = true;
-                        let assignments = to_delete
-                            .iter()
-                            .filter(|(_x, y)| !y)
-                            .map(|(x, _y)| x.to_string())
-                            .join(" ");
-                        if assignments.is_empty() {
-                            line = String::new();
+            if let Kind::Pattern(patt) = kind
+                && patt.to_string() == "*.ipynb"
+            {
+                let to_delete = x
+                    .into_iter()
+                    .map(|x| {
+                        let x = x?;
+                        if let StateRef::Value(s) = x.state {
+                            Ok((x, s.as_bstr() == "nbwipers"))
                         } else {
-                            line = format!("{patt} {assignments}");
+                            Ok((x, false))
                         }
+                    })
+                    .collect::<Result<Vec<(AssignmentRef, bool)>, gix_attributes::name::Error>>()?;
+                if to_delete.iter().any(|(_, y)| *y) {
+                    to_write = true;
+                    let assignments = to_delete
+                        .iter()
+                        .filter(|(_x, y)| !y)
+                        .map(|(x, _y)| x.to_string())
+                        .join(" ");
+                    if assignments.is_empty() {
+                        line = String::new();
+                    } else {
+                        line = format!("{patt} {assignments}");
                     }
                 }
             };
@@ -193,21 +192,21 @@ fn check_attribute_file(attr_file_path: &Path) -> Result<InstallStatus, Error> {
         for line in lines {
             let (kind, assignments, _) = line?;
 
-            if let Kind::Pattern(patt) = kind {
-                if patt.to_string() == "*.ipynb" {
-                    for assignment in assignments {
-                        let assignment = assignment?;
-                        if let StateRef::Value(s) = assignment.state {
-                            if s.as_bstr() == "nbwipers" {
-                                status.nbwipers.filter |= assignment.name.as_str() == "filter";
-                                status.nbwipers.diff |= assignment.name.as_str() == "diff";
-                            }
-                            if s.as_bstr() == "ipynb" {
-                                status.nbstripout.diff |= assignment.name.as_str() == "diff";
-                            }
-                            if s.as_bstr() == "nbstripout" {
-                                status.nbstripout.filter |= assignment.name.as_str() == "filter";
-                            }
+            if let Kind::Pattern(patt) = kind
+                && patt.to_string() == "*.ipynb"
+            {
+                for assignment in assignments {
+                    let assignment = assignment?;
+                    if let StateRef::Value(s) = assignment.state {
+                        if s.as_bstr() == "nbwipers" {
+                            status.nbwipers.filter |= assignment.name.as_str() == "filter";
+                            status.nbwipers.diff |= assignment.name.as_str() == "diff";
+                        }
+                        if s.as_bstr() == "ipynb" {
+                            status.nbstripout.diff |= assignment.name.as_str() == "diff";
+                        }
+                        if s.as_bstr() == "nbstripout" {
+                            status.nbstripout.filter |= assignment.name.as_str() == "filter";
                         }
                     }
                 }

@@ -1,11 +1,11 @@
-use std::io::{stdin, Read};
-use std::io::{stdout, Write};
+use std::io::{Read, stdin};
+use std::io::{Write, stdout};
 
 use anyhow::bail;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use crate::files::get_cwd;
-use crate::record::{get_kernelspec_file, read_kernelspec_file, KernelSpecInfo};
+use crate::record::{KernelSpecInfo, get_kernelspec_file, read_kernelspec_file};
 use crate::schema::RawNotebook;
 use crate::strip::write_nb;
 
@@ -83,7 +83,7 @@ fn maybe_replace_kernelspec(
 
 #[cfg(test)]
 mod test {
-    use serde_json::{json, Value};
+    use serde_json::{Value, json};
 
     use super::maybe_replace_kernelspec;
     use crate::{record::KernelSpecInfo, schema::RawNotebook, strip::write_nb};

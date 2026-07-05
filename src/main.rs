@@ -14,27 +14,27 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::{anyhow, bail, Error};
+use anyhow::{Error, anyhow, bail};
 use clap::Parser;
 use colored::Colorize;
-use nbwipers::config::{resolve, Configuration};
+use nbwipers::config::{Configuration, resolve};
 use nbwipers::files::{
-    find_notebooks_or_stdin, read_nb, read_nb_stdin, relativize_path, FoundNotebooks,
+    FoundNotebooks, find_notebooks_or_stdin, read_nb, read_nb_stdin, relativize_path,
 };
 use nbwipers::hooks::hooks;
 use nbwipers::install;
 use nbwipers::record::record;
 use nbwipers::settings::Settings;
-use nbwipers::strip::{strip_single, StripResult};
+use nbwipers::strip::{StripResult, strip_single};
 use nbwipers::{
     check::{self as check, PathCheckResult},
     files::check_exclusions,
 };
 use nbwipers::{
     cli::{
-        self as cli, resolve_bool_arg, CheckCommand, CheckInstallCommand, CleanAllCommand,
-        CleanCommand, Commands, CommonArgs, InstallCommand, OutputFormat, ShowConfigCommand,
-        SmudgeCommand, UninstallCommand,
+        self as cli, CheckCommand, CheckInstallCommand, CleanAllCommand, CleanCommand, Commands,
+        CommonArgs, InstallCommand, OutputFormat, ShowConfigCommand, SmudgeCommand,
+        UninstallCommand, resolve_bool_arg,
     },
     smudge::smudge,
 };
@@ -208,7 +208,7 @@ fn main() -> Result<(), Error> {
     let cli = cli::Cli::parse();
     #[cfg(feature = "markdown-help")]
     if cli.markdown_help {
-        #[cfg(not(tarpaulin_include))]
+        #[cfg(not(coverage))]
         clap_markdown::print_help_markdown::<cli::Cli>();
         return Ok(());
     }

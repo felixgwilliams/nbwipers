@@ -12,8 +12,8 @@ use thiserror::Error;
 use crate::{
     config::IdAction,
     extra_keys::partition_extra_keys,
-    files::{check_exclusions, read_nb, read_nb_stdin, NBReadError, NBWriteError},
-    schema::{RawNotebook, ID_OPTIONAL_MAX_VERSION},
+    files::{NBReadError, NBWriteError, check_exclusions, read_nb, read_nb_stdin},
+    schema::{ID_OPTIONAL_MAX_VERSION, RawNotebook},
     settings::Settings,
     utils::{get_value_child, pop_cell_key, pop_meta_key},
 };
@@ -118,7 +118,6 @@ pub fn strip_single(
             let stdout = std::io::stdout();
             match write_nb(stdout, &strip_nb) {
                 Ok(()) => Ok(StripSuccess::from_stripped(stripped)),
-                #[cfg(not(tarpaulin_include))]
                 Err(e) => Err(e.into()),
             }
         }
@@ -128,7 +127,6 @@ pub fn strip_single(
             let writer = BufWriter::new(f);
             match write_nb(writer, &strip_nb) {
                 Ok(()) => Ok(StripSuccess::Stripped),
-                #[cfg(not(tarpaulin_include))]
                 Err(e) => Err(e.into()),
             }
         }

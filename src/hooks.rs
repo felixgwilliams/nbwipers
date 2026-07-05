@@ -9,7 +9,7 @@ use crate::cli::{CheckLargeFilesCommand, ConfigOverrides, HookCommands};
 use crate::files::read_nb;
 use crate::settings::Settings;
 use crate::strip::{strip_nb, write_nb};
-use anyhow::{anyhow, bail, Context, Error};
+use anyhow::{Context, Error, anyhow, bail};
 use itertools::Itertools;
 
 use rayon::prelude::*;
@@ -17,7 +17,7 @@ use rustc_hash::FxHashSet;
 
 pub fn hooks(cmd: &HookCommands) -> Result<(), Error> {
     match cmd {
-        HookCommands::CheckLargeFiles(ref inner_cmd) => check_large_files(inner_cmd),
+        HookCommands::CheckLargeFiles(inner_cmd) => check_large_files(inner_cmd),
     }
 }
 const DEFAULT_MAX_SIZE_KB: u64 = 500; // 500 KB
@@ -177,10 +177,10 @@ fn filter_lfs(files: &mut FxHashSet<PathBuf>) -> Result<(), Error> {
         let fname = chunk.next();
         // 3rd element index 2, but we already consumed one...
         let info = chunk.nth(1);
-        if let (Some(fname), Some(info)) = (fname.map(PathBuf::from), info) {
-            if info == "lfs" {
-                files.remove(&fname);
-            }
+        if let (Some(fname), Some(info)) = (fname.map(PathBuf::from), info)
+            && info == "lfs"
+        {
+            files.remove(&fname);
         }
     }
 

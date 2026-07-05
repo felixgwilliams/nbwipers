@@ -1,6 +1,6 @@
 use std::{fmt::Display, str::FromStr};
 
-use serde::{de, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de};
 use thiserror::Error;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -21,7 +21,7 @@ impl Serialize for ExtraKey {
 impl ExtraKey {
     pub const fn get_parts(&self) -> &Vec<String> {
         match self {
-            Self::Metadata(ref c) | Self::CellMeta(ref c) => &c.parts,
+            Self::Metadata(c) | Self::CellMeta(c) => &c.parts,
         }
     }
 }
@@ -104,8 +104,8 @@ pub fn partition_extra_keys<'a, I: IntoIterator<Item = &'a ExtraKey>>(
     let mut cell_keys = vec![];
     for extra_key in extra_keys {
         match extra_key {
-            ExtraKey::CellMeta(ref _cell_key) => cell_keys.push(extra_key),
-            ExtraKey::Metadata(ref _meta_key) => meta_keys.push(extra_key),
+            ExtraKey::CellMeta(_cell_key) => cell_keys.push(extra_key),
+            ExtraKey::Metadata(_meta_key) => meta_keys.push(extra_key),
         };
     }
     (cell_keys, meta_keys)

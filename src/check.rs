@@ -3,8 +3,8 @@ use std::{fmt::Display, path::Path};
 use crate::{
     config::IdAction,
     extra_keys::partition_extra_keys,
-    files::{relativize_path, NBReadError},
-    schema::{RawNotebook, ID_OPTIONAL_MAX_VERSION},
+    files::{NBReadError, relativize_path},
+    schema::{ID_OPTIONAL_MAX_VERSION, RawNotebook},
     settings::Settings,
     utils::get_value_child,
 };
