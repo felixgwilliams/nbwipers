@@ -185,7 +185,13 @@ mod test {
         create_dir_all(&subdir).unwrap();
         with_dir(&subdir, || {
             let res = get_git_repo_and_work_tree();
-            assert_eq!(res.unwrap().1.unwrap(), temp_dir.path());
+            // canonicalize both sides: on macOS `TMPDIR` lives under `/var/...`,
+            // a symlink to `/private/var/...`, and `current_dir()` (used inside
+            // `get_git_repo_and_work_tree`) returns the resolved form.
+            assert_eq!(
+                res.unwrap().1.unwrap().canonicalize().unwrap(),
+                temp_dir.path().canonicalize().unwrap()
+            );
         });
     }
 }
