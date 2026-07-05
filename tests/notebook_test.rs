@@ -517,31 +517,117 @@ fn test_exclusions() {
     let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
     // the notebooks are full of issues
     let output = Command::new(&cur_exe)
-        .args(["check", "tests/e2e_notebooks", "-o", "text"])
+        .args(["check", "tests/e2e_notebooks", "-o", "text", "--isolated"])
         // .args([])
         .output()
         .expect("command failed");
     assert!(!output.status.success());
     // but if we exclude them, it should pass
     let output = Command::new(&cur_exe)
-        .args(["check", "tests/e2e_notebooks", "-o", "text"])
-        .args(["--exclude", "tests/e2e_notebooks", "--allow-no-notebooks"])
+        .args(["check", "tests/e2e_notebooks", "-o", "text", "--isolated"])
+        .args(["--exclude", "tests/e2e_notebooks/*", "--allow-no-notebooks"])
         .output()
         .expect("command failed");
-    dbg!(output.stderr.as_bstr());
     assert!(output.status.success());
     // and let's exclude them another way
     let output = Command::new(&cur_exe)
-        .args(["check", "tests/e2e_notebooks", "-o", "text"])
+        .args(["check", "tests/e2e_notebooks", "-o", "text", "--isolated"])
         .args([
             "--extend-exclude",
-            "tests/e2e_notebooks",
+            "tests/e2e_notebooks/*",
             "--allow-no-notebooks",
         ])
         .output()
         .expect("command failed");
     dbg!(output.stderr.as_bstr());
     assert!(output.status.success());
+}
+
+#[test]
+fn test_exclude_directory_patterns() {
+    // directory patterns behave like gitignore: a bare or trailing-slash name
+    // matches directories at any depth and covers their contents in every
+    // code path, while a pattern with a leading/middle separator is anchored
+    // to the config file's directory
+    let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));
+    let dirty_nb = fs::read_to_string("tests/e2e_notebooks/test_nbformat45.ipynb").unwrap();
+
+    let temp_dir = tempfile::tempdir().unwrap();
+    let nested = temp_dir.path().join("nested/scratch");
+    fs::create_dir_all(&nested).unwrap();
+    fs::write(nested.join("inner.ipynb"), &dirty_nb).unwrap();
+
+    for pattern in ["scratch", "scratch/", "nested/scratch/"] {
+        fs::write(
+            temp_dir.path().join(".nbwipers.toml"),
+            format!("exclude = [\"{pattern}\"]\n"),
+        )
+        .unwrap();
+
+        // walking from the root skips the excluded directory
+        let output = Command::new(&cur_exe)
+            .current_dir(&temp_dir)
+            .args(["check", ".", "--allow-no-notebooks"])
+            .output()
+            .expect("command failed");
+        assert!(output.status.success(), "check . with exclude {pattern}");
+
+        // walking from inside the excluded directory matches the files directly
+        let output = Command::new(&cur_exe)
+            .current_dir(&temp_dir)
+            .args(["check", "nested/scratch", "--allow-no-notebooks"])
+            .output()
+            .expect("command failed");
+        assert!(
+            output.status.success(),
+            "check nested/scratch with exclude {pattern}"
+        );
+
+        // the git filter path passes a repo-relative file name; regression
+        // test: directory excludes previously never matched here
+        let mut clean_cmd = Command::new(&cur_exe)
+            .current_dir(&temp_dir)
+            .args([
+                "clean",
+                "-",
+                "--stdin-file-name",
+                "nested/scratch/inner.ipynb",
+                "--respect-exclusions",
+            ])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("command failed");
+        {
+            let mut stdin = clean_cmd.stdin.take().unwrap();
+            stdin.write_all(dirty_nb.as_bytes()).unwrap();
+        }
+        let clean_out = clean_cmd.wait_with_output().unwrap();
+        assert!(clean_out.status.success());
+        assert!(
+            clean_out
+                .stdout
+                .to_str()
+                .unwrap()
+                .contains("\"execution_count\": 1"),
+            "git filter should pass excluded file through unchanged for {pattern}"
+        );
+    }
+
+    // an anchored pattern must not exclude a same-named directory elsewhere
+    fs::write(
+        temp_dir.path().join(".nbwipers.toml"),
+        "exclude = [\"other/scratch/\"]\n",
+    )
+    .unwrap();
+    let output = Command::new(&cur_exe)
+        .current_dir(&temp_dir)
+        .args(["check", "."])
+        .output()
+        .expect("command failed");
+    assert!(!output.status.success());
+    assert!(output.stdout.to_str().unwrap().contains("inner.ipynb"));
 }
 
 #[test]
@@ -561,8 +647,8 @@ fn test_strip_stdin() {
             "--stdin-file-name",
             "tests/e2e_notebooks/test_nbformat45.ipynb",
             "--respect-exclusions",
+            "--isolated",
         ])
-        // .args(extra_args)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -586,6 +672,7 @@ fn test_strip_stdin() {
             "--respect-exclusions",
             "--exclude",
             "test_nbformat45.ipynb",
+            "--isolated",
         ])
         // .args(extra_args)
         .stdin(Stdio::piped())
@@ -612,6 +699,7 @@ fn test_strip_stdin() {
             "test_nbformat45.ipynb",
             "--stdin-file-name",
             "tests/e2e_notebooks/test_nbformat45.ipynb",
+            "--isolated",
         ])
         // .args(extra_args)
         .stdin(Stdio::piped())
@@ -644,6 +732,7 @@ fn test_strip_stdin() {
             "--stdin-file-name",
             "tests/e2e_notebooks/test_nbformat45.ipynb",
             "--respect-exclusions",
+            "--isolated",
         ])
         // .args(extra_args)
         .stdin(Stdio::piped())
