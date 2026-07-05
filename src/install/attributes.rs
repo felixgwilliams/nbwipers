@@ -1,4 +1,4 @@
-use anyhow::{Error, bail};
+use anyhow::Error;
 use gix_attributes::{AssignmentRef, StateRef, parse::Kind};
 
 use std::{
@@ -134,9 +134,12 @@ pub fn uninstall_attributes(
             if line.trim().is_empty() {
                 continue;
             }
-            // let (kind, x, _) = gix_attributes::parse(line.as_bytes()).next().unwrap()?;
+            // the parser yields nothing for comment lines; preserve them verbatim
             let (kind, x, _) = match gix_attributes::parse(line.as_bytes()).next() {
-                None => bail!("No pattern found in line : {line}"),
+                None => {
+                    writeln!(out, "{line}")?;
+                    continue;
+                }
                 Some(Ok(res)) => res,
                 Some(res) => res?,
             };
