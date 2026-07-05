@@ -876,6 +876,7 @@ fn test_large_files_outside_git_repo() {
         .output()
         .expect("command failed");
     assert!(!output.status.success());
+    dbg!(output.stdout.to_str_lossy());
     dbg!(output.stderr.to_str_lossy());
     assert!(
         output

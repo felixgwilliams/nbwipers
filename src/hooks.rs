@@ -161,7 +161,12 @@ fn filter_lfs(files: &mut FxHashSet<PathBuf>) -> Result<(), Error> {
         .spawn()?;
     {
         let mut stdin = check_attr.stdin.take().context("Could not open stdin")?;
-        stdin.write_all(&file_list)?;
+        // git may exit without reading stdin (e.g. outside a repository);
+        // ignore the broken pipe so the exit-status check reports the real error
+        match stdin.write_all(&file_list) {
+            Err(e) if e.kind() != std::io::ErrorKind::BrokenPipe => return Err(e.into()),
+            _ => {}
+        }
     }
     let check_output = check_attr.wait_with_output()?;
     if !check_output.status.success() {

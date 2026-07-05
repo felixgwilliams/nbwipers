@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning].
 ### Fixed
 
 - `uninstall` no longer errors if the `.gitattributes` file contains comment lines. Comments are now preserved
+- the `check-large-files` hook could report a confusing `Broken pipe` error instead of `Git check-attr failed` when git exited before reading its input, e.g. outside a git repository
 - `record --remove` previously had no effect. It now removes the recorded kernel metadata for the given notebook paths
 - Add missing project metadata to the PyPI package
 - Fix a macOS-only test failure caused by symlinked temporary directories
