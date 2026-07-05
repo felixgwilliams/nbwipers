@@ -181,6 +181,13 @@ jobs:
           else
             echo "Releasing ${{ inputs.tag }}"
           fi
+      - name: check README pre-commit rev
+        run: |
+          README_REV=$(grep -oP '(?<=rev: )\S+' README.md)
+          if [ "$README_REV" != "${{ inputs.tag }}" ]; then
+            echo "README pre-commit rev $README_REV does not match tag ${{ inputs.tag }}" >&2
+            exit 1;
+          fi
 
   release_github:
     name: Release
