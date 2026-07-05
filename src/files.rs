@@ -1,11 +1,11 @@
 use std::{
     ffi::OsStr,
     fs::File,
-    io::{stdin, BufReader},
+    io::{BufReader, stdin},
     path::{Path, PathBuf},
 };
 
-use anyhow::{anyhow, Error};
+use anyhow::{Error, anyhow};
 use globset::Candidate;
 use ignore::{WalkBuilder, WalkState};
 use itertools::Itertools;

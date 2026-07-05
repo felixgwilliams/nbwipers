@@ -1,7 +1,7 @@
 [package]
 name = "nbwipers"
 version = "0.6.2"
-edition = "2021"
+edition = "2024"
 description = "Wipe clean your Jupyter Notebooks!"
 readme = "README.md"
 homepage = "https://github.com/felixgwilliams/nbwipers"
@@ -46,4 +46,4 @@ tempfile = "3.10.0"
 markdown-help = ["dep:clap-markdown"]
 
 [lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ["cfg(tarpaulin_include)"] }
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(tarpaulin_include)", "cfg(coverage)"] }

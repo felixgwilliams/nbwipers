@@ -1,5 +1,5 @@
 use crate::cli::ConfigOverrides;
-use crate::config::{resolve, Configuration, IdAction};
+use crate::config::{Configuration, IdAction, resolve};
 use crate::extra_keys::ExtraKey;
 use globset::GlobSet;
 use rustc_hash::FxHashSet;

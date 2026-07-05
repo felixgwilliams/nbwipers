@@ -7,7 +7,7 @@ use std::{
 
 use crate::{
     cli::RecordCommand,
-    files::{find_notebooks, get_cwd, normalize_path, read_nb, relativize_path, FoundNotebooks},
+    files::{FoundNotebooks, find_notebooks, get_cwd, normalize_path, read_nb, relativize_path},
     schema::RawNotebook,
     settings::Settings,
 };

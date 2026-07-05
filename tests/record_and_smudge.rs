@@ -6,7 +6,7 @@ use std::{
 };
 
 use nbwipers::{
-    record::{get_kernelspec_file, read_kernelspec_file, KernelSpecInfo},
+    record::{KernelSpecInfo, get_kernelspec_file, read_kernelspec_file},
     schema::RawNotebook,
     strip::write_nb,
 };
