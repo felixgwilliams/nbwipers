@@ -1,1 +1,3 @@
 *.expected text eol=lf
+*.ipynb text eol=lf
+*.toml text eol=lf

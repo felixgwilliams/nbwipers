@@ -41,10 +41,11 @@ pub fn relativize_path<P: AsRef<Path>>(path: P) -> String {
 
     let cwd = get_cwd();
 
-    path.strip_prefix(cwd).map_or_else(
+    let path_str = path.strip_prefix(cwd).map_or_else(
         |_| format!("{}", path.display()),
         |path| format!("{}", path.display()),
-    )
+    );
+    path_str.replace(std::path::MAIN_SEPARATOR, "/")
 }
 
 pub fn normalize_path_to<P: AsRef<Path>, R: AsRef<Path>>(path: P, root_path: R) -> PathBuf {
@@ -199,7 +200,11 @@ mod tests {
         dbg!(relativize_path(&subdir));
         assert_eq!(rel_dir, relativize_path(&subdir));
         if let Some(parent) = cur_dir.parent() {
-            assert_eq!(parent.to_str().unwrap(), relativize_path(parent));
+            let expected = parent
+                .to_str()
+                .unwrap()
+                .replace(std::path::MAIN_SEPARATOR, "/");
+            assert_eq!(expected, relativize_path(parent));
         }
     }
 }
