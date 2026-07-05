@@ -21,6 +21,9 @@ nbwipers has a few subcommands that provide functionality related to cleaning Ju
 - `install` register nbwipers as a git filter for `ipynb` files. Equivalent to `nbstripout --install`
 - `uninstall` remove nbwipers as a git filter.
 - `check-install` check that `nbwipers` or `nbstripout` is installed in the local repo. This is used in the pre-commit hook.
+- `show-config` show the effective configuration nbwipers would use, merging the config file with any CLI overrides.
+- `record` record kernel metadata for notebooks in a local, git-untracked store, so it can be restored later even though `strip-kernel-info` removes it from committed notebooks. See [Preserving kernel info locally](#preserving-kernel-info-locally) below.
+- `hook` subcommands used by pre-commit-style hooks &mdash; currently `check-large-files`, which checks notebook file sizes after cleaning.
 
 The full options can be found in [`CommandLineHelp.md`](CommandLineHelp.md).
 
@@ -44,6 +47,32 @@ To check the notebooks in your folder, you can run the following
 ```shell
 nbwipers check .
 ```
+
+To see the configuration nbwipers would use in the current directory, you can run
+
+```shell
+nbwipers show-config
+```
+
+Add `--show-all` to also see the default values for settings that have not been explicitly configured.
+
+### Preserving kernel info locally
+
+`nbwipers install` sets up both a clean filter, which strips notebooks before they are committed, and a smudge filter, which runs when notebooks are checked out.
+
+If you enable `strip-kernel-info` (see [Configuration](#configuration)) so that kernelspec and python-version metadata never gets committed, you can still keep that information around locally with `record`:
+
+```shell
+nbwipers record .
+```
+
+This saves the kernel metadata for notebooks under the given path to `.git/x-nbwipers/kernelspec_store.json` &mdash; local to your clone and never committed. The next time you check out one of those notebooks, the smudge filter automatically restores its recorded kernel metadata, so each collaborator keeps their own kernel/python version info without it living in version control.
+
+To keep the local store tidy as notebooks come and go:
+
+- `nbwipers record --sync .` discards the whole store and rebuilds it from the notebooks currently found under `.`, dropping entries for notebooks that no longer exist.
+- `nbwipers record --remove path/to/notebook.ipynb` removes a specific notebook's entry, leaving the rest of the store untouched.
+- `nbwipers record --clear` wipes the store entirely.
 
 ### pre-commit
 

@@ -55,7 +55,7 @@ pub struct CommonArgs {
     #[arg(long, overrides_with("keep_output"), hide = true)]
     pub drop_output: bool,
 
-    /// keep cell execution count. Disable with `--drop count`
+    /// keep cell execution count. Disable with `--drop-count`
     #[arg(long, overrides_with("drop_count"))]
     pub keep_count: bool,
 
@@ -115,13 +115,13 @@ pub struct CommonArgs {
     #[arg(long, value_delimiter = ',')]
     pub drop_tagged_cells: Option<Vec<String>>,
 
-    /// List of metadata keys that should be kept, regardless of if they appear in
+    /// List of metadata keys that should be kept, even if they would otherwise be removed by `--extra-keys` or the default set of stripped keys
     #[arg(long, value_delimiter = ',')]
     pub keep_keys: Option<Vec<ExtraKey>>,
-    /// List of file patterns to ignore
+    /// List of file patterns to ignore. Replaces any `exclude` patterns set in the configuration file
     #[arg(long, value_delimiter = ',')]
     pub exclude: Option<Vec<FilePattern>>,
-    /// List of additional file patterns to ignore
+    /// List of additional file patterns to ignore, on top of `exclude` and any `extend-exclude` patterns set in the configuration file
     #[arg(long, value_delimiter = ',')]
     pub extend_exclude: Option<Vec<FilePattern>>,
 }
@@ -130,15 +130,15 @@ pub struct CommonArgs {
 pub enum Commands {
     /// Register nbwipers as a git filter for `ipynb` files
     Install(InstallCommand),
-    /// clean all notebooks in a given path
+    /// Clean all notebooks in a given path
     CleanAll(CleanAllCommand),
-    /// check notebooks in a given path for elements that would be removed by `clean`
+    /// Check notebooks in a given path for elements that would be removed by `clean`
     Check(CheckCommand),
-    /// clean a single notebook
+    /// Clean a single notebook
     Clean(CleanCommand),
-    /// uninstall nbwipers as a git filter
+    /// Uninstall nbwipers as a git filter
     Uninstall(UninstallCommand),
-    /// check whether nbwipers is setup as a git filter
+    /// Check whether nbwipers is setup as a git filter
     CheckInstall(CheckInstallCommand),
     /// Show configuration
     ShowConfig(ShowConfigCommand),
@@ -179,7 +179,7 @@ pub struct CheckLargeFilesCommand {
 
 #[derive(Clone, Debug, Parser)]
 pub struct ShowConfigCommand {
-    /// Show all config including defaults Disable with `--no-show-defaults`
+    /// Show all config including defaults. Disable with `--no-show-defaults`
     #[arg(long, overrides_with("no_show_defaults"))]
     pub show_all: bool,
 
@@ -243,8 +243,10 @@ pub struct CleanAllCommand {
 
 #[derive(Clone, Debug, ValueEnum, Copy, Default)]
 pub enum OutputFormat {
+    /// human-readable plain text diagnostics
     #[default]
     Text,
+    /// machine-readable JSON diagnostics
     Json,
 }
 #[derive(Clone, Debug, Parser)]
@@ -278,13 +280,17 @@ pub struct UninstallCommand {
 
 #[derive(Clone, Debug, Parser)]
 pub struct RecordCommand {
+    /// path to search for notebooks whose kernel metadata should be recorded. Defaults to the current directory
     pub path: Option<PathBuf>,
 
+    /// remove recorded kernel metadata for these notebook paths, leaving other recorded entries untouched
     #[arg(long)]
     pub remove: Vec<PathBuf>,
 
+    /// remove all recorded kernel metadata without recording anything new
     #[arg(long)]
     pub clear: bool,
+    /// discard all recorded kernel metadata and rebuild it from the notebooks currently found under `path`, dropping entries for notebooks that are no longer found
     #[arg(long)]
     pub sync: bool,
 

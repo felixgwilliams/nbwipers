@@ -12,7 +12,7 @@ test-cov:
 
 # Regenerate the documentation file for the CLI
 cli-docs:
-    cargo run -q --features=markdown-help -- --markdown-help check | sed -z -e 's/\n\n *Possible values: `true`, `false`\n//g'  > CommandLineHelp.md
+    cargo run -q --features=markdown-help -- --markdown-help check | perl -0777 -pe 's/\n\n *Possible values: `true`, `false`\n//g'  > CommandLineHelp.md
     -rumdl check CommandLineHelp.md --fix
 
 # run the tests fr fr on god (run tests but allow dbg! and println! to display output)
