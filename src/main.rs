@@ -28,7 +28,7 @@ use nbwipers::settings::Settings;
 use nbwipers::strip::{StripResult, strip_single};
 use nbwipers::{
     check::{self as check, PathCheckResult},
-    files::check_exclusions,
+    files::{check_exclusions, normalize_path},
 };
 use nbwipers::{
     cli::{
@@ -55,7 +55,7 @@ fn check_all(
         FoundNotebooks::Stdin => match read_nb_stdin() {
             Ok(nb) => vec![(
                 Path::new("-"),
-                match stdin_file_name.map(|sfn| check_exclusions(sfn, &settings)) {
+                match stdin_file_name.map(|sfn| check_exclusions(&normalize_path(sfn), &settings)) {
                     Some(true) => vec![],
                     _ => nbwipers::check::check_nb(&nb, &settings),
                 },

@@ -116,11 +116,19 @@ pub struct FilePattern {
 
 impl FilePattern {
     pub fn add_to(self, builder: &mut GlobSetBuilder) -> anyhow::Result<()> {
-        builder.add(Glob::new(&self.absolute.to_string_lossy())?);
+        let absolute = self.absolute.to_string_lossy();
+        builder.add(Glob::new(&absolute)?);
+        // also match everything below the pattern, so that excluding a
+        // directory covers its contents even when the files are matched
+        // directly rather than skipped during traversal
+        builder.add(Glob::new(&format!("{absolute}/**"))?);
 
-        // Add basename path.
-        if !self.pattern.contains(std::path::MAIN_SEPARATOR) {
-            builder.add(Glob::new(&self.pattern)?);
+        // Add basename path. As in gitignore, a trailing separator does not
+        // anchor the pattern; only a leading or middle separator does
+        let trimmed = self.pattern.trim_end_matches(std::path::is_separator);
+        if !trimmed.contains(std::path::is_separator) {
+            builder.add(Glob::new(trimmed)?);
+            builder.add(Glob::new(&format!("**/{trimmed}/**"))?);
         }
 
         Ok(())
@@ -160,7 +168,6 @@ impl Serialize for FilePattern {
 }
 fn make_globset<I: IntoIterator<Item = FilePattern>>(patterns: I) -> anyhow::Result<GlobSet> {
     let mut builder = GlobSetBuilder::new();
-    #[allow(clippy::unwrap_used)]
     for pattern in patterns {
         pattern.add_to(&mut builder)?;
     }

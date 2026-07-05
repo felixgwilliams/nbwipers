@@ -12,7 +12,7 @@ use thiserror::Error;
 use crate::{
     config::IdAction,
     extra_keys::partition_extra_keys,
-    files::{NBReadError, NBWriteError, check_exclusions, read_nb, read_nb_stdin},
+    files::{NBReadError, NBWriteError, check_exclusions, normalize_path, read_nb, read_nb_stdin},
     schema::{ID_OPTIONAL_MAX_VERSION, RawNotebook},
     settings::Settings,
     utils::{get_value_child, pop_cell_key, pop_meta_key},
@@ -105,7 +105,9 @@ pub fn strip_single(
         (None, _) => strip_nb(nb, settings),
         (Some(_), false) => strip_nb(nb, settings),
         (Some(stdin_name), true) => {
-            if check_exclusions(stdin_name, settings) {
+            // git passes filter paths relative to the repo root; absolutize so
+            // they can match the absolutized exclude globs
+            if check_exclusions(&normalize_path(stdin_name), settings) {
                 (nb, false)
             } else {
                 strip_nb(nb, settings)

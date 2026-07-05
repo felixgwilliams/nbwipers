@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning].
 ### Changed
 
 - Move to Rust edition 2024. The minimum supported Rust version for building from source is now 1.88, declared via `rust-version` in `Cargo.toml`
+- Directory exclude patterns now behave like gitignore: excluding a directory also excludes its contents in every code path (including the git filter), a bare or trailing-slash name such as `scratch/` matches at any depth, and patterns with a leading or middle separator are anchored to the config file's directory
 - Expand and correct the CLI help text: `record` and its flags are now documented, `show-config` and the id/exclude options have clearer descriptions
 - Document the `show-config`, `record` and `hook` subcommands and the record/smudge kernel-info workflow in the README
 - Run tests on Windows and macOS in CI
