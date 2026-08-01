@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-08-01
+
+- Adopt all clippy rules and fix lints
+- Emit correct warning when running the file size hook with malformed settings files
+
 ## [0.7.0] - 2026-07-05
 
 ### Changed
