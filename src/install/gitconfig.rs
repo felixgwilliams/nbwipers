@@ -9,6 +9,15 @@ use bstr::BStr;
 
 use crate::cli::GitConfigType;
 
+/// # Panics
+///
+/// Panics if the hard-coded `filter`/`diff` section or value names fail to parse (this should
+/// never happen).
+///
+/// # Errors
+///
+/// Returns an error if the current executable path is not valid unicode, the config file cannot
+/// be resolved or opened, or writing to it fails.
 pub fn install_config(config_file: Option<&Path>, config_type: GitConfigType) -> Result<(), Error> {
     let cur_exe = std::env::current_exe()?;
     let source = config_type.into();
@@ -31,12 +40,18 @@ pub fn install_config(config_file: Option<&Path>, config_type: GitConfigType) ->
     };
 
     // fails for invalid section names. This one is ok
-    #[allow(clippy::unwrap_used)]
+    #[expect(
+        clippy::unwrap_used,
+        reason = "fails for invalid section names. This one is ok"
+    )]
     let mut nbwipers_section = file
         .section_mut_or_create_new("filter", Some("nbwipers".into()))
         .unwrap();
     // fails for invalid section names. This one is ok
-    #[allow(clippy::unwrap_used)]
+    #[expect(
+        clippy::unwrap_used,
+        reason = "fails for invalid section names. This one is ok"
+    )]
     nbwipers_section.set(
         ValueName::try_from("clean").unwrap(),
         BStr::new(
@@ -48,20 +63,29 @@ pub fn install_config(config_file: Option<&Path>, config_type: GitConfigType) ->
         ),
     );
 
-    #[allow(clippy::unwrap_used)]
+    #[expect(
+        clippy::unwrap_used,
+        reason = "fails for invalid section names. This one is ok"
+    )]
     nbwipers_section.set(
         ValueName::try_from("smudge").unwrap(),
         BStr::new(format!("\"{}\" smudge %f", cur_exe_str.as_str()).as_str()),
     );
 
     // fails for invalid section names. This one is ok
-    #[allow(clippy::unwrap_used)]
+    #[expect(
+        clippy::unwrap_used,
+        reason = "fails for invalid section names. This one is ok"
+    )]
     let mut diff_section = file
         .section_mut_or_create_new("diff", Some("nbwipers".into()))
         .unwrap();
 
     // fails for invalid section names. This one is ok
-    #[allow(clippy::unwrap_used)]
+    #[expect(
+        clippy::unwrap_used,
+        reason = "fails for invalid section names. This one is ok"
+    )]
     diff_section.set(
         ValueName::try_from("textconv").unwrap(),
         BStr::new(format!("\"{}\" clean --respect-exclusions -t", cur_exe_str.as_str()).as_str()),
@@ -82,21 +106,27 @@ pub(super) fn resolve_config_file(
         Ok(config_file.to_path_buf())
     } else {
         let source: Source = config_type.into();
-        #[allow(clippy::unwrap_used)]
         let file_path = match config_type {
             GitConfigType::Global | GitConfigType::System => source
                 .storage_location(&mut gix_path::env::var)
                 .as_deref()
-                .unwrap()
+                .ok_or_else(|| anyhow::anyhow!("Could not find path to config"))?
                 .to_owned(),
             GitConfigType::Local => {
                 let dotgit = get_git_repo_and_work_tree()?.0;
-                dotgit.join(source.storage_location(&mut gix_path::env::var).unwrap())
+                dotgit.join(
+                    source
+                        .storage_location(&mut gix_path::env::var)
+                        .ok_or_else(|| anyhow::anyhow!("Could not find path to local config"))?,
+                )
             }
         };
         Ok(file_path)
     }
 }
+/// # Errors
+///
+/// Returns an error if the config file cannot be resolved or opened, or writing to it fails.
 pub fn uninstall_config(
     config_file: Option<&Path>,
     config_type: GitConfigType,

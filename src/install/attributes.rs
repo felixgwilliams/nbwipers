@@ -1,12 +1,12 @@
 use anyhow::Error;
-use gix_attributes::{AssignmentRef, StateRef, parse::Kind};
+use gix_attributes::{Assignment, AssignmentRef, StateRef, parse::Kind};
 
 use std::{
     fmt::Write as _,
     fs,
     io::{BufRead, BufReader},
-    path::Path,
-    path::PathBuf,
+    path::{Path, PathBuf},
+    sync::LazyLock,
 };
 
 use std::{collections::BTreeMap, io::Write};
@@ -31,19 +31,21 @@ fn resolve_attribute_file(
         };
 
         let file_path: PathBuf = match config_type {
-            #[allow(clippy::unwrap_used)]
             GitConfigType::Global | GitConfigType::System => source
                 .storage_location(&mut gix_path::env::var)
                 .as_deref()
-                .unwrap()
+                .ok_or_else(|| anyhow::anyhow!("Could not find path to config"))?
                 .to_owned(),
             GitConfigType::Local => {
                 let dotgit = gix_discover::upwards(&cur_dir)?
                     .0
                     .into_repository_and_work_tree_directories()
                     .0;
-                #[allow(clippy::unwrap_used)]
-                dotgit.join(source.storage_location(&mut gix_path::env::var).unwrap())
+                dotgit.join(
+                    source
+                        .storage_location(&mut gix_path::env::var)
+                        .ok_or_else(|| anyhow::anyhow!("Could not find path to local config"))?,
+                )
             }
         };
         Ok(file_path)
@@ -64,6 +66,27 @@ fn get_default_attribute_file() -> Result<Option<PathBuf>, Error> {
 
 const ATTRIBUTE_LINES: &[&str; 2] = &["*.ipynb filter=nbwipers", "*.ipynb diff=nbwipers"];
 
+#[expect(clippy::unwrap_used, reason = "ATTRIBUTE_LINES are known to be good")]
+static ATTRIBUTE_ASSIGNMENTS: LazyLock<Vec<(Kind, Assignment)>> = LazyLock::new(|| {
+    ATTRIBUTE_LINES
+        .iter()
+        .map(|x| gix_attributes::parse(x.as_bytes()).next().unwrap().unwrap())
+        .flat_map(|(kind, rhs, _)| {
+            rhs.filter_map(Result::ok)
+                .map(move |a| (kind.clone(), a.to_owned()))
+        })
+        .collect()
+});
+
+/// # Panics
+///
+/// Panics if the hard-coded attribute lines fail to parse as gix attributes (this should never
+/// happen).
+///
+/// # Errors
+///
+/// Returns an error if the attribute file or git repository cannot be resolved, or if reading
+/// from or writing to the attribute file fails.
 pub fn install_attributes(
     config_type: GitConfigType,
     attribute_file: Option<&Path>,
@@ -72,17 +95,8 @@ pub fn install_attributes(
     if file_path.is_file() {
         let attribute_bytes = fs::read(&file_path)?;
 
-        // let to_add_str = to_add_lines.join("\n").as_bytes();
-        #[allow(clippy::unwrap_used)]
-        let to_add_values = ATTRIBUTE_LINES
-            .iter()
-            .map(|x| gix_attributes::parse(x.as_bytes()).next().unwrap().unwrap())
-            .flat_map(|(kind, rhs, _)| {
-                rhs.filter_map(Result::ok)
-                    .map(move |a| (kind.clone(), a.to_owned()))
-            });
-
-        let mut to_add: BTreeMap<_, _> = to_add_values.zip(ATTRIBUTE_LINES).collect();
+        let mut to_add: BTreeMap<_, _> =
+            ATTRIBUTE_ASSIGNMENTS.iter().zip(ATTRIBUTE_LINES).collect();
         let extra = match attribute_bytes.last() {
             None | Some(&b'\n') => "",
             _ => "\n",
@@ -120,6 +134,10 @@ pub fn install_attributes(
     Ok(())
 }
 
+/// # Errors
+///
+/// Returns an error if the attribute file or git repository cannot be resolved, or if reading
+/// from or writing to the attribute file fails.
 pub fn uninstall_attributes(
     config_type: GitConfigType,
     attribute_file: Option<&Path>,
@@ -170,7 +188,7 @@ pub fn uninstall_attributes(
                         line = format!("{patt} {assignments}");
                     }
                 }
-            };
+            }
             if !line.is_empty() {
                 writeln!(out, "{line}")?;
             }

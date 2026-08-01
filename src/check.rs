@@ -185,7 +185,7 @@ pub fn check_nb(nb: &RawNotebook, settings: &Settings) -> Vec<CheckResult> {
     if downgrade_nbformat && nb.nbformat_minor > ID_OPTIONAL_MAX_VERSION {
         out.push(CheckResult::DowngradeNBFormat {
             nbformat_minor: nb.nbformat_minor,
-        })
+        });
     }
 
     out

@@ -3,7 +3,6 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::str::FromStr;
-use std::sync::RwLock;
 
 use crate::cli::{CheckLargeFilesCommand, ConfigOverrides, HookCommands};
 use crate::files::read_nb;
@@ -15,6 +14,9 @@ use itertools::Itertools;
 use rayon::prelude::*;
 use rustc_hash::FxHashSet;
 
+/// # Errors
+///
+/// Returns an error if the underlying hook command fails.
 pub fn hooks(cmd: &HookCommands) -> Result<(), Error> {
     match cmd {
         HookCommands::CheckLargeFiles(inner_cmd) => check_large_files(inner_cmd),
@@ -24,6 +26,21 @@ const DEFAULT_MAX_SIZE_KB: u64 = 500; // 500 KB
 fn check_normal_filesize<P: AsRef<Path>>(path: P) -> Result<u64, Error> {
     Ok(std::fs::metadata(path)?.len())
 }
+fn stripped_size(path: &Path, settings: &Settings) -> Result<u64, Error> {
+    let file_name = path.file_name().ok_or_else(|| anyhow!("Invalid file"))?;
+    if settings.exclude_.is_match(path)
+        || settings.exclude_.is_match(file_name)
+        || settings.extend_exclude_.is_match(path)
+        || settings.extend_exclude_.is_match(file_name)
+    {
+        return check_normal_filesize(path);
+    }
+    let nb = read_nb(path)?;
+    let (stripped_nb, _) = strip_nb(nb, settings);
+    let mut out = Vec::new();
+    write_nb(&mut out, &stripped_nb)?;
+    Ok(out.len().try_into()?)
+}
 fn check_large_files(cmd: &CheckLargeFilesCommand) -> Result<(), Error> {
     let max_size_kb = cmd.maxkb.unwrap_or(DEFAULT_MAX_SIZE_KB);
     let mut files: FxHashSet<PathBuf> = cmd.filenames.iter().map(PathBuf::to_owned).collect();
@@ -32,24 +49,30 @@ fn check_large_files(cmd: &CheckLargeFilesCommand) -> Result<(), Error> {
         let added = get_added_files()?;
         files = &files & &added;
     }
-    let lazy_settings = SizeFinder::new();
+    let settings = Settings::construct(
+        cmd.config.as_deref(),
+        cmd.isolated,
+        &ConfigOverrides::default(),
+    );
 
     let out: Vec<(&Path, u64)> = files
         .par_iter()
         .map(|f| {
-            match f.extension().and_then(OsStr::to_str) {
-                Some("ipynb") => lazy_settings
-                    .stripped_size(f, cmd.config.as_deref(), cmd.isolated)
-                    .map_or_else(
-                        |_| {
-                            eprintln!(
-                                "Could not parse nb file {}. Using on-disk size",
-                                f.to_string_lossy()
-                            );
-                            Ok((f.as_path(), check_normal_filesize(f)?))
-                        },
-                        |size| Ok((f.as_path(), size)),
-                    ),
+            match (f.extension().and_then(OsStr::to_str), &settings) {
+                (Some("ipynb"), Ok(settings)) => stripped_size(f, settings).map_or_else(
+                    |_| {
+                        eprintln!(
+                            "Could not parse nb file {}. Using on-disk size",
+                            f.to_string_lossy()
+                        );
+                        Ok((f.as_path(), check_normal_filesize(f)?))
+                    },
+                    |size| Ok((f.as_path(), size)),
+                ),
+                (Some("ipynb"), Err(_)) => {
+                    eprintln!("Could not parse settings. Using on-disk size");
+                    Ok((f.as_path(), check_normal_filesize(f)?))
+                }
                 _ => Ok((f.as_path(), check_normal_filesize(f)?)),
             }
             // don't worry about
@@ -73,61 +96,6 @@ fn check_large_files(cmd: &CheckLargeFilesCommand) -> Result<(), Error> {
         bail!("Some files exceed the limit")
     }
     Ok(())
-}
-
-#[derive(Debug)]
-struct SizeFinder {
-    settings: RwLock<Option<Settings>>,
-}
-impl SizeFinder {
-    const fn new() -> Self {
-        Self {
-            settings: RwLock::new(None),
-        }
-    }
-    #[allow(clippy::unwrap_used)]
-    fn load_settings(&self, config_file: Option<&Path>, isolated: bool) -> Result<(), Error> {
-        if self.settings.read().unwrap().is_none() {
-            let mut s = self.settings.write().unwrap();
-            *s = Some(Settings::construct(
-                config_file,
-                isolated,
-                &ConfigOverrides::default(),
-            )?);
-        }
-        Ok(())
-    }
-    #[allow(clippy::unwrap_used)]
-    fn stripped_size(
-        &self,
-        path: &Path,
-        config_file: Option<&Path>,
-        isolated: bool,
-    ) -> Result<u64, Error> {
-        self.load_settings(config_file, isolated)?;
-        let binding = self.settings.read().unwrap();
-
-        let x = binding.as_ref().expect("settings should be loaded");
-        let file_name = path.file_name().ok_or_else(|| anyhow!("Invalid file"))?;
-
-        if x.exclude_.is_match(path)
-            || x.exclude_.is_match(file_name)
-            || x.extend_exclude_.is_match(path)
-            || x.extend_exclude_.is_match(file_name)
-        {
-            // we're not treating this one as a candidate for stripping
-            return check_normal_filesize(path);
-        }
-
-        let nb = read_nb(path)?;
-
-        let (stripped_nb, _) = strip_nb(nb, binding.as_ref().expect("settings should be loaded"));
-        drop(binding); // release lock early at clippy's suggestion
-        let mut out: Vec<u8> = Vec::new();
-
-        write_nb(&mut out, &stripped_nb)?;
-        Ok(out.len() as u64)
-    }
 }
 
 fn get_added_files() -> Result<FxHashSet<PathBuf>, Error> {

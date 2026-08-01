@@ -1,3 +1,4 @@
+#![cfg_attr(test, allow(clippy::expect_used, clippy::unwrap_used, clippy::panic))]
 use std::{env, fs, io::BufWriter, io::Write, path::PathBuf, process::Command, process::Stdio};
 
 use bstr::ByteSlice;
@@ -77,8 +78,8 @@ fn test_install() {
 
         let config_file_contents2 = fs::read_to_string(&config_file).unwrap();
         let attr_file_contents2 = fs::read_to_string(&attr_file).unwrap();
-        assert!(config_file_contents == config_file_contents2);
-        assert!(attr_file_contents == attr_file_contents2);
+        assert_eq!(config_file_contents, config_file_contents2);
+        assert_eq!(attr_file_contents, attr_file_contents2);
 
         let output = Command::new(&cur_exe)
             .args([
@@ -187,8 +188,8 @@ fn test_partial_install() {
         .unwrap();
         fs::write(
             &attr_file,
-            r#"*.ipynb filter=nbwipers
-*.ipynb filter=banana"#,
+            r"*.ipynb filter=nbwipers
+*.ipynb filter=banana",
         )
         .unwrap();
 
@@ -238,9 +239,9 @@ fn test_handle_multiple_assignments() {
         .unwrap();
         fs::write(
             &attr_file,
-            r#"
+            r"
             *.ipynb filter=nbwipers filter=banana argh
-        "#,
+        ",
         )
         .unwrap();
 
@@ -416,9 +417,9 @@ fn test_check_install() {
     let config_file = temp_dir.path().join(".git/config");
     fs::write(
         &attr_file,
-        r#"*.ipynb filter=nbstripout
+        r"*.ipynb filter=nbstripout
 *.zpln filter=nbstripout
-*.ipynb diff=ipynb"#,
+*.ipynb diff=ipynb",
     )
     .unwrap();
     fs::write(
@@ -527,7 +528,7 @@ fn test_invalid_format() {
         .args(["check", "tests/test_nbformat2.ipynb"])
         .output()
         .expect("command failed");
-    assert!(&output.stdout.contains_str(b"Invalid notebook:"))
+    assert!(&output.stdout.contains_str(b"Invalid notebook:"));
 }
 
 #[test]
@@ -540,7 +541,7 @@ fn test_file_not_found() {
         .output()
         .expect("command failed");
     assert!(!output.status.success());
-    assert!(&output.stderr.contains_str(b"Pyproject IO Error"))
+    assert!(&output.stderr.contains_str(b"Pyproject IO Error"));
 }
 
 #[test]
@@ -636,6 +637,7 @@ fn test_nothing() {
     assert!(!output.status.success());
 }
 
+#[allow(clippy::too_many_lines)]
 #[test]
 fn test_large_files() {
     let temp_dir = tempfile::tempdir().unwrap();
@@ -920,13 +922,15 @@ fn test_large_files_invalid_config() {
         ])
         .output()
         .expect("command failed");
+    dbg!(&output.stderr.to_str_lossy());
+    dbg!(&output.stdout.to_str_lossy());
     assert!(output.status.success());
     assert!(
         output
             .stderr
             .to_str()
             .unwrap()
-            .contains("Could not parse nb file")
+            .contains("Could not parse settings")
     );
 }
 
@@ -948,7 +952,7 @@ fn test_invalid_stdin() {
             .expect("Failed to write to stdin");
     }
     let check_output = check_output_cmd.wait_with_output().expect("Command failed");
-    assert!(!check_output.status.success())
+    assert!(!check_output.status.success());
 }
 
 #[test]

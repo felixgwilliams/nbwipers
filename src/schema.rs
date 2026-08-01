@@ -26,7 +26,8 @@ pub struct RawNotebook {
 pub const ID_OPTIONAL_MAX_VERSION: i64 = 4;
 
 impl RawNotebook {
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         Self {
             cells: Vec::new(),
             metadata: Value::Null,
@@ -115,7 +116,6 @@ pub enum SourceValue {
     StringArray(Vec<String>),
 }
 
-#[allow(clippy::unwrap_used)]
 #[cfg(test)]
 mod tests {
     use super::*;

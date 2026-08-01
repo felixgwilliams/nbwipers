@@ -40,11 +40,29 @@ toml = "^1.1.2"
 
 [dev-dependencies]
 insta = { version = "1.39.0", features = ["yaml"] }
-lazy_static = "1.4.0"
 tempfile = "3.10.0"
 
 [features]
 markdown-help = ["dep:clap-markdown"]
 
-[lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ["cfg(tarpaulin_include)", "cfg(coverage)"] }
+[lints.clippy]
+arithmetic_side_effects = "deny"
+as_conversions = "deny"
+exit = "deny"
+expect_used = "deny"
+indexing_slicing = "deny"
+nursery = { level = "deny", priority = -1 }
+panic = "deny"
+panic_in_result_fn = "deny"
+pedantic = { level = "deny", priority = -1 }
+string_slice = "deny"
+todo = "deny"
+unchecked_time_subtraction = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+# DENY PANICS
+unwrap_used = "deny"
+
+[lints.rust.unexpected_cfgs]
+level = "warn"
+check-cfg = ["cfg(tarpaulin_include)", "cfg(coverage)"]

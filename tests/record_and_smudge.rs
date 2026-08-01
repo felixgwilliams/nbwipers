@@ -1,3 +1,4 @@
+#![cfg_attr(test, allow(clippy::expect_used, clippy::unwrap_used, clippy::panic))]
 use std::{
     fs::{self, File},
     io::{Read, Write},
@@ -34,7 +35,7 @@ fn test_blank_not_recorded() {
     let kernelspec_info = read_kernelspec_file(get_kernelspec_file(&temp_dir).unwrap())
         .unwrap()
         .unwrap();
-    assert!(kernelspec_info.is_empty())
+    assert!(kernelspec_info.is_empty());
 }
 
 #[test]
@@ -109,7 +110,7 @@ fn test_metadata_recorded() {
         .expect("smudge failed");
     {
         let mut check_in = check_smudge_output.stdin.take().unwrap();
-        check_in.write_all(&nb_bytes).unwrap()
+        check_in.write_all(&nb_bytes).unwrap();
     }
     let smudge_out = check_smudge_output.wait_with_output().unwrap();
 
@@ -172,7 +173,7 @@ fn test_smudge_nothing() {
         .expect("smudge failed");
     {
         let mut check_in = check_smudge_output.stdin.take().unwrap();
-        check_in.write_all(&verbatim_bytes).unwrap()
+        check_in.write_all(&verbatim_bytes).unwrap();
     }
     let smudge_out = check_smudge_output.wait_with_output().unwrap();
     assert_eq!(smudge_out.stdout, verbatim_bytes);
