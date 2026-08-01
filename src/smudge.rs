@@ -9,14 +9,18 @@ use crate::record::{KernelSpecInfo, get_kernelspec_file, read_kernelspec_file};
 use crate::schema::RawNotebook;
 use crate::strip::write_nb;
 
-pub fn smudge(path: String) -> Result<(), anyhow::Error> {
+/// # Errors
+///
+/// Returns an error if stdin cannot be read, the kernelspec file cannot be read, or the
+/// notebook cannot be deserialized or written.
+pub fn smudge(path: &str) -> Result<(), anyhow::Error> {
     let mut in_nb_bytes = Vec::new();
     stdin().lock().read_to_end(&mut in_nb_bytes)?;
     // let lock = std_in.lock();
     // serde_json::from_reader(lock)?
     let kernelspec_info =
         read_kernelspec_file(get_kernelspec_file(get_cwd())?)?.unwrap_or_default();
-    match kernelspec_info.get(&path) {
+    match kernelspec_info.get(path) {
         Some(kernel_spec) => {
             let out_nb = maybe_replace_kernelspec(&in_nb_bytes, kernel_spec)?;
             write_nb(stdout(), &out_nb)?;
@@ -42,7 +46,7 @@ fn maybe_replace_kernelspec(
                     {
                         "kernelspec": kernelspec_info.kernelspec,
                     }
-                )
+                );
             }
             Value::Object(ref mut meta) => {
                 if !meta.contains_key("kernelspec") {
@@ -61,7 +65,7 @@ fn maybe_replace_kernelspec(
             Value::Null => {
                 nb.metadata = json!(
                     {"language_info":{"version":version}}
-                )
+                );
             }
             Value::Object(ref mut meta) => match meta.get_mut("language_info") {
                 Some(Value::Null) | None => {
@@ -76,7 +80,7 @@ fn maybe_replace_kernelspec(
             },
             _ => bail!("Unexpected metadata type"),
         }
-    };
+    }
 
     Ok(nb)
 }
@@ -194,7 +198,7 @@ mod test {
             "kernelspec":original_kernelspec,
                 "language_info": {
                         "name": "python",
-                        "version": original_version.clone()
+                        "version": original_version
                     }
 
         }));

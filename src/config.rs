@@ -1,5 +1,7 @@
+use crate::extra_keys::StripKey;
 use crate::files::{get_cwd, normalize_path_to};
 use crate::{extra_keys::ExtraKey, settings::Settings};
+use anyhow::anyhow;
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
@@ -39,13 +41,18 @@ pub struct ConfigurationSection {
 }
 
 impl ConfigurationSection {
-    pub fn make_configuration(self, own_path: Option<&Path>) -> Configuration {
-        let parent = own_path.map_or_else(get_cwd, |own_path| {
-            own_path
+    /// # Errors
+    ///
+    /// Errors if `own_path` is `Some` and its parent directory cannot be determined.
+    pub fn make_configuration(self, own_path: Option<&Path>) -> anyhow::Result<Configuration> {
+        let parent = match own_path {
+            Some(own_path) => own_path
                 .parent()
-                .expect("parent of own path should exist")
-                .to_owned()
-        });
+                .map(Path::to_owned)
+                .ok_or_else(|| anyhow!("parent of own path should exist"))?,
+            None => get_cwd(),
+        };
+
         let exclude = self.exclude.map(|excludes| {
             excludes
                 .into_iter()
@@ -59,7 +66,7 @@ impl ConfigurationSection {
             .map(|p| FilePattern::new_with_path(&p, &parent))
             .collect();
 
-        Configuration {
+        Ok(Configuration {
             extra_keys: self.extra_keys,
             drop_empty_cells: self.drop_empty_cells,
             drop_output: self.drop_output,
@@ -71,7 +78,7 @@ impl ConfigurationSection {
             exclude,
             extend_exclude,
             strip_kernel_info: self.strip_kernel_info,
-        }
+        })
     }
 }
 
@@ -100,9 +107,11 @@ pub const EXTRA_KEYS: &[&str] = &[
     "cell.metadata.hidden",
     "cell.metadata.scrolled",
 ];
-
+#[expect(
+    clippy::unwrap_used,
+    reason = "EXTRA_KEYS entries are validated by test_key_roundtrip"
+)]
 fn default_extra_keys() -> FxHashSet<ExtraKey> {
-    #[allow(clippy::unwrap_used)]
     EXTRA_KEYS
         .iter()
         .map(|s| ExtraKey::from_str(s).unwrap())
@@ -115,6 +124,9 @@ pub struct FilePattern {
 }
 
 impl FilePattern {
+    /// # Errors
+    ///
+    /// Returns an error if any of the glob patterns derived from this file pattern fail to parse.
     pub fn add_to(self, builder: &mut GlobSetBuilder) -> anyhow::Result<()> {
         let absolute = self.absolute.to_string_lossy();
         builder.add(Glob::new(&absolute)?);
@@ -133,6 +145,7 @@ impl FilePattern {
 
         Ok(())
     }
+    #[must_use]
     pub fn new_with_path(pattern: &str, path: &Path) -> Self {
         let absolute = normalize_path_to(pattern, path);
         Self {
@@ -175,12 +188,19 @@ fn make_globset<I: IntoIterator<Item = FilePattern>>(patterns: I) -> anyhow::Res
 }
 
 impl Configuration {
+    /// # Errors
+    ///
+    /// Returns an error if building the globsets for `exclude` or `extend_exclude` fails.
     pub fn into_settings(self) -> Result<Settings, anyhow::Error> {
         let mut extra_keys = default_extra_keys();
         let strip_kernel_info = self.strip_kernel_info.unwrap_or(false);
         if strip_kernel_info {
-            extra_keys.insert(ExtraKey::from_str("metadata.kernelspec").unwrap());
-            extra_keys.insert(ExtraKey::from_str("metadata.language_info.version").unwrap());
+            extra_keys.insert(ExtraKey::Metadata(StripKey {
+                parts: vec!["kernelspec".into()],
+            }));
+            extra_keys.insert(ExtraKey::Metadata(StripKey {
+                parts: vec!["language_info".into(), "version".into()],
+            }));
         }
         extra_keys.extend(self.extra_keys.unwrap_or_default());
         for key in &self.keep_keys.unwrap_or_default() {
@@ -231,6 +251,9 @@ struct Tools {
     nbwipers: Option<ConfigurationSection>,
 }
 
+/// # Errors
+///
+/// Returns an error if the `pyproject.toml` file at `path` cannot be read or parsed.
 pub fn nbwipers_enabled<P: AsRef<Path>>(path: P) -> Result<bool, PyprojectError> {
     let config = read_pyproject(path)?;
     Ok(config.is_some())
@@ -253,6 +276,10 @@ fn settings_for_dir<P: AsRef<Path>>(path: P) -> Result<Option<PathBuf>, Pyprojec
     Ok(None)
 }
 
+/// # Errors
+///
+/// Returns an error if a settings or `pyproject.toml` file found while walking up from the
+/// current directory cannot be read or parsed.
 pub fn find_settings() -> Result<Option<PathBuf>, PyprojectError> {
     let cwd = get_cwd();
 
@@ -273,6 +300,9 @@ pub enum PyprojectError {
     ParseError(#[from] toml::de::Error),
 }
 
+/// # Errors
+///
+/// Returns an error if `path` cannot be read or its contents cannot be parsed as TOML.
 pub fn read_pyproject<P: AsRef<Path>>(
     path: P,
 ) -> Result<Option<ConfigurationSection>, PyprojectError> {
@@ -281,6 +311,9 @@ pub fn read_pyproject<P: AsRef<Path>>(
     let config = pyproject.tool.and_then(|tools| tools.nbwipers);
     Ok(config)
 }
+/// # Errors
+///
+/// Returns an error if `path` cannot be read or its contents cannot be parsed as TOML.
 pub fn read_nbwipers<P: AsRef<Path>>(
     path: P,
 ) -> Result<Option<ConfigurationSection>, PyprojectError> {
@@ -297,6 +330,9 @@ fn read_settings<P: AsRef<Path>>(path: P) -> Result<Option<ConfigurationSection>
     }
 }
 
+/// # Errors
+///
+/// Returns an error if the resolved configuration file cannot be read or parsed.
 pub fn resolve(
     config_file: Option<&Path>,
 ) -> Result<(ConfigurationSection, Option<PathBuf>), PyprojectError> {
@@ -311,7 +347,6 @@ pub fn resolve(
     }
 }
 
-#[allow(clippy::unwrap_used)]
 #[cfg(test)]
 mod tests {
     use super::*;

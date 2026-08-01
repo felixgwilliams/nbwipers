@@ -26,6 +26,9 @@ pub struct Settings {
 }
 
 impl Settings {
+    /// # Errors
+    ///
+    /// Returns an error if the configuration cannot be resolved, read, or parsed.
     pub fn construct(
         config_file: Option<&Path>,
         isolated: bool,
@@ -35,7 +38,7 @@ impl Settings {
             Configuration::default()
         } else {
             let (config_sec, config_path) = resolve(config_file)?;
-            config_sec.make_configuration(config_path.as_deref())
+            config_sec.make_configuration(config_path.as_deref())?
         };
         config = overrides.override_config(config);
 

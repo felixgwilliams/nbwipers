@@ -132,6 +132,10 @@ fn combine_install_status(
         bail!("Neither nbstripout nor nbwipers are installed.")
     }
 }
+/// # Errors
+///
+/// Returns an error if the attribute or config files cannot be checked, or if neither
+/// `nbstripout` nor `nbwipers` is installed.
 pub fn check_install_some_type(config_type: GitConfigType) -> Result<(), Error> {
     let attr_install_status = check_install_attr_files(&[config_type])?;
 
@@ -141,6 +145,10 @@ pub fn check_install_some_type(config_type: GitConfigType) -> Result<(), Error> 
 
     combine_install_status(attr_install_status, config_install_status)
 }
+/// # Errors
+///
+/// Returns an error if the attribute or config files cannot be checked, or if neither
+/// `nbstripout` nor `nbwipers` is installed.
 pub fn check_install_none_type() -> Result<(), Error> {
     let config_types = vec![
         GitConfigType::Local,
@@ -155,6 +163,7 @@ pub fn check_install_none_type() -> Result<(), Error> {
     combine_install_status(attr_install_status, config_install_status)
 }
 
+#[must_use]
 pub fn check_should_exit_zero(exit_zero: bool) -> bool {
     if exit_zero {
         exit_zero
@@ -170,7 +179,6 @@ mod test {
     use super::*;
     use std::{fs::create_dir_all, process::Command};
 
-    #[allow(clippy::unwrap_used)]
     #[test]
     fn test_git_discovery() {
         let temp_dir = tempfile::tempdir().unwrap();

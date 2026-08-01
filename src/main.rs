@@ -192,7 +192,7 @@ fn show_config(common: CommonArgs, show_all: bool) -> Result<(), Error> {
             Configuration::default()
         } else {
             let (config_sec, config_path) = resolve(args.config.as_deref())?;
-            config_sec.make_configuration(config_path.as_deref())
+            config_sec.make_configuration(config_path.as_deref())?
         };
         config = overrides.override_config(config);
         toml::to_string(&config)?
@@ -251,7 +251,7 @@ fn main() -> Result<(), Error> {
         ),
         Commands::Hook(ref cmd) => hooks(cmd),
         Commands::Record(cmd) => record(cmd),
-        Commands::Smudge(SmudgeCommand { path }) => smudge(path),
+        Commands::Smudge(SmudgeCommand { path }) => smudge(&path),
     }
 }
 

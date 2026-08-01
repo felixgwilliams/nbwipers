@@ -19,6 +19,7 @@ impl Serialize for ExtraKey {
 }
 
 impl ExtraKey {
+    #[must_use]
     pub const fn get_parts(&self) -> &Vec<String> {
         match self {
             Self::Metadata(c) | Self::CellMeta(c) => &c.parts,
@@ -51,6 +52,10 @@ pub enum ExtraKeyParseError {
 }
 
 impl StripKey {
+    /// # Errors
+    ///
+    /// Returns [`ExtraKeyParseError::EmptySubKey`] if `parts` is empty or contains only an
+    /// empty string.
     pub fn try_from_slice(parts: &[&str]) -> Result<Self, ExtraKeyParseError> {
         if parts.is_empty() || parts == [""] {
             Err(ExtraKeyParseError::EmptySubKey)
@@ -66,18 +71,11 @@ impl FromStr for ExtraKey {
     type Err = ExtraKeyParseError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let parts = s.split('.').collect::<Vec<_>>();
-        match parts.split_first() {
-            Some((&"cell", tail)) => match tail.split_first() {
-                Some((&"metadata", tail2)) => {
-                    StripKey::try_from_slice(tail2).map(ExtraKey::CellMeta)
-                }
-                _ => Err(ExtraKeyParseError::NotCellOrMetadata),
-            },
-
-            Some((&"metadata", tail)) => StripKey::try_from_slice(tail).map(ExtraKey::Metadata),
-            Some((&"", [])) => Err(ExtraKeyParseError::Empty),
-            Some(_) => Err(ExtraKeyParseError::NotCellOrMetadata),
-            None => unreachable!(),
+        match parts.as_slice() {
+            ["cell", "metadata", tail @ ..] => StripKey::try_from_slice(tail).map(Self::CellMeta),
+            ["metadata", tail @ ..] => StripKey::try_from_slice(tail).map(ExtraKey::Metadata),
+            [""] => Err(ExtraKeyParseError::Empty),
+            _ => Err(ExtraKeyParseError::NotCellOrMetadata),
         }
     }
 }
@@ -106,12 +104,11 @@ pub fn partition_extra_keys<'a, I: IntoIterator<Item = &'a ExtraKey>>(
         match extra_key {
             ExtraKey::CellMeta(_cell_key) => cell_keys.push(extra_key),
             ExtraKey::Metadata(_meta_key) => meta_keys.push(extra_key),
-        };
+        }
     }
     (cell_keys, meta_keys)
 }
 
-#[allow(clippy::unwrap_used)]
 #[cfg(test)]
 mod tests {
     use serde_json::json;
@@ -154,7 +151,7 @@ mod tests {
         for key in EXTRA_KEYS {
             let parsed_key = ExtraKey::from_str(key).unwrap();
             let key2 = parsed_key.to_string();
-            assert!(key == &key2);
+            assert_eq!(key, &key2);
         }
     }
 

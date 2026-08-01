@@ -8,7 +8,7 @@ use std::{
 use serde::Serialize;
 use thiserror::Error;
 
-/// Maximum nbformat_minor version for which cell ids are optional.
+/// Maximum `nbformat_minor` version for which cell ids are optional.
 use crate::{
     config::IdAction,
     extra_keys::partition_extra_keys,
@@ -90,6 +90,9 @@ pub fn strip_nb(mut nb: RawNotebook, settings: &Settings) -> (RawNotebook, bool)
     }
     (nb, stripped)
 }
+/// # Errors
+///
+/// Returns an error if the notebook cannot be read or written.
 pub fn strip_single(
     nb_path: &Path,
     textconv: bool,
@@ -102,8 +105,7 @@ pub fn strip_single(
         _ => (read_nb(nb_path)?, textconv, Some(nb_path)),
     };
     let (strip_nb, stripped) = match (resolved_file_name, respect_exclusions) {
-        (None, _) => strip_nb(nb, settings),
-        (Some(_), false) => strip_nb(nb, settings),
+        (None, _) | (Some(_), false) => strip_nb(nb, settings),
         (Some(stdin_name), true) => {
             // git passes filter paths relative to the repo root; absolutize so
             // they can match the absolutized exclude globs
@@ -134,6 +136,9 @@ pub fn strip_single(
         }
     }
 }
+/// # Errors
+///
+/// Returns an error if serializing `value` or writing to `writer` fails.
 pub fn write_nb<W, T>(mut writer: W, value: &T) -> Result<(), NBWriteError>
 where
     W: Write,
@@ -204,6 +209,7 @@ impl Display for StripResult {
 }
 
 impl StripSuccess {
+    #[must_use]
     pub const fn from_stripped(stripped: bool) -> Self {
         if stripped {
             Self::Stripped
@@ -214,6 +220,7 @@ impl StripSuccess {
 }
 
 impl StripResult {
+    #[must_use]
     pub const fn is_err(&self) -> bool {
         matches!(self, Self::ReadError(_) | Self::WriteError(_))
     }

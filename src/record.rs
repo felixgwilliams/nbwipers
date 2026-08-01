@@ -38,6 +38,10 @@ pub enum RecordError {
     NoNotebooks,
 }
 
+/// # Errors
+///
+/// Returns an error if `path` has no `.git` directory, the git directory is invalid, or the
+/// `x-nbwipers` directory cannot be created.
 pub fn get_kernelspec_file<P: AsRef<Path>>(path: P) -> Result<PathBuf, RecordError> {
     let git_dir = path.as_ref().join(gix_discover::DOT_GIT_DIR);
     if !git_dir.is_dir() {
@@ -54,6 +58,9 @@ pub fn get_kernelspec_file<P: AsRef<Path>>(path: P) -> Result<PathBuf, RecordErr
     fs::create_dir_all(&nbwipers_dir).map_err(RecordError::FailedCreateNbwipersDir)?;
     Ok(nbwipers_dir.join("kernelspec_store.json"))
 }
+/// # Errors
+///
+/// Returns an error if `path` exists but cannot be read or its contents cannot be parsed.
 pub fn read_kernelspec_file<P: AsRef<Path>>(
     path: P,
 ) -> Result<Option<IndexMap<String, KernelSpecInfo>>, RecordError> {
@@ -67,12 +74,16 @@ pub fn read_kernelspec_file<P: AsRef<Path>>(
         Ok(None)
     }
 }
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct KernelSpecInfo {
     pub kernelspec: Value,
     pub python_version: Option<String>,
 }
 
+/// # Errors
+///
+/// Returns an error if settings construction fails, the kernelspec file cannot be read or
+/// written, or no notebooks are found to record.
 pub fn record(cmd: RecordCommand) -> Result<(), Error> {
     let path = cmd.path.unwrap_or_else(get_cwd);
     let cli = cmd.common;
@@ -120,10 +131,7 @@ fn extract_kernel_info(nb: &RawNotebook) -> Option<KernelSpecInfo> {
 fn get_kernelspecs<P: AsRef<Path> + Sync + Debug>(nbs: &[P]) -> IndexMap<String, KernelSpecInfo> {
     nbs.par_iter()
         .map(|nb| (nb, read_nb(nb)))
-        .filter_map(|(path, nb_res)| match nb_res {
-            Ok(nb) => Some((path.as_ref(), nb)),
-            Err(_) => None,
-        })
+        .filter_map(|(path, nb_res)| nb_res.map_or_else(|_| None, |nb| Some((path.as_ref(), nb))))
         .filter_map(|(path, nb_res)| {
             extract_kernel_info(&nb_res).map(|k| (relativize_path(path), k))
         })

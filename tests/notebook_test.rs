@@ -1,3 +1,4 @@
+#![cfg_attr(test, allow(clippy::expect_used, clippy::unwrap_used, clippy::panic))]
 use bstr::ByteSlice;
 use std::{
     fs,
@@ -630,6 +631,7 @@ fn test_exclude_directory_patterns() {
     assert!(output.stdout.to_str().unwrap().contains("inner.ipynb"));
 }
 
+#[allow(clippy::too_many_lines)]
 #[test]
 fn test_strip_stdin() {
     let cur_exe = PathBuf::from(env!("CARGO_BIN_EXE_nbwipers"));

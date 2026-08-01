@@ -13,9 +13,11 @@ impl SourceValue {
 }
 
 impl CodeCell {
-    pub fn is_clear_outputs(&self) -> bool {
+    #[must_use]
+    pub const fn is_clear_outputs(&self) -> bool {
         self.outputs.is_empty()
     }
+    #[must_use]
     pub fn is_clear_exec_count(&self) -> bool {
         let clear_exec_count = self.execution_count.is_none();
 
@@ -40,6 +42,7 @@ impl CodeCell {
                 x.insert("execution_count".into(), Value::Null);
             });
     }
+    #[must_use]
     pub fn should_clear_output(&self, drop_output: bool, strip_init_cell: bool) -> bool {
         // drop_output
         let Some(cell_metadata) = self.metadata.as_object() else {
@@ -47,7 +50,7 @@ impl CodeCell {
         };
         if let Some(init_cell) = cell_metadata.get("init_cell") {
             return !init_cell.as_bool().unwrap_or(false) || strip_init_cell;
-        };
+        }
 
         if drop_output {
             let keep_output_metadata = cell_metadata.contains_key("keep_output");
@@ -65,6 +68,7 @@ impl CodeCell {
 }
 
 impl Cell {
+    #[must_use]
     pub const fn as_codecell(&self) -> Option<&CodeCell> {
         if let Self::Code(codecell) = self {
             Some(codecell)
@@ -72,18 +76,20 @@ impl Cell {
             None
         }
     }
-    pub fn as_codecell_mut(&mut self) -> Option<&mut CodeCell> {
+    pub const fn as_codecell_mut(&mut self) -> Option<&mut CodeCell> {
         if let Self::Code(codecell) = self {
             Some(codecell)
         } else {
             None
         }
     }
+    #[must_use]
     pub fn is_clear_id(&self, cell_number: usize) -> bool {
         let id = self.get_id();
         id.is_none() || id.as_ref().is_some_and(|id| id == &cell_number.to_string())
     }
 
+    #[must_use]
     pub const fn get_source(&self) -> &SourceValue {
         match self {
             Self::Code(c) => &c.source,
@@ -92,6 +98,7 @@ impl Cell {
         }
     }
 
+    #[must_use]
     pub const fn get_metadata(&self) -> &Value {
         match self {
             Self::Code(c) => &c.metadata,
@@ -99,13 +106,14 @@ impl Cell {
             Self::Raw(c) => &c.metadata,
         }
     }
-    pub fn get_metadata_mut(&mut self) -> &mut Value {
+    pub const fn get_metadata_mut(&mut self) -> &mut Value {
         match self {
             Self::Code(c) => &mut c.metadata,
             Self::Markdown(c) => &mut c.metadata,
             Self::Raw(c) => &mut c.metadata,
         }
     }
+    #[must_use]
     pub const fn get_id(&self) -> &Option<String> {
         match self {
             Self::Code(c) => &c.id,
@@ -123,10 +131,11 @@ impl Cell {
             Self::Code(c) => c.id = new_id,
             Self::Markdown(c) => c.id = new_id,
             Self::Raw(c) => c.id = new_id,
-        };
+        }
         prev_id
     }
 
+    #[must_use]
     pub fn should_drop(
         &self,
         drop_empty_cells: bool,

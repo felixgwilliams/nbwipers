@@ -1,3 +1,4 @@
+#![cfg_attr(test, allow(clippy::expect_used, clippy::unwrap_used, clippy::panic))]
 pub mod cell_impl;
 pub mod check;
 pub mod cli;
@@ -12,14 +13,11 @@ pub mod settings;
 pub mod smudge;
 pub mod strip;
 pub mod utils;
-#[allow(clippy::unwrap_used)]
 #[cfg(test)]
 pub(crate) mod test_helpers {
-    use lazy_static::lazy_static;
+    use std::sync::LazyLock;
     use std::{env::set_current_dir, path::Path, sync::Mutex};
-    lazy_static! {
-        pub static ref CWD_MUTEX: Mutex<()> = Mutex::new(());
-    }
+    pub static CWD_MUTEX: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
 
     pub fn with_dir<P: AsRef<Path>, T: Sized>(dir: P, f: impl FnOnce() -> T) -> T {
         let _lock = CWD_MUTEX.lock().unwrap();

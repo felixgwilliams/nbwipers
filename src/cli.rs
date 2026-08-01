@@ -104,7 +104,7 @@ pub struct CommonArgs {
 
     #[arg(long, overrides_with("strip_init_cell"), hide = true)]
     pub keep_init_cell: bool,
-    /// Strip kernel info. Namely, metadata.kernelspec and metadata.language_info.python_version. Disable with `--keep-kernel-info`
+    /// Strip kernel info. Namely, metadata.kernelspec and `metadata.language_info.python_version`. Disable with `--keep-kernel-info`
     #[arg(long, overrides_with("keep_kernel_info"))]
     pub strip_kernel_info: bool,
 
@@ -343,6 +343,8 @@ pub struct Args {
     pub allow_no_notebooks: bool,
 }
 
+#[allow(clippy::unreachable)]
+#[must_use]
 pub fn resolve_bool_arg(yes: bool, no: bool) -> Option<bool> {
     match (yes, no) {
         (true, false) => Some(true),
@@ -351,6 +353,7 @@ pub fn resolve_bool_arg(yes: bool, no: bool) -> Option<bool> {
         (..) => unreachable!("Clap should make this impossible"),
     }
 }
+#[allow(clippy::unreachable)]
 fn resolve_id_action(
     id_action: Option<IdAction>,
     keep: bool,
@@ -367,6 +370,7 @@ fn resolve_id_action(
     }
 }
 impl CommonArgs {
+    #[must_use]
     pub fn partition(self) -> (Args, ConfigOverrides) {
         (
             Args {
@@ -397,6 +401,7 @@ impl CommonArgs {
 }
 
 impl ConfigOverrides {
+    #[must_use]
     pub fn override_config(&self, mut config: Configuration) -> Configuration {
         if let Some(extra_keys) = &self.extra_keys {
             config.extra_keys = Some(extra_keys.clone());

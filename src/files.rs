@@ -3,6 +3,7 @@ use std::{
     fs::File,
     io::{BufReader, stdin},
     path::{Path, PathBuf},
+    sync::PoisonError,
 };
 
 use anyhow::{Error, anyhow};
@@ -16,12 +17,16 @@ use crate::{schema::RawNotebook, settings::Settings};
 
 #[inline]
 #[cfg(not(test))]
+#[must_use]
 pub fn get_cwd() -> PathBuf {
     path_absolutize::path_dedot::CWD.to_owned()
     // current_dir().unwrap().absolutize().unwrap().into_owned()
 }
-#[allow(clippy::unwrap_used)]
+/// # Panics
+///
+/// Panics if the current directory cannot be determined or absolutized.
 #[cfg(test)]
+#[must_use]
 pub fn get_cwd() -> PathBuf {
     use std::env::current_dir;
 
@@ -62,6 +67,9 @@ pub enum FoundNotebooks {
     Files(Vec<PathBuf>),
 }
 
+/// # Errors
+///
+/// Returns an error if [`find_notebooks`] fails.
 pub fn find_notebooks_or_stdin(
     paths: &[PathBuf],
     settings: &Settings,
@@ -71,6 +79,7 @@ pub fn find_notebooks_or_stdin(
     }
     find_notebooks(paths, settings)
 }
+#[must_use]
 pub fn check_exclusions(path: &Path, settings: &Settings) -> bool {
     if let Some(file_name) = path.file_name() {
         let fname_candidate = Candidate::new(file_name);
@@ -93,6 +102,9 @@ pub fn check_exclusions(path: &Path, settings: &Settings) -> bool {
     false
 }
 
+/// # Errors
+///
+/// Returns an error if `paths` is empty.
 pub fn find_notebooks<P: AsRef<Path>>(
     paths: &[P],
     settings: &Settings,
@@ -134,8 +146,10 @@ pub fn find_notebooks<P: AsRef<Path>>(
                     }
                 };
                 if let Some(resolved) = resolved {
-                    #[allow(clippy::unwrap_used)]
-                    files.lock().unwrap().push(resolved.to_owned());
+                    files
+                        .lock()
+                        .unwrap_or_else(PoisonError::into_inner)
+                        .push(resolved.to_owned());
                 }
             }
 
@@ -150,6 +164,9 @@ pub fn find_notebooks<P: AsRef<Path>>(
     }
 }
 
+/// # Errors
+///
+/// Returns an error if `path` cannot be opened or its contents cannot be parsed as a notebook.
 pub fn read_nb<P: AsRef<Path>>(path: P) -> Result<RawNotebook, NBReadError> {
     let f = File::open(path)?;
     let rdr = BufReader::new(f);
@@ -173,12 +190,14 @@ pub enum NBWriteError {
     Serde(#[from] serde_json::Error),
 }
 
+/// # Errors
+///
+/// Returns an error if stdin cannot be parsed as a notebook.
 pub fn read_nb_stdin() -> Result<RawNotebook, NBReadError> {
     let out = serde_json::from_reader(stdin().lock())?;
     Ok(out)
 }
 
-#[allow(clippy::unwrap_used)]
 #[cfg(test)]
 mod tests {
 

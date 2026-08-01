@@ -38,17 +38,12 @@ pub fn pop_value_child<T: AsRef<str>>(value: &mut serde_json::Value, path: &[T])
     }
 
     for i in (1..n_parts).rev() {
-        let trial_key = path[0..i].iter().map(std::convert::AsRef::as_ref).join(".");
-        let tail_key = &path[i..n_parts];
-        #[allow(clippy::unwrap_used)]
-        if value
-            .as_object()
-            .is_some_and(|x| x.contains_key(trial_key.as_str()))
+        let (head, tail_key) = path.split_at(i);
+
+        let trial_key = head.iter().map(std::convert::AsRef::as_ref).join(".");
+        if let Some(value) = value.as_object_mut()
+            && let Some(inner) = value.get_mut(trial_key.as_str())
         {
-            let inner = value
-                .as_object_mut()
-                .and_then(|x| x.get_mut(trial_key.as_str()))
-                .unwrap();
             return pop_value_child(inner, tail_key);
         }
     }
@@ -73,10 +68,9 @@ pub fn get_value_child<'a, T: AsRef<str>>(value: &'a Value, path: &[T]) -> Optio
     if n_parts == 0 {
         return Some(value);
     }
-
     for i in (1..=n_parts).rev() {
-        let trial_key = path[0..i].iter().map(std::convert::AsRef::as_ref).join(".");
-        let tail_key = &path[i..n_parts];
+        let (head, tail_key) = path.split_at(i);
+        let trial_key = head.iter().map(std::convert::AsRef::as_ref).join(".");
 
         if let Some(inner) = value.as_object().and_then(|x| x.get(trial_key.as_str())) {
             return get_value_child(inner, tail_key);
@@ -85,35 +79,6 @@ pub fn get_value_child<'a, T: AsRef<str>>(value: &'a Value, path: &[T]) -> Optio
     None
 }
 
-// fn get_value_child_mut<'a, T: AsRef<str>>(
-//     value: &'a mut Value,
-//     path: &[T],
-// ) -> Option<&'a mut Value> {
-//     let n_parts = path.len();
-//     if n_parts == 0 {
-//         return Some(value);
-//     }
-
-//     for i in (1..=n_parts).rev() {
-//         let trial_key = path[0..i].iter().map(std::convert::AsRef::as_ref).join(".");
-//         let tail_key = &path[i..n_parts];
-
-//         #[allow(clippy::unwrap_used)]
-//         if value
-//             .as_object()
-//             .is_some_and(|x| x.contains_key(trial_key.as_str()))
-//         {
-//             let inner = value
-//                 .as_object_mut()
-//                 .and_then(|x| x.get_mut(trial_key.as_str()))
-//                 .unwrap();
-//             return get_value_child_mut(inner, tail_key);
-//         }
-//     }
-//     None
-// }
-
-#[allow(clippy::unwrap_used)]
 #[cfg(test)]
 mod test {
     use std::str::FromStr;
