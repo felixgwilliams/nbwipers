@@ -8,6 +8,7 @@ use std::{
 use crate::{
     cli::RecordCommand,
     files::{FoundNotebooks, find_notebooks, get_cwd, normalize_path, read_nb, relativize_path},
+    install::get_git_dirs,
     schema::RawNotebook,
     settings::Settings,
 };
@@ -21,11 +22,7 @@ use thiserror::Error as ThisError;
 #[derive(ThisError, Debug)]
 pub enum RecordError {
     #[error("No .git dir")]
-    NoGitDir,
-    #[error("Invalid git repo")]
-    InvalidGitRepo(#[from] gix_discover::is_git::Error),
-    #[error("Not a git worktree")]
-    NotAGitWorktree,
+    NoGitDir(#[source] anyhow::Error),
     #[error("Failed to create nbwipers dir")]
     FailedCreateNbwipersDir(std::io::Error),
     #[error("Failed to read existing kernelspec file")]
@@ -40,21 +37,12 @@ pub enum RecordError {
 
 /// # Errors
 ///
-/// Returns an error if `path` has no `.git` directory, the git directory is invalid, or the
+/// Returns an error if no git repository is found at or above `path`, or if the
 /// `x-nbwipers` directory cannot be created.
 pub fn get_kernelspec_file<P: AsRef<Path>>(path: P) -> Result<PathBuf, RecordError> {
-    let git_dir = path.as_ref().join(gix_discover::DOT_GIT_DIR);
-    if !git_dir.is_dir() {
-        return Err(RecordError::NoGitDir);
-    }
-    // check for a valid git directory
-    gix_discover::is_git(&git_dir)?;
-    // I don't know how to test this
+    let git_dirs = get_git_dirs(Some(path.as_ref())).map_err(RecordError::NoGitDir)?;
 
-    // if !matches!(git_type, gix_discover::repository::Kind::WorkTree { .. }) {
-    //     return Err(RecordError::NotAGitWorktree);
-    // }
-    let nbwipers_dir = git_dir.join("x-nbwipers");
+    let nbwipers_dir = git_dirs.git.join("x-nbwipers");
     fs::create_dir_all(&nbwipers_dir).map_err(RecordError::FailedCreateNbwipersDir)?;
     Ok(nbwipers_dir.join("kernelspec_store.json"))
 }

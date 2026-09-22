@@ -4,7 +4,7 @@ use std::{fs, io::BufWriter, path::Path, path::PathBuf};
 
 use gix_config::{Source, parse::section::ValueName};
 
-use super::{InstallStatus, InstallToolStatus, get_git_repo_and_work_tree};
+use super::{InstallStatus, InstallToolStatus, get_git_dirs};
 use bstr::BStr;
 
 use crate::cli::GitConfigType;
@@ -113,7 +113,7 @@ pub(super) fn resolve_config_file(
                 .ok_or_else(|| anyhow::anyhow!("Could not find path to config"))?
                 .to_owned(),
             GitConfigType::Local => {
-                let dotgit = get_git_repo_and_work_tree()?.0;
+                let dotgit = get_git_dirs(None)?.common;
                 dotgit.join(
                     source
                         .storage_location(&mut gix_path::env::var)
