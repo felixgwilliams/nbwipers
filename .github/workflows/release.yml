@@ -69,28 +69,28 @@ jobs:
         target: [x64, x86] # disabling aarch64 for now
     steps:
       - uses: actions/checkout@v6
-      # build on a ReFS Dev Drive, which avoids the NTFS and Defender overhead
-      # on the many small files cargo writes
+      # put cargo's registry and build output on a ReFS Dev Drive, which avoids
+      # the NTFS and Defender overhead on the many small files cargo writes.
+      # The checkout stays in GITHUB_WORKSPACE: maturin-action hangs if its
+      # working-directory is outside it.
       - name: Set up Dev Drive
         uses: samypr100/setup-dev-drive@v4
         with:
           drive-size: 8GB
-          workspace-copy: true
           trusted-dev-drive: true
           env-mapping: |
             CARGO_HOME,{{ DEV_DRIVE }}/.cargo
+            CARGO_TARGET_DIR,{{ DEV_DRIVE }}/target
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
           args: --release --out dist
           sccache: 'true'
-          working-directory: ${{ env.DEV_DRIVE_WORKSPACE }}
       - name: Build archives
         shell: bash
-        working-directory: ${{ env.DEV_DRIVE_WORKSPACE }}
         run: |
-          for dir in target/*/
+          for dir in "$CARGO_TARGET_DIR"/*/
           do
             TARGET_TRIPLE=$(basename $dir)
             if [ "$TARGET_TRIPLE" == 'release' ]; then
@@ -101,21 +101,21 @@ jobs:
             fi
             ARCHIVE_FILE=nbwipers-${TARGET_TRIPLE}.zip
             echo $ARCHIVE_FILE
-            7z a $ARCHIVE_FILE ./${dir}release/nbwipers.exe
+            7z a $ARCHIVE_FILE "${dir}release/nbwipers.exe"
             sha256sum $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
           done
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
           name: wheels-${{ matrix.target }}-windows
-          path: ${{ env.DEV_DRIVE_WORKSPACE }}/dist
+          path: dist
       - name: "Upload binary"
         uses: actions/upload-artifact@v7
         with:
           name: binaries-${{ matrix.target }}-windows
           path: |
-            ${{ env.DEV_DRIVE_WORKSPACE }}/*.zip
-            ${{ env.DEV_DRIVE_WORKSPACE }}/*.sha256
+            *.zip
+            *.sha256
 
   macos:
     runs-on: macos-latest
