@@ -69,14 +69,26 @@ jobs:
         target: [x64, x86] # disabling aarch64 for now
     steps:
       - uses: actions/checkout@v6
+      # build on a ReFS Dev Drive, which avoids the NTFS and Defender overhead
+      # on the many small files cargo writes
+      - name: Set up Dev Drive
+        uses: samypr100/setup-dev-drive@v4
+        with:
+          drive-size: 8GB
+          workspace-copy: true
+          trusted-dev-drive: true
+          env-mapping: |
+            CARGO_HOME,{{ DEV_DRIVE }}/.cargo
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
           args: --release --out dist
           sccache: 'true'
+          working-directory: ${{ env.DEV_DRIVE_WORKSPACE }}
       - name: Build archives
         shell: bash
+        working-directory: ${{ env.DEV_DRIVE_WORKSPACE }}
         run: |
           for dir in target/*/
           do
@@ -96,14 +108,14 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: wheels-${{ matrix.target }}-windows
-          path: dist
+          path: ${{ env.DEV_DRIVE_WORKSPACE }}/dist
       - name: "Upload binary"
         uses: actions/upload-artifact@v7
         with:
           name: binaries-${{ matrix.target }}-windows
           path: |
-            *.zip
-            *.sha256
+            ${{ env.DEV_DRIVE_WORKSPACE }}/*.zip
+            ${{ env.DEV_DRIVE_WORKSPACE }}/*.sha256
 
   macos:
     runs-on: macos-latest
