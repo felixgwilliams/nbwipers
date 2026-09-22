@@ -7,9 +7,27 @@ and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-09-22
+
+### Fixed
+
+- Fix [#25](https://github.com/felixgwilliams/nbwipers/issues/25): `check-install` failed in a linked git worktree. It now reads the shared repository config, and `config.worktree` when `extensions.worktreeConfig` is enabled
+- `install local` and `uninstall local` run from a linked worktree wrote to a per-worktree config and attributes file that git ignores, so the filter was never active. They now write to the shared repository config
+- `record` and `smudge` now work in a linked worktree
+- `record` now works from a subdirectory of the repository, or when given a subdirectory path
+
+### Changed
+
+- `clean-all` without `--yes` now errors when stdin is not a terminal, instead of prompting on the controlling terminal
+
 ## [0.7.1] - 2026-08-01
 
+### Changed
+
 - Adopt all clippy rules and fix lints
+
+### Fixed
+
 - Emit correct warning when running the file size hook with malformed settings files
 
 ## [0.7.0] - 2026-07-05

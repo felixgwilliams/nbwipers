@@ -1,6 +1,6 @@
 [package]
 name = "nbwipers"
-version = "0.7.1"
+version = "0.7.2"
 edition = "2024"
 rust-version = "1.88"
 description = "Wipe clean your Jupyter Notebooks!"
