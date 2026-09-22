@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
 
+### Changed
+
+- CI: Add caches to testing + dev drive for windows
+
 ## [0.7.2] - 2026-09-22
 
 ### Fixed
