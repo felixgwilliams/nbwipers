@@ -155,3 +155,133 @@ fn test_record_from_subdir() {
     dbg!(String::from_utf8_lossy(&output.stderr));
     assert!(output.status.success());
 }
+
+/// Moves the nbwipers filter/diff config out of the shared `.git/config`,
+/// writing it with `git config <location...>` run in `dir` instead.
+fn move_config(repo: &Path, dir: &Path, location: &[&str]) {
+    for key in [
+        "filter.nbwipers.clean",
+        "filter.nbwipers.smudge",
+        "diff.nbwipers.textconv",
+    ] {
+        let output = git(repo, &["config", "--get", key]);
+        assert!(output.status.success());
+        let value = String::from_utf8(output.stdout).unwrap();
+        let args = [&["config"], location, &[key, value.trim_end()]].concat();
+        assert!(git(dir, &args).status.success());
+        assert!(git(repo, &["config", "--unset", key]).status.success());
+    }
+}
+
+/// Enables `extensions.worktreeConfig` and moves the nbwipers config into the
+/// `config.worktree` of the worktree at `dir`, so only that worktree sees it.
+fn move_config_to_worktree_config(repo: &Path, dir: &Path) {
+    assert!(
+        git(repo, &["config", "extensions.worktreeConfig", "true"])
+            .status
+            .success()
+    );
+    move_config(repo, dir, &["--worktree"]);
+}
+
+#[test]
+fn test_check_install_linked_worktree_config() {
+    // with extensions.worktreeConfig, config installed in the linked
+    // worktree's `.git/worktrees/wt/config.worktree` applies only there.
+    let (_temp_dir, repo, wt) = repo_with_worktree();
+    assert!(nbwipers(&repo, &["install", "local"]).status.success());
+    move_config_to_worktree_config(&repo, &wt);
+
+    // sanity check: git agrees on who can see the filter
+    let get_filter = ["config", "--get", "filter.nbwipers.clean"];
+    assert!(git(&wt, &get_filter).status.success());
+    assert!(!git(&repo, &get_filter).status.success());
+
+    let output = nbwipers(&wt, &["check-install"]);
+    dbg!(String::from_utf8_lossy(&output.stderr));
+    assert!(output.status.success());
+    assert!(!nbwipers(&repo, &["check-install"]).status.success());
+}
+
+#[test]
+fn test_check_install_main_worktree_config() {
+    // the reverse: config in the main worktree's `.git/config.worktree`
+    // must not be treated as installed in a linked worktree.
+    let (_temp_dir, repo, wt) = repo_with_worktree();
+    assert!(nbwipers(&repo, &["install", "local"]).status.success());
+    move_config_to_worktree_config(&repo, &repo);
+
+    let get_filter = ["config", "--get", "filter.nbwipers.clean"];
+    assert!(git(&repo, &get_filter).status.success());
+    assert!(!git(&wt, &get_filter).status.success());
+
+    assert!(nbwipers(&repo, &["check-install"]).status.success());
+    let output = nbwipers(&wt, &["check-install"]);
+    dbg!(String::from_utf8_lossy(&output.stderr));
+    assert!(!output.status.success());
+}
+
+#[test]
+fn test_check_install_config_include() {
+    // config reached through `[include]` in the shared `.git/config`
+    let (temp_dir, repo, wt) = repo_with_worktree();
+    assert!(nbwipers(&repo, &["install", "local"]).status.success());
+    let included = temp_dir.path().join("nbwipers.gitconfig");
+    let included = included.to_str().unwrap();
+    move_config(&repo, &repo, &["-f", included]);
+    assert!(
+        git(&repo, &["config", "include.path", included])
+            .status
+            .success()
+    );
+
+    let get_filter = ["config", "--get", "filter.nbwipers.clean"];
+    assert!(git(&repo, &get_filter).status.success());
+    assert!(git(&wt, &get_filter).status.success());
+
+    assert!(nbwipers(&repo, &["check-install"]).status.success());
+    let output = nbwipers(&wt, &["check-install"]);
+    dbg!(String::from_utf8_lossy(&output.stderr));
+    assert!(output.status.success());
+}
+
+#[test]
+fn test_check_install_config_include_if_gitdir() {
+    // `includeIf "gitdir:..."` matches the per-worktree git dir, so a condition
+    // on `.git/worktrees/wt` applies only in the linked worktree.
+    let (temp_dir, repo, wt) = repo_with_worktree();
+    assert!(nbwipers(&repo, &["install", "local"]).status.success());
+    let included = temp_dir.path().join("nbwipers.gitconfig");
+    let included = included.to_str().unwrap();
+    move_config(&repo, &repo, &["-f", included]);
+    let wt_git_dir = repo.join(".git/worktrees/wt");
+    let key = format!("includeIf.gitdir:{}.path", wt_git_dir.to_str().unwrap());
+    assert!(git(&repo, &["config", &key, included]).status.success());
+
+    let get_filter = ["config", "--get", "filter.nbwipers.clean"];
+    assert!(!git(&repo, &get_filter).status.success());
+    assert!(git(&wt, &get_filter).status.success());
+
+    assert!(!nbwipers(&repo, &["check-install"]).status.success());
+    let output = nbwipers(&wt, &["check-install"]);
+    dbg!(String::from_utf8_lossy(&output.stderr));
+    assert!(output.status.success());
+}
+
+#[test]
+fn test_check_install_worktree_config_without_extension() {
+    // without extensions.worktreeConfig, git ignores `config.worktree`, so
+    // config found there must not count as installed.
+    let (_temp_dir, repo, wt) = repo_with_worktree();
+    assert!(nbwipers(&repo, &["install", "local"]).status.success());
+    let wt_config = repo.join(".git/worktrees/wt/config.worktree");
+    move_config(&repo, &repo, &["-f", wt_config.to_str().unwrap()]);
+    assert!(wt_config.is_file());
+
+    let get_filter = ["config", "--get", "filter.nbwipers.clean"];
+    assert!(!git(&wt, &get_filter).status.success());
+
+    let output = nbwipers(&wt, &["check-install"]);
+    dbg!(String::from_utf8_lossy(&output.stdout));
+    assert!(!output.status.success());
+}

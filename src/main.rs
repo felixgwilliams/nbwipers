@@ -39,6 +39,7 @@ use nbwipers::{
     smudge::smudge,
 };
 use rayon::prelude::*;
+use std::io::IsTerminal;
 use std::io::Write;
 
 fn check_all(
@@ -112,6 +113,9 @@ fn strip_all(files: &[PathBuf], dry_run: bool, yes: bool, cli: CommonArgs) -> Re
         bail!("`strip-all` does not support stdin");
     };
     if !yes {
+        if !std::io::stdin().is_terminal() {
+            bail!("stdin is not a terminal; pass --yes to clean without confirmation");
+        }
         let ans = inquire::Confirm::new("Continue?")
             .with_default(false)
             .prompt()?;

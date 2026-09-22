@@ -136,19 +136,21 @@ fn test_invalid_git_dirs() {
     let stderr = String::from_utf8(not_git_dir_out.stderr).unwrap();
     assert!(stderr.contains("Error: No .git dir"));
 
+    // an empty `.git` dir isn't a repository, so as with git itself it is
+    // skipped during discovery rather than reported as invalid
     let temp_dir = tempfile::tempdir().unwrap();
     fs::create_dir_all(temp_dir.path().join(".git")).unwrap();
 
-    let not_not_workdir = Command::new(&cur_exe)
+    let empty_git_dir_out = Command::new(&cur_exe)
         .current_dir(&temp_dir)
         .args(["record"])
         .output()
         .expect("record failed");
 
-    assert!(!not_not_workdir.status.success());
-    let stderr = String::from_utf8(not_not_workdir.stderr).unwrap();
+    assert!(!empty_git_dir_out.status.success());
+    let stderr = String::from_utf8(empty_git_dir_out.stderr).unwrap();
     dbg!(&stderr);
-    assert!(stderr.contains("Error: Invalid git repo"));
+    assert!(stderr.contains("Error: No .git dir"));
 }
 
 #[test]

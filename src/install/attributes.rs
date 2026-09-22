@@ -11,7 +11,7 @@ use std::{
 
 use std::{collections::BTreeMap, io::Write};
 
-use super::{InstallStatus, get_git_repo_and_work_tree};
+use super::{InstallStatus, get_git_dirs};
 use crate::cli::GitConfigType;
 use itertools::Itertools;
 
@@ -22,8 +22,6 @@ fn resolve_attribute_file(
     if let Some(path) = attribute_file {
         Ok(path.to_owned())
     } else {
-        let cur_dir = std::env::current_dir()?;
-
         let source = match config_type {
             GitConfigType::Global => gix_attributes::Source::Git,
             GitConfigType::Local => gix_attributes::Source::Local,
@@ -37,10 +35,7 @@ fn resolve_attribute_file(
                 .ok_or_else(|| anyhow::anyhow!("Could not find path to config"))?
                 .to_owned(),
             GitConfigType::Local => {
-                let dotgit = gix_discover::upwards(&cur_dir)?
-                    .0
-                    .into_repository_and_work_tree_directories()
-                    .0;
+                let dotgit = get_git_dirs(None)?.common;
                 dotgit.join(
                     source
                         .storage_location(&mut gix_path::env::var)
@@ -53,7 +48,7 @@ fn resolve_attribute_file(
 }
 
 fn get_default_attribute_file() -> Result<Option<PathBuf>, Error> {
-    let Some(work_dir) = get_git_repo_and_work_tree()?.1 else {
+    let Some(work_dir) = get_git_dirs(None)?.work else {
         return Ok(None);
     };
     let attribute_file = work_dir.join(".gitattributes");
