@@ -254,9 +254,11 @@ fn test_check_install_config_include_if_gitdir() {
     let included = temp_dir.path().join("nbwipers.gitconfig");
     let included = included.to_str().unwrap();
     move_config(&repo, &repo, &["-f", included]);
-    let wt_git_dir = repo.join(".git/worktrees/wt");
-    let key = format!("includeIf.gitdir:{}.path", wt_git_dir.to_str().unwrap());
-    assert!(git(&repo, &["config", &key, included]).status.success());
+    // a relative pattern gets a `**/` prefix, which avoids comparing absolute
+    // paths: those differ by symlinks (macOS `/var` -> `/private/var`), 8.3
+    // short names and separators (Windows) between the test and git
+    let key = "includeIf.gitdir:.git/worktrees/wt.path";
+    assert!(git(&repo, &["config", key, included]).status.success());
 
     let get_filter = ["config", "--get", "filter.nbwipers.clean"];
     assert!(!git(&repo, &get_filter).status.success());
